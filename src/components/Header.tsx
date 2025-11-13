@@ -43,10 +43,16 @@ const Header = () => {
         setIsAuthenticated(false);
       }
     } else if (token) {
-      // Локальный Express токен
-      setIsAuthenticated(true);
-      loadCartCount();
-      setIsAdmin(false);
+      // Локальный Express токен — проверяем валидность через /auth/me
+      try {
+        await authApi.me();
+        setIsAuthenticated(true);
+        loadCartCount();
+        setIsAdmin(false);
+      } catch {
+        // Токен недействителен или сервер недоступен — считаем, что не авторизованы
+        setIsAuthenticated(false);
+      }
     }
   };
 
