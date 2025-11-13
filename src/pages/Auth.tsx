@@ -4,6 +4,7 @@ import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { z } from "zod";
 import { authApi, setToken } from "@/lib/api";
+import { supabase } from "@/integrations/supabase/client";
 
 const authSchema = z.object({
   email: z.string().email({ message: "Некорректный email адрес" }),
@@ -22,43 +23,86 @@ const Auth = () => {
   });
 
   useEffect(() => {
+    let isMounted = true;
     const token = localStorage.getItem('auth_token');
     if (token) {
       navigate("/");
     }
+    supabase.auth.getSession().then(({ data }) => {
+      if (isMounted && data.session) navigate("/");
+    });
+    return () => { isMounted = false; };
   }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    try {
-      const validation = authSchema.safeParse(formData);
-      if (!validation.success) {
-        toast.error(validation.error.errors[0].message);
-        setLoading(false);
-        return;
-      }
+    const validation = authSchema.safeParse(formData);
+    if (!validation.success) {
+      toast.error(validation.error.errors[0].message);
+      setLoading(false);
+      return;
+    }
 
+    try {
       if (isSignUp) {
-        const response = await authApi.signup(
-          formData.email,
-          formData.password,
-          formData.fullName
-        );
-        
-        setToken(response.token);
-        toast.success("Регистрация успешна! Добро пожаловать!");
-        navigate("/");
+        // 1) Пытаемся через локальный Express (если доступен)
+        try {
+          const response = await authApi.signup(
+            formData.email,
+            formData.password,
+            formData.fullName
+          );
+          setToken(response.token);
+          toast.success("Регистрация успешна! Добро пожаловать!");
+          navigate("/");
+          return;
+        } catch (err) {
+          // 2) Фолбэк на облачную авторизацию (Lovable Cloud)
+          const redirectUrl = `${window.location.origin}/`;
+          const { data, error } = await supabase.auth.signUp({
+            email: formData.email,
+            password: formData.password,
+            options: {
+              emailRedirectTo: redirectUrl,
+              data: { full_name: formData.fullName || undefined },
+            },
+          });
+          if (error) throw error;
+          // Если автоподтверждение включено, будет сессия; если нет — письмо отправлено
+          if (data.session) {
+            setToken('supabase');
+            toast.success("Регистрация успешна!");
+            navigate("/");
+          } else {
+            toast.success("Письмо для подтверждения отправлено. Проверьте почту.");
+          }
+        }
       } else {
-        const response = await authApi.signin(
-          formData.email,
-          formData.password
-        );
-        
-        setToken(response.token);
-        toast.success("Вход выполнен успешно!");
-        navigate("/");
+        // Вход: сначала пробуем локальный Express
+        try {
+          const response = await authApi.signin(
+            formData.email,
+            formData.password
+          );
+          setToken(response.token);
+          toast.success("Вход выполнен успешно!");
+          navigate("/");
+          return;
+        } catch (err) {
+          // Фолбэк на облачный вход
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email: formData.email,
+            password: formData.password,
+          });
+          if (error) throw error;
+          if (data.session) {
+            setToken('supabase');
+            toast.success("Вход выполнен успешно!");
+            navigate("/");
+          }
+        }
       }
     } catch (error: any) {
       toast.error(error.message || "Произошла ошибка. Попробуйте снова.");
