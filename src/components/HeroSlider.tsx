@@ -165,31 +165,28 @@ const HeroSlider = () => {
         </CarouselContent>
 
         {/* Navigation Buttons */}
-        <div
+        <CarouselPrevious
           style={{
             position: "absolute",
-            bottom: "2rem",
-            right: "2rem",
-            display: "flex",
-            gap: "1rem",
-            zIndex: 10,
+            left: "2rem",
+            top: "50%",
+            transform: "translateY(-50%)",
+            backgroundColor: "hsl(var(--background) / 0.8)",
+            border: "1px solid hsl(var(--border))",
           }}
-        >
-          <CarouselPrevious
-            style={{
-              position: "static",
-              backgroundColor: "hsl(var(--background) / 0.8)",
-              border: "1px solid hsl(var(--border))",
-            }}
-          />
-          <CarouselNext
-            style={{
-              position: "static",
-              backgroundColor: "hsl(var(--background) / 0.8)",
-              border: "1px solid hsl(var(--border))",
-            }}
-          />
-        </div>
+          className="hover:bg-[hsl(var(--background)/0.8)]"
+        />
+        <CarouselNext
+          style={{
+            position: "absolute",
+            right: "2rem",
+            top: "50%",
+            transform: "translateY(-50%)",
+            backgroundColor: "hsl(var(--background) / 0.8)",
+            border: "1px solid hsl(var(--border))",
+          }}
+          className="hover:bg-[hsl(var(--background)/0.8)]"
+        />
       </Carousel>
     </div>
   );
