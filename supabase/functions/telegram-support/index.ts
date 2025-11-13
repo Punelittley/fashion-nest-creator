@@ -32,6 +32,35 @@ serve(async (req) => {
         const telegramChatId = update.message.chat.id;
         const messageText = update.message.text;
 
+        // Проверяем, является ли сообщение UUID (ID чата для привязки)
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (uuidRegex.test(messageText.trim())) {
+          const chatIdToLink = messageText.trim();
+          
+          // Привязываем telegram_chat_id к чату
+          const { error: linkError } = await supabaseClient
+            .from('support_chats')
+            .update({ telegram_chat_id: telegramChatId })
+            .eq('id', chatIdToLink);
+
+          if (!linkError) {
+            await fetch(`${TELEGRAM_API_URL}/sendMessage`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                chat_id: telegramChatId,
+                text: '✅ Чат успешно привязан! Теперь вы будете получать сообщения от пользователя.',
+              }),
+            });
+            
+            console.log(`Chat ${chatIdToLink} linked to Telegram ${telegramChatId}`);
+            
+            return new Response(JSON.stringify({ ok: true }), {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
+        }
+
         // Find the support chat by telegram_chat_id
         const { data: chat, error: chatError } = await supabaseClient
           .from('support_chats')
