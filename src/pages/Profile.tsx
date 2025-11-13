@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { localApi } from "@/lib/localApi";
 
 interface Profile {
   first_name: string;
@@ -58,44 +58,31 @@ const Profile = () => {
   }, [navigate]);
 
   const checkAuthAndLoadData = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    if (!localApi.isAuthenticated()) {
       navigate("/auth");
     } else {
       loadProfile();
-      loadOrderStats();
     }
   };
 
   const loadProfile = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
-
-      if (error) throw error;
-      if (data) {
-        setProfile({
-          first_name: data.first_name || "",
-          last_name: data.last_name || "",
-          middle_name: data.middle_name || "",
-          full_name: data.full_name || "",
-          email: data.email || "",
-          phone: data.phone || "",
-          address: data.address || "",
-          birth_date: data.birth_date || "",
-          gender: data.gender || "",
-          city: data.city || "",
-          postal_code: data.postal_code || "",
-          avatar_url: data.avatar_url || "",
-          bio: data.bio || ""
-        });
-      }
+      const data = await localApi.getProfile();
+      setProfile({
+        first_name: data.first_name || "",
+        last_name: data.last_name || "",
+        middle_name: data.middle_name || "",
+        full_name: data.full_name || "",
+        email: data.email || "",
+        phone: data.phone || "",
+        address: data.address || "",
+        birth_date: data.birth_date || "",
+        gender: "",
+        city: "",
+        postal_code: "",
+        avatar_url: "",
+        bio: ""
+      });
     } catch (error) {
       console.error('Error loading profile:', error);
       toast.error("Ошибка загрузки профиля");
@@ -132,32 +119,18 @@ const Profile = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          first_name: profile.first_name,
-          last_name: profile.last_name,
-          middle_name: profile.middle_name || null,
-          full_name: `${profile.last_name} ${profile.first_name} ${profile.middle_name}`.trim(),
-          phone: profile.phone,
-          address: profile.address,
-          birth_date: profile.birth_date || null,
-          gender: profile.gender || null,
-          city: profile.city || null,
-          postal_code: profile.postal_code || null,
-          avatar_url: profile.avatar_url || null,
-          bio: profile.bio || null
-        })
-        .eq('id', session.user.id);
-
-      if (error) throw error;
-      toast.success("Профиль обновлен");
+      await localApi.updateProfile({
+        first_name: profile.first_name,
+        last_name: profile.last_name,
+        middle_name: profile.middle_name,
+        phone: profile.phone,
+        address: profile.address,
+      });
+      
+      toast.success("Профиль успешно обновлен");
     } catch (error) {
       console.error('Error updating profile:', error);
-      toast.error("Ошибка при обновлении профиля");
+      toast.error("Ошибка обновления профиля");
     } finally {
       setLoading(false);
     }
