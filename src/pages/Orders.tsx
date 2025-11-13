@@ -18,6 +18,7 @@ interface Order {
   created_at: string;
   shipping_address: string;
   order_items: OrderItem[];
+  is_favorite?: boolean;
 }
 
 const statusLabels: Record<string, string> = {
@@ -32,6 +33,7 @@ const Orders = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [favoriteOrderIds, setFavoriteOrderIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     checkAuthAndLoadOrders();
@@ -51,6 +53,7 @@ const Orders = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
+      // Load orders
       const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -73,6 +76,15 @@ const Orders = () => {
 
       if (error) throw error;
 
+      // Load favorite orders
+      const { data: favoritesData } = await supabase
+        .from('favorite_orders')
+        .select('order_id')
+        .eq('user_id', session.user.id);
+
+      const favoriteIds = new Set(favoritesData?.map(f => f.order_id) || []);
+      setFavoriteOrderIds(favoriteIds);
+
       const formattedOrders = data?.map(order => ({
         ...order,
         order_items: order.order_items.map((item: any) => ({
@@ -80,7 +92,8 @@ const Orders = () => {
           price: item.price,
           name: item.products.name,
           image_url: item.products.image_url
-        }))
+        })),
+        is_favorite: favoriteIds.has(order.id)
       })) || [];
 
       setOrders(formattedOrders);
@@ -89,6 +102,56 @@ const Orders = () => {
       toast.error("Ошибка загрузки заказов");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const toggleFavorite = async (orderId: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const isFavorite = favoriteOrderIds.has(orderId);
+
+      if (isFavorite) {
+        // Remove from favorites
+        const { error } = await supabase
+          .from('favorite_orders')
+          .delete()
+          .eq('user_id', session.user.id)
+          .eq('order_id', orderId);
+
+        if (error) throw error;
+
+        setFavoriteOrderIds(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(orderId);
+          return newSet;
+        });
+        
+        setOrders(prev => prev.map(order => 
+          order.id === orderId ? { ...order, is_favorite: false } : order
+        ));
+
+        toast.success("Удалено из избранного");
+      } else {
+        // Add to favorites
+        const { error } = await supabase
+          .from('favorite_orders')
+          .insert({ user_id: session.user.id, order_id: orderId });
+
+        if (error) throw error;
+
+        setFavoriteOrderIds(prev => new Set([...prev, orderId]));
+        
+        setOrders(prev => prev.map(order => 
+          order.id === orderId ? { ...order, is_favorite: true } : order
+        ));
+
+        toast.success("Добавлено в избранное");
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      toast.error("Ошибка при обновлении избранного");
     }
   };
 
@@ -147,15 +210,35 @@ const Orders = () => {
               <div key={order.id} style={{
                 padding: "2rem",
                 backgroundColor: "hsl(var(--card))",
-                boxShadow: "var(--shadow-soft)"
+                boxShadow: "var(--shadow-soft)",
+                position: "relative"
               }}>
+                <button
+                  onClick={() => toggleFavorite(order.id)}
+                  style={{
+                    position: "absolute",
+                    top: "1.5rem",
+                    right: "1.5rem",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: "1.5rem",
+                    padding: "0.5rem",
+                    color: order.is_favorite ? "hsl(var(--accent))" : "hsl(var(--muted-foreground))"
+                  }}
+                  title={order.is_favorite ? "Удалить из избранного" : "Добавить в избранное"}
+                >
+                  {order.is_favorite ? "♥" : "♡"}
+                </button>
+                
                 <div style={{
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "start",
                   marginBottom: "1.5rem",
                   flexWrap: "wrap",
-                  gap: "1rem"
+                  gap: "1rem",
+                  paddingRight: "3rem"
                 }}>
                   <div>
                     <p style={{
