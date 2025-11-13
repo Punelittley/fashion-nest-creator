@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ShoppingCart, User, LogOut, Menu, X, LayoutDashboard, Heart, MessageCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { authApi, cartApi } from "@/lib/api";
+import { supabase } from "@/integrations/supabase/client";
 
 const Header = () => {
   const navigate = useNavigate();
@@ -12,14 +13,39 @@ const Header = () => {
 
   useEffect(() => {
     checkAuth();
+    
+    // Слушаем изменения состояния авторизации Supabase
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        setIsAuthenticated(true);
+        setTimeout(() => loadCartCount(), 0);
+      } else if (event === 'SIGNED_OUT') {
+        setIsAuthenticated(false);
+        setIsAdmin(false);
+        setCartCount(0);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const checkAuth = async () => {
     const token = localStorage.getItem('auth_token');
-    if (token) {
+    if (token === 'supabase') {
+      // Проверяем Supabase сессию
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setIsAuthenticated(true);
+        loadCartCount();
+        // Можно проверить роль админа через user_roles таблицу
+        setIsAdmin(false);
+      } else {
+        setIsAuthenticated(false);
+      }
+    } else if (token) {
+      // Локальный Express токен
       setIsAuthenticated(true);
       loadCartCount();
-      // В реальном приложении здесь нужна проверка роли админа через API
       setIsAdmin(false);
     }
   };
@@ -34,8 +60,13 @@ const Header = () => {
     }
   };
 
-  const handleLogout = () => {
-    authApi.signout();
+  const handleLogout = async () => {
+    const token = localStorage.getItem('auth_token');
+    if (token === 'supabase') {
+      await supabase.auth.signOut();
+    } else {
+      authApi.signout();
+    }
     setIsAuthenticated(false);
     setIsAdmin(false);
     setCartCount(0);
