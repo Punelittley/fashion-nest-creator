@@ -1,8 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
-import { supabase } from "@/integrations/supabase/client";
-import { Session } from "@supabase/supabase-js";
+import { toast } from "sonner";
+import { ordersApi } from "@/lib/api";
+
+interface OrderItem {
+  quantity: number;
+  price: number;
+  name: string;
+  image_url: string;
+}
 
 interface Order {
   id: string;
@@ -10,19 +17,12 @@ interface Order {
   status: string;
   created_at: string;
   shipping_address: string;
-  order_items: Array<{
-    quantity: number;
-    price: number;
-    product: {
-      name: string;
-      image_url: string;
-    };
-  }>;
+  order_items: OrderItem[];
 }
 
 const statusLabels: Record<string, string> = {
-  pending: "Ожидает обработки",
-  processing: "В обработке",
+  pending: "В обработке",
+  processing: "Обрабатывается",
   shipped: "Отправлен",
   delivered: "Доставлен",
   cancelled: "Отменен"
@@ -30,46 +30,27 @@ const statusLabels: Record<string, string> = {
 
 const Orders = () => {
   const navigate = useNavigate();
-  const [session, setSession] = useState<Session | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (!session) {
-        navigate("/auth");
-      } else {
-        loadOrders(session.user.id);
-      }
-    });
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      navigate("/auth");
+    } else {
+      loadOrders();
+    }
   }, [navigate]);
 
-  const loadOrders = async (userId: string) => {
-    const { data, error } = await supabase
-      .from("orders")
-      .select(`
-        id,
-        total_amount,
-        status,
-        created_at,
-        shipping_address,
-        order_items (
-          quantity,
-          price,
-          product:products (
-            name,
-            image_url
-          )
-        )
-      `)
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
-
-    if (data) {
-      setOrders(data as any);
+  const loadOrders = async () => {
+    try {
+      const data = await ordersApi.get();
+      setOrders(data);
+    } catch (error) {
+      toast.error("Ошибка загрузки заказов");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -191,10 +172,10 @@ const Orders = () => {
                         backgroundColor: "hsl(var(--muted))",
                         overflow: "hidden"
                       }}>
-                        {item.product.image_url && (
+                        {item.image_url && (
                           <img
-                            src={item.product.image_url}
-                            alt={item.product.name}
+                            src={item.image_url}
+                            alt={item.name}
                             style={{
                               width: "100%",
                               height: "100%",
@@ -209,7 +190,7 @@ const Orders = () => {
                           color: "hsl(var(--foreground))",
                           marginBottom: "0.25rem"
                         }}>
-                          {item.product.name}
+                          {item.name}
                         </p>
                         <p style={{
                           fontSize: "0.9rem",

@@ -60,49 +60,6 @@ const ProductDetail = () => {
       setAddingToCart(false);
     }
   };
-    if (!session) {
-      toast.error("Войдите в аккаунт для добавления в корзину");
-      navigate("/auth");
-      return;
-    }
-
-    if (!product) return;
-
-    setLoading(true);
-    try {
-      const { data: existingItem } = await supabase
-        .from("cart_items")
-        .select("*")
-        .eq("user_id", session.user.id)
-        .eq("product_id", product.id)
-        .single();
-
-      if (existingItem) {
-        const { error } = await supabase
-          .from("cart_items")
-          .update({ quantity: existingItem.quantity + quantity })
-          .eq("id", existingItem.id);
-
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from("cart_items")
-          .insert({
-            user_id: session.user.id,
-            product_id: product.id,
-            quantity
-          });
-
-        if (error) throw error;
-      }
-
-      toast.success("Товар добавлен в корзину");
-    } catch (error) {
-      toast.error("Ошибка при добавлении в корзину");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (!product) {
     return (

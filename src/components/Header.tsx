@@ -1,64 +1,44 @@
 import { Link, useNavigate } from "react-router-dom";
 import { ShoppingCart, User, LogOut, Menu, X, LayoutDashboard } from "lucide-react";
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Session } from "@supabase/supabase-js";
+import { authApi, cartApi } from "@/lib/api";
 
 const Header = () => {
   const navigate = useNavigate();
-  const [session, setSession] = useState<Session | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [cartCount, setCartCount] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session?.user) {
-        checkAdminRole(session.user.id);
-        loadCartCount(session.user.id);
-      }
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session?.user) {
-        checkAdminRole(session.user.id);
-        loadCartCount(session.user.id);
-      } else {
-        setIsAdmin(false);
-        setCartCount(0);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    checkAuth();
   }, []);
 
-  const checkAdminRole = async (userId: string) => {
-    const { data } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .eq("role", "admin")
-      .single();
-    
-    setIsAdmin(!!data);
-  };
-
-  const loadCartCount = async (userId: string) => {
-    const { data } = await supabase
-      .from("cart_items")
-      .select("quantity")
-      .eq("user_id", userId);
-    
-    if (data) {
-      const total = data.reduce((sum, item) => sum + item.quantity, 0);
-      setCartCount(total);
+  const checkAuth = async () => {
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      setIsAuthenticated(true);
+      loadCartCount();
+      // В реальном приложении здесь нужна проверка роли админа через API
+      setIsAdmin(false);
     }
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
+  const loadCartCount = async () => {
+    try {
+      const data = await cartApi.get();
+      const total = data.reduce((sum: number, item: any) => sum + item.quantity, 0);
+      setCartCount(total);
+    } catch (error) {
+      setCartCount(0);
+    }
+  };
+
+  const handleLogout = () => {
+    authApi.signout();
+    setIsAuthenticated(false);
+    setIsAdmin(false);
+    setCartCount(0);
     navigate("/");
   };
 
@@ -138,7 +118,7 @@ const Header = () => {
           gap: "1.5rem",
           alignItems: "center"
         }}>
-          {session ? (
+          {isAuthenticated ? (
             <>
               <Link to="/cart" style={{
                 position: "relative",
