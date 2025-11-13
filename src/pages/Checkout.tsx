@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { z } from "zod";
-import { cartApi, ordersApi, profileApi } from "@/lib/api";
+import { supabase } from "@/integrations/supabase/client";
 
 const checkoutSchema = z.object({
   phone: z.string().min(10, { message: "Введите корректный номер телефона" }),
@@ -12,6 +12,7 @@ const checkoutSchema = z.object({
 
 interface CartItem {
   id: string;
+  product_id: string;
   quantity: number;
   name: string;
   price: number;
@@ -28,26 +29,69 @@ const Checkout = () => {
   });
 
   useEffect(() => {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
+    checkAuthAndLoadData();
+  }, [navigate]);
+
+  const checkAuthAndLoadData = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
       navigate("/auth");
     } else {
       loadData();
     }
-  }, [navigate]);
+  };
 
   const loadData = async () => {
     try {
-      const [cartData, profileData] = await Promise.all([
-        cartApi.get(),
-        profileApi.get()
-      ]);
-      setCartItems(cartData);
-      setFormData({
-        phone: profileData.phone || "",
-        address: profileData.address || ""
-      });
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      // Load cart items
+      const { data: cartData, error: cartError } = await supabase
+        .from('cart_items')
+        .select(`
+          id,
+          quantity,
+          product_id,
+          products (
+            id,
+            name,
+            price,
+            image_url
+          )
+        `)
+        .eq('user_id', session.user.id);
+
+      if (cartError) throw cartError;
+
+      const formattedItems = cartData?.map((item: any) => ({
+        id: item.id,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        name: item.products.name,
+        price: item.products.price,
+        image_url: item.products.image_url
+      })) || [];
+
+      setCartItems(formattedItems);
+
+      // Load profile data
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('phone, address')
+        .eq('id', session.user.id)
+        .single();
+
+      if (profileError) throw profileError;
+
+      if (profileData) {
+        setFormData({
+          phone: profileData.phone || "",
+          address: profileData.address || ""
+        });
+      }
     } catch (error) {
+      console.error('Error loading data:', error);
       toast.error("Ошибка загрузки данных");
     }
   };
@@ -70,10 +114,56 @@ const Checkout = () => {
         return;
       }
 
-      await ordersApi.create(formData.address, formData.phone);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Необходима авторизация");
+        navigate("/auth");
+        return;
+      }
+
+      const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+      // Create order
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          user_id: session.user.id,
+          shipping_address: formData.address,
+          phone: formData.phone,
+          total_amount: total,
+          status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // Create order items
+      const orderItems = cartItems.map(item => ({
+        order_id: order.id,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        price: item.price
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
+
+      // Clear cart
+      const { error: clearError } = await supabase
+        .from('cart_items')
+        .delete()
+        .eq('user_id', session.user.id);
+
+      if (clearError) throw clearError;
+
       toast.success("Заказ успешно оформлен!");
       navigate("/orders");
     } catch (error: any) {
+      console.error('Error creating order:', error);
       toast.error(error.message || "Ошибка оформления заказа");
     } finally {
       setLoading(false);
