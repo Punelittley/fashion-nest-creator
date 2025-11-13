@@ -1,7 +1,8 @@
 import { Link, useNavigate } from "react-router-dom";
 import { ShoppingCart, User, LogOut, Menu, X, LayoutDashboard, Heart } from "lucide-react";
 import { useState, useEffect } from "react";
-import { localApi } from "@/lib/localApi";
+import { authApi, cartApi } from "@/lib/api";
+import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.svg";
 
 const Header = () => {
@@ -13,30 +14,105 @@ const Header = () => {
 
   useEffect(() => {
     checkAuth();
+    
+    // Слушаем изменения состояния авторизации Supabase
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        setIsAuthenticated(true);
+        setTimeout(() => {
+          loadCartCount();
+          checkAdminRole(session.user.id);
+        }, 0);
+      } else if (event === 'SIGNED_OUT') {
+        setIsAuthenticated(false);
+        setIsAdmin(false);
+        setCartCount(0);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const checkAuth = async () => {
-    if (localApi.isAuthenticated()) {
-      setIsAuthenticated(true);
-      loadCartCount();
+    const token = localStorage.getItem('auth_token');
+    if (token === 'supabase') {
+      // Проверяем Supabase сессию
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setIsAuthenticated(true);
+        loadCartCount();
+        // Проверяем роль админа
+        checkAdminRole(session.user.id);
+      } else {
+        setIsAuthenticated(false);
+      }
+    } else if (token) {
+      // Локальный Express токен — проверяем валидность через /auth/me
+      try {
+        await authApi.me();
+        setIsAuthenticated(true);
+        loadCartCount();
+        setIsAdmin(false);
+      } catch {
+        // Токен недействителен или сервер недоступен — считаем, что не авторизованы
+        setIsAuthenticated(false);
+      }
+    }
+  };
+
+  const checkAdminRole = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .eq('role', 'admin')
+        .maybeSingle();
+
+      setIsAdmin(!!data && !error);
+    } catch {
       setIsAdmin(false);
-    } else {
-      setIsAuthenticated(false);
     }
   };
 
   const loadCartCount = async () => {
     try {
-      const data = await localApi.getCart();
-      const total = data.reduce((sum: number, item: any) => sum + item.quantity, 0);
-      setCartCount(total);
+      const token = localStorage.getItem('auth_token');
+      if (token === 'supabase') {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          setCartCount(0);
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from('cart_items')
+          .select('quantity')
+          .eq('user_id', session.user.id);
+        
+        if (!error && data) {
+          const total = data.reduce((sum, item) => sum + (item.quantity || 0), 0);
+          setCartCount(total);
+        } else {
+          setCartCount(0);
+        }
+      } else {
+        const data = await cartApi.get();
+        const total = data.reduce((sum: number, item: any) => sum + item.quantity, 0);
+        setCartCount(total);
+      }
     } catch (error) {
       setCartCount(0);
     }
   };
 
   const handleLogout = async () => {
-    await localApi.signOut();
+    const token = localStorage.getItem('auth_token');
+    if (token === 'supabase') {
+      await supabase.auth.signOut();
+    } else {
+      authApi.signout();
+    }
     setIsAuthenticated(false);
     setIsAdmin(false);
     setCartCount(0);
