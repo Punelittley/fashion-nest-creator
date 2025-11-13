@@ -6,10 +6,15 @@ import { z } from "zod";
 import { authApi, setToken } from "@/lib/api";
 import { supabase } from "@/integrations/supabase/client";
 
-const authSchema = z.object({
+const signUpSchema = z.object({
   email: z.string().email({ message: "Некорректный email адрес" }),
   password: z.string().min(6, { message: "Пароль должен быть не менее 6 символов" }),
-  fullName: z.string().min(2, { message: "Имя должно содержать не менее 2 символов" }).optional()
+  fullName: z.string().min(2, { message: "Имя должно содержать не менее 2 символов" })
+});
+
+const signInSchema = z.object({
+  email: z.string().email({ message: "Некорректный email адрес" }),
+  password: z.string().min(6, { message: "Пароль должен быть не менее 6 символов" })
 });
 
 const Auth = () => {
@@ -46,7 +51,10 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
 
-    const validation = authSchema.safeParse(formData);
+    const validation = isSignUp 
+      ? signUpSchema.safeParse(formData)
+      : signInSchema.safeParse(formData);
+      
     if (!validation.success) {
       toast.error(validation.error.errors[0].message);
       setLoading(false);
