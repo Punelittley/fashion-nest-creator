@@ -5,6 +5,9 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Profile {
+  first_name: string;
+  last_name: string;
+  middle_name: string;
   full_name: string;
   email: string;
   phone: string;
@@ -27,6 +30,9 @@ interface OrderStats {
 const Profile = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile>({
+    first_name: "",
+    last_name: "",
+    middle_name: "",
     full_name: "",
     email: "",
     phone: "",
@@ -75,6 +81,9 @@ const Profile = () => {
       if (error) throw error;
       if (data) {
         setProfile({
+          first_name: data.first_name || "",
+          last_name: data.last_name || "",
+          middle_name: data.middle_name || "",
           full_name: data.full_name || "",
           email: data.email || "",
           phone: data.phone || "",
@@ -129,7 +138,10 @@ const Profile = () => {
       const { error } = await supabase
         .from('profiles')
         .update({
-          full_name: profile.full_name,
+          first_name: profile.first_name,
+          last_name: profile.last_name,
+          middle_name: profile.middle_name || null,
+          full_name: `${profile.last_name} ${profile.first_name} ${profile.middle_name}`.trim(),
           phone: profile.phone,
           address: profile.address,
           birth_date: profile.birth_date || null,
@@ -322,12 +334,62 @@ const Profile = () => {
                       fontWeight: "500",
                       color: "hsl(var(--foreground))"
                     }}>
-                      Полное имя
+                      Фамилия
                     </label>
                     <input
                       type="text"
-                      value={profile.full_name}
-                      onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
+                      value={profile.last_name}
+                      onChange={(e) => setProfile({ ...profile, last_name: e.target.value })}
+                      style={{
+                        width: "100%",
+                        padding: "0.875rem",
+                        backgroundColor: "hsl(var(--background))",
+                        border: "1px solid hsl(var(--border))",
+                        color: "hsl(var(--foreground))",
+                        fontSize: "1rem"
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: "block",
+                      marginBottom: "0.5rem",
+                      fontSize: "0.95rem",
+                      fontWeight: "500",
+                      color: "hsl(var(--foreground))"
+                    }}>
+                      Имя
+                    </label>
+                    <input
+                      type="text"
+                      value={profile.first_name}
+                      onChange={(e) => setProfile({ ...profile, first_name: e.target.value })}
+                      style={{
+                        width: "100%",
+                        padding: "0.875rem",
+                        backgroundColor: "hsl(var(--background))",
+                        border: "1px solid hsl(var(--border))",
+                        color: "hsl(var(--foreground))",
+                        fontSize: "1rem"
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: "block",
+                      marginBottom: "0.5rem",
+                      fontSize: "0.95rem",
+                      fontWeight: "500",
+                      color: "hsl(var(--foreground))"
+                    }}>
+                      Отчество
+                    </label>
+                    <input
+                      type="text"
+                      value={profile.middle_name}
+                      onChange={(e) => setProfile({ ...profile, middle_name: e.target.value })}
                       style={{
                         width: "100%",
                         padding: "0.875rem",

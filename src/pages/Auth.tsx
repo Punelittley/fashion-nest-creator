@@ -9,7 +9,10 @@ import { supabase } from "@/integrations/supabase/client";
 const signUpSchema = z.object({
   email: z.string().email({ message: "Некорректный email адрес" }),
   password: z.string().min(6, { message: "Пароль должен быть не менее 6 символов" }),
-  fullName: z.string().min(2, { message: "Имя должно содержать не менее 2 символов" })
+  firstName: z.string().min(2, { message: "Имя должно содержать не менее 2 символов" }),
+  lastName: z.string().min(2, { message: "Фамилия должна содержать не менее 2 символов" }),
+  middleName: z.string().optional(),
+  birthDate: z.string().min(1, { message: "Укажите дату рождения" })
 });
 
 const signInSchema = z.object({
@@ -24,7 +27,10 @@ const Auth = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    fullName: ""
+    firstName: "",
+    lastName: "",
+    middleName: "",
+    birthDate: ""
   });
 
   useEffect(() => {
@@ -68,7 +74,7 @@ const Auth = () => {
           const response = await authApi.signup(
             formData.email,
             formData.password,
-            formData.fullName
+            `${formData.lastName} ${formData.firstName} ${formData.middleName}`.trim()
           );
           setToken(response.token);
           toast.success("Регистрация успешна! Добро пожаловать!");
@@ -82,7 +88,12 @@ const Auth = () => {
             password: formData.password,
             options: {
               emailRedirectTo: redirectUrl,
-              data: { full_name: formData.fullName || undefined },
+              data: { 
+                first_name: formData.firstName,
+                last_name: formData.lastName,
+                middle_name: formData.middleName || undefined,
+                birth_date: formData.birthDate
+              },
             },
           });
           if (error) throw error;
@@ -166,32 +177,114 @@ const Auth = () => {
             gap: "1.5rem"
           }}>
             {isSignUp && (
-              <div>
-                <label style={{
-                  display: "block",
-                  marginBottom: "0.5rem",
-                  fontSize: "0.9rem",
-                  fontWeight: "500",
-                  color: "hsl(var(--foreground))"
-                }}>
-                  Полное имя
-                </label>
-                <input
-                  type="text"
-                  value={formData.fullName}
-                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    backgroundColor: "hsl(var(--background))",
-                    border: "1px solid hsl(var(--border))",
-                    color: "hsl(var(--foreground))",
-                    fontSize: "1rem",
-                    outline: "none"
-                  }}
-                  required={isSignUp}
-                />
-              </div>
+              <>
+                <div>
+                  <label style={{
+                    display: "block",
+                    marginBottom: "0.5rem",
+                    fontSize: "0.9rem",
+                    fontWeight: "500",
+                    color: "hsl(var(--foreground))"
+                  }}>
+                    Фамилия
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.lastName}
+                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                    style={{
+                      width: "100%",
+                      padding: "0.75rem",
+                      backgroundColor: "hsl(var(--background))",
+                      border: "1px solid hsl(var(--border))",
+                      color: "hsl(var(--foreground))",
+                      fontSize: "1rem",
+                      outline: "none"
+                    }}
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label style={{
+                    display: "block",
+                    marginBottom: "0.5rem",
+                    fontSize: "0.9rem",
+                    fontWeight: "500",
+                    color: "hsl(var(--foreground))"
+                  }}>
+                    Имя
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.firstName}
+                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                    style={{
+                      width: "100%",
+                      padding: "0.75rem",
+                      backgroundColor: "hsl(var(--background))",
+                      border: "1px solid hsl(var(--border))",
+                      color: "hsl(var(--foreground))",
+                      fontSize: "1rem",
+                      outline: "none"
+                    }}
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label style={{
+                    display: "block",
+                    marginBottom: "0.5rem",
+                    fontSize: "0.9rem",
+                    fontWeight: "500",
+                    color: "hsl(var(--foreground))"
+                  }}>
+                    Отчество (необязательно)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.middleName}
+                    onChange={(e) => setFormData({ ...formData, middleName: e.target.value })}
+                    style={{
+                      width: "100%",
+                      padding: "0.75rem",
+                      backgroundColor: "hsl(var(--background))",
+                      border: "1px solid hsl(var(--border))",
+                      color: "hsl(var(--foreground))",
+                      fontSize: "1rem",
+                      outline: "none"
+                    }}
+                  />
+                </div>
+                
+                <div>
+                  <label style={{
+                    display: "block",
+                    marginBottom: "0.5rem",
+                    fontSize: "0.9rem",
+                    fontWeight: "500",
+                    color: "hsl(var(--foreground))"
+                  }}>
+                    Дата рождения
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.birthDate}
+                    onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
+                    style={{
+                      width: "100%",
+                      padding: "0.75rem",
+                      backgroundColor: "hsl(var(--background))",
+                      border: "1px solid hsl(var(--border))",
+                      color: "hsl(var(--foreground))",
+                      fontSize: "1rem",
+                      outline: "none"
+                    }}
+                    required
+                  />
+                </div>
+              </>
             )}
 
             <div>
