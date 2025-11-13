@@ -52,10 +52,26 @@ const Header = () => {
 
   const loadCartCount = async () => {
     try {
-      const data = await cartApi.get();
-      const total = data.reduce((sum: number, item: any) => sum + item.quantity, 0);
-      setCartCount(total);
+      const token = localStorage.getItem('auth_token');
+      if (token === 'supabase') {
+        // Используем Supabase для корзины
+        const { data, error } = await supabase
+          .from('cart_items')
+          .select('quantity');
+        if (!error && data) {
+          const total = data.reduce((sum, item) => sum + (item.quantity || 0), 0);
+          setCartCount(total);
+        } else {
+          setCartCount(0);
+        }
+      } else {
+        // Используем Express API
+        const data = await cartApi.get();
+        const total = data.reduce((sum: number, item: any) => sum + item.quantity, 0);
+        setCartCount(total);
+      }
     } catch (error) {
+      // Игнорируем ошибки загрузки корзины
       setCartCount(0);
     }
   };
