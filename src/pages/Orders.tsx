@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
-import { ordersApi } from "@/lib/api";
+import { supabase } from "@/integrations/supabase/client";
 
 interface OrderItem {
   quantity: number;
@@ -34,19 +34,58 @@ const Orders = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
+    checkAuthAndLoadOrders();
+  }, [navigate]);
+
+  const checkAuthAndLoadOrders = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
       navigate("/auth");
     } else {
       loadOrders();
     }
-  }, [navigate]);
+  };
 
   const loadOrders = async () => {
     try {
-      const data = await ordersApi.get();
-      setOrders(data);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          id,
+          total_amount,
+          status,
+          created_at,
+          shipping_address,
+          order_items (
+            quantity,
+            price,
+            products (
+              name,
+              image_url
+            )
+          )
+        `)
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const formattedOrders = data?.map(order => ({
+        ...order,
+        order_items: order.order_items.map((item: any) => ({
+          quantity: item.quantity,
+          price: item.price,
+          name: item.products.name,
+          image_url: item.products.image_url
+        }))
+      })) || [];
+
+      setOrders(formattedOrders);
     } catch (error) {
+      console.error('Error loading orders:', error);
       toast.error("Ошибка загрузки заказов");
     } finally {
       setLoading(false);
