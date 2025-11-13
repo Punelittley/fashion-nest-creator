@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { Heart, Trash2, ShoppingCart } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface WishlistItem {
   id: string;
@@ -10,6 +11,7 @@ interface WishlistItem {
   price: number;
   image_url: string;
   stock: number;
+  product_id: string;
 }
 
 const Wishlist = () => {
@@ -18,33 +20,103 @@ const Wishlist = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
+    checkAuthAndLoadWishlist();
+  }, [navigate]);
+
+  const checkAuthAndLoadWishlist = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
       navigate("/auth");
     } else {
       loadWishlist();
     }
-  }, [navigate]);
+  };
 
-  const loadWishlist = () => {
-    // Временно загружаем из localStorage
-    const saved = localStorage.getItem('wishlist');
-    if (saved) {
-      setWishlistItems(JSON.parse(saved));
+  const loadWishlist = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase
+        .from('favorite_products')
+        .select(`
+          id,
+          product_id,
+          products (
+            id,
+            name,
+            price,
+            image_url,
+            stock
+          )
+        `)
+        .eq('user_id', session.user.id);
+
+      if (error) throw error;
+
+      const formattedItems = data?.map((item: any) => ({
+        id: item.id,
+        product_id: item.products.id,
+        name: item.products.name,
+        price: item.products.price,
+        image_url: item.products.image_url,
+        stock: item.products.stock
+      })) || [];
+
+      setWishlistItems(formattedItems);
+    } catch (error) {
+      console.error('Error loading wishlist:', error);
+      toast.error("Ошибка загрузки избранного");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  const removeFromWishlist = (productId: string) => {
-    const updated = wishlistItems.filter(item => item.id !== productId);
-    setWishlistItems(updated);
-    localStorage.setItem('wishlist', JSON.stringify(updated));
-    toast.success("Товар удален из избранного");
+  const removeFromWishlist = async (favoriteId: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { error } = await supabase
+        .from('favorite_products')
+        .delete()
+        .eq('id', favoriteId)
+        .eq('user_id', session.user.id);
+
+      if (error) throw error;
+
+      setWishlistItems(prev => prev.filter(item => item.id !== favoriteId));
+      toast.success("Товар удален из избранного");
+    } catch (error) {
+      console.error('Error removing from wishlist:', error);
+      toast.error("Ошибка удаления из избранного");
+    }
   };
 
-  const addToCart = (product: WishlistItem) => {
-    toast.success(`${product.name} добавлен в корзину`);
-    // В реальном приложении здесь будет API запрос
+  const addToCart = async (item: WishlistItem) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Войдите для добавления в корзину");
+        navigate("/auth");
+        return;
+      }
+
+      const { error } = await supabase
+        .from('cart_items')
+        .insert({
+          user_id: session.user.id,
+          product_id: item.product_id,
+          quantity: 1
+        });
+
+      if (error) throw error;
+
+      toast.success(`${item.name} добавлен в корзину`);
+    } catch (error: any) {
+      console.error('Error adding to cart:', error);
+      toast.error(error.message || "Ошибка добавления в корзину");
+    }
   };
 
   if (loading) {
@@ -123,123 +195,130 @@ const Wishlist = () => {
                   key={item.id}
                   style={{
                     backgroundColor: "hsl(var(--card))",
-                    boxShadow: "var(--shadow-soft)",
                     overflow: "hidden",
-                    position: "relative",
-                    transition: "var(--transition)",
-                    animationDelay: `${index * 0.1}s`
+                    boxShadow: "var(--shadow-soft)",
+                    display: "flex",
+                    flexDirection: "column"
                   }}
-                  className="animate-fade-in hover-scale"
+                  className="animate-slide-up"
+                  data-delay={index * 100}
                 >
-                  <button
-                    onClick={() => removeFromWishlist(item.id)}
+                  <Link
+                    to={`/product/${item.product_id}`}
                     style={{
-                      position: "absolute",
-                      top: "1rem",
-                      right: "1rem",
-                      zIndex: 10,
-                      background: "hsl(var(--background))",
-                      border: "none",
-                      padding: "0.5rem",
-                      cursor: "pointer",
-                      borderRadius: "50%",
-                      boxShadow: "var(--shadow-medium)",
-                      transition: "var(--transition)"
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "hsl(var(--destructive))";
-                      e.currentTarget.style.transform = "scale(1.1)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "hsl(var(--background))";
-                      e.currentTarget.style.transform = "scale(1)";
+                      aspectRatio: "3/4",
+                      backgroundColor: "hsl(var(--muted))",
+                      overflow: "hidden",
+                      display: "block",
+                      textDecoration: "none"
                     }}
                   >
-                    <Trash2 size={18} style={{ color: "hsl(var(--destructive))" }} />
-                  </button>
-
-                  <Link to={`/product/${item.id}`} style={{ textDecoration: "none" }}>
-                    <div style={{
-                      position: "relative",
-                      paddingBottom: "125%",
-                      backgroundColor: "hsl(var(--muted))"
-                    }}>
+                    {item.image_url && (
                       <img
-                        src={item.image_url || "https://images.unsplash.com/photo-1523381210434-271e8be1f52b"}
+                        src={item.image_url}
                         alt={item.name}
                         style={{
-                          position: "absolute",
                           width: "100%",
                           height: "100%",
                           objectFit: "cover"
                         }}
                       />
-                    </div>
+                    )}
                   </Link>
 
-                  <div style={{ padding: "1.5rem" }}>
+                  <div style={{ padding: "1.5rem", flex: 1, display: "flex", flexDirection: "column" }}>
                     <Link
-                      to={`/product/${item.id}`}
+                      to={`/product/${item.product_id}`}
                       style={{
                         textDecoration: "none",
-                        color: "inherit"
+                        color: "hsl(var(--foreground))",
+                        display: "block",
+                        marginBottom: "0.5rem"
                       }}
                     >
                       <h3 style={{
                         fontSize: "1.125rem",
                         fontWeight: "500",
-                        marginBottom: "0.5rem",
-                        color: "hsl(var(--foreground))",
-                        transition: "var(--transition)"
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.color = "hsl(var(--accent))"}
-                      onMouseLeave={(e) => e.currentTarget.style.color = "hsl(var(--foreground))"}>
+                        marginBottom: "0.5rem"
+                      }}>
                         {item.name}
                       </h3>
                     </Link>
-                    
+
                     <p style={{
                       fontSize: "1.25rem",
-                      fontWeight: "500",
                       color: "hsl(var(--accent))",
+                      fontWeight: "600",
                       marginBottom: "1rem"
                     }}>
-                      {item.price.toLocaleString()} ₽
+                      {item.price.toLocaleString('ru-RU')} ₽
                     </p>
 
                     {item.stock > 0 ? (
-                      <button
-                        onClick={() => addToCart(item)}
-                        style={{
-                          width: "100%",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: "0.5rem",
-                          padding: "0.75rem",
-                          backgroundColor: "hsl(var(--primary))",
-                          color: "hsl(var(--primary-foreground))",
-                          border: "none",
-                          fontSize: "0.95rem",
-                          fontWeight: "500",
-                          cursor: "pointer",
-                          transition: "var(--transition)"
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-2px)"}
-                        onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
-                      >
-                        <ShoppingCart size={18} />
-                        В корзину
-                      </button>
+                      <p style={{
+                        fontSize: "0.9rem",
+                        color: "hsl(var(--muted-foreground))",
+                        marginBottom: "1rem"
+                      }}>
+                        В наличии: {item.stock} шт.
+                      </p>
                     ) : (
                       <p style={{
-                        textAlign: "center",
+                        fontSize: "0.9rem",
                         color: "hsl(var(--destructive))",
-                        fontSize: "0.9rem"
+                        marginBottom: "1rem"
                       }}>
                         Нет в наличии
                       </p>
                     )}
+
+                    <div style={{
+                      display: "flex",
+                      gap: "0.75rem",
+                      marginTop: "auto"
+                    }}>
+                      <button
+                        onClick={() => addToCart(item)}
+                        disabled={item.stock === 0}
+                        style={{
+                          flex: 1,
+                          padding: "0.75rem",
+                          backgroundColor: item.stock === 0 ? "hsl(var(--muted))" : "hsl(var(--primary))",
+                          color: "hsl(var(--primary-foreground))",
+                          border: "none",
+                          fontSize: "0.9rem",
+                          fontWeight: "500",
+                          cursor: item.stock === 0 ? "not-allowed" : "pointer",
+                          transition: "var(--transition)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "0.5rem"
+                        }}
+                      >
+                        <ShoppingCart size={16} />
+                        В корзину
+                      </button>
+
+                      <button
+                        onClick={() => removeFromWishlist(item.id)}
+                        style={{
+                          padding: "0.75rem",
+                          backgroundColor: "hsl(var(--secondary))",
+                          color: "hsl(var(--foreground))",
+                          border: "1px solid hsl(var(--border))",
+                          fontSize: "0.9rem",
+                          cursor: "pointer",
+                          transition: "var(--transition)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center"
+                        }}
+                        title="Удалить"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
