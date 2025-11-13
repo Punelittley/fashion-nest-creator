@@ -19,7 +19,10 @@ const Header = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
         setIsAuthenticated(true);
-        setTimeout(() => loadCartCount(), 0);
+        setTimeout(() => {
+          loadCartCount();
+          checkAdminRole(session.user.id);
+        }, 0);
       } else if (event === 'SIGNED_OUT') {
         setIsAuthenticated(false);
         setIsAdmin(false);
@@ -38,8 +41,8 @@ const Header = () => {
       if (session) {
         setIsAuthenticated(true);
         loadCartCount();
-        // Можно проверить роль админа через user_roles таблицу
-        setIsAdmin(false);
+        // Проверяем роль админа
+        checkAdminRole(session.user.id);
       } else {
         setIsAuthenticated(false);
       }
@@ -54,6 +57,21 @@ const Header = () => {
         // Токен недействителен или сервер недоступен — считаем, что не авторизованы
         setIsAuthenticated(false);
       }
+    }
+  };
+
+  const checkAdminRole = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .eq('role', 'admin')
+        .maybeSingle();
+
+      setIsAdmin(!!data && !error);
+    } catch {
+      setIsAdmin(false);
     }
   };
 

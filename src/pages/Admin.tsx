@@ -3,6 +3,9 @@ import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import UsersList from "@/components/admin/UsersList";
+import AddProductForm from "@/components/admin/AddProductForm";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -56,7 +59,7 @@ const Admin = () => {
 
   return (
     <Layout>
-      <div style={{ padding: "4rem 2rem", maxWidth: "1200px", margin: "0 auto" }}>
+      <div style={{ padding: "4rem 2rem", maxWidth: "1400px", margin: "0 auto" }}>
         <h1 style={{
           fontSize: "3rem",
           fontWeight: "500",
@@ -66,35 +69,35 @@ const Admin = () => {
           Админ-панель
         </h1>
         
-        <div style={{
-          padding: "2rem",
-          backgroundColor: "hsl(var(--card))",
-          boxShadow: "var(--shadow-soft)",
-          textAlign: "center"
-        }}>
-          <p style={{
-            fontSize: "1.125rem",
-            color: "hsl(var(--muted-foreground))",
-            marginBottom: "1.5rem"
+        <Tabs defaultValue="users" style={{ width: "100%" }}>
+          <TabsList style={{
+            marginBottom: "2rem",
+            backgroundColor: "hsl(var(--muted))",
+            padding: "0.25rem",
+            borderRadius: "8px"
           }}>
-            Управление магазином через Cloud
-          </p>
-          <button
-            onClick={() => window.open('https://lovable.dev', '_blank')}
-            style={{
-              padding: "1rem 2rem",
-              backgroundColor: "hsl(var(--primary))",
-              color: "hsl(var(--primary-foreground))",
-              border: "none",
-              fontSize: "1rem",
-              fontWeight: "500",
-              cursor: "pointer",
-              transition: "var(--transition)"
-            }}
-          >
-            Открыть Cloud панель
-          </button>
-        </div>
+            <TabsTrigger value="users" style={{
+              padding: "0.75rem 1.5rem",
+              fontSize: "1rem"
+            }}>
+              Пользователи
+            </TabsTrigger>
+            <TabsTrigger value="products" style={{
+              padding: "0.75rem 1.5rem",
+              fontSize: "1rem"
+            }}>
+              Добавить товар
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="users">
+            <UsersList />
+          </TabsContent>
+          
+          <TabsContent value="products">
+            <AddProductForm />
+          </TabsContent>
+        </Tabs>
       </div>
     </Layout>
   );
