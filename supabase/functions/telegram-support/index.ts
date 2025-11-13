@@ -7,6 +7,7 @@ const corsHeaders = {
 };
 
 const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
+const TELEGRAM_SUPPORT_CHAT_ID = Deno.env.get('TELEGRAM_SUPPORT_CHAT_ID');
 const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
 
 serve(async (req) => {
@@ -62,7 +63,7 @@ serve(async (req) => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               chat_id: telegramChatId,
-              text: `✅ Бот активирован!\n\nВаш Chat ID: ${telegramChatId}\n\nСохраните этот ID для настройки автоматической пересылки сообщений.`,
+              text: `✅ Бот готов к работе!\n\nВсе сообщения от пользователей будут приходить сюда.\n\nДля ответа пользователю, отвечайте в формате:\n[Chat: ID] Ваш ответ`,
             }),
           });
           
@@ -71,77 +72,37 @@ serve(async (req) => {
           });
         }
 
-        // Проверяем, является ли сообщение UUID (ID чата для привязки)
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (uuidRegex.test(messageText.trim())) {
-          const chatIdToLink = messageText.trim();
-          
-          console.log(`Attempting to link chat ${chatIdToLink} to Telegram ${telegramChatId}`);
-          
-          // Привязываем telegram_chat_id к чату
-          const { error: linkError } = await supabaseClient
-            .from('support_chats')
-            .update({ telegram_chat_id: telegramChatId })
-            .eq('id', chatIdToLink);
-
-          if (linkError) {
-            console.error('Error linking chat:', linkError);
-            const errorResponse = await fetch(`${TELEGRAM_API_URL}/sendMessage`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                chat_id: telegramChatId,
-                text: '❌ Не удалось привязать чат. Проверьте правильность ID.',
-              }),
-            });
-            console.log('Error message send result:', await errorResponse.text());
-            
-            return new Response(JSON.stringify({ ok: true }), {
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            });
-          }
-
-          console.log(`Chat ${chatIdToLink} linked successfully, sending confirmation`);
-          
-          const confirmResponse = await fetch(`${TELEGRAM_API_URL}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              chat_id: telegramChatId,
-              text: '✅ Чат успешно привязан! Теперь вы будете получать сообщения от пользователя и сможете отвечать прямо здесь.',
-            }),
-          });
-          
-          const confirmResult = await confirmResponse.text();
-          console.log('Confirmation message send result:', confirmResult);
-          
+        // Check if message is from the support chat
+        if (telegramChatId.toString() !== TELEGRAM_SUPPORT_CHAT_ID) {
+          console.log('Message from non-support chat, ignoring');
           return new Response(JSON.stringify({ ok: true }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         }
 
-        // Find the support chat by telegram_chat_id
-        const { data: chat, error: chatError } = await supabaseClient
-          .from('support_chats')
-          .select('id, user_id')
-          .eq('telegram_chat_id', telegramChatId)
-          .single();
-
-        if (chatError || !chat) {
-          console.log('Chat not found for telegram_chat_id:', telegramChatId, 'Error:', chatError);
-          // Send message to telegram that this chat is not linked
-          const notLinkedResponse = await fetch(`${TELEGRAM_API_URL}/sendMessage`, {
+        // Parse chat ID from message format: [Chat: uuid] message text
+        const chatIdMatch = messageText.match(/^\[Chat:\s*([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\]/i);
+        
+        if (!chatIdMatch) {
+          console.log('Message does not contain chat ID, ignoring');
+          await fetch(`${TELEGRAM_API_URL}/sendMessage`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               chat_id: telegramChatId,
-              text: '❌ Этот чат не привязан. Отправьте ID чата с сайта для привязки.',
+              text: '⚠️ Формат ответа: [Chat: ID] Ваш текст',
             }),
           });
-          
-          const notLinkedResult = await notLinkedResponse.text();
-          console.log('Not linked message send result:', notLinkedResult);
-          
+          return new Response(JSON.stringify({ ok: true }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        const chatId = chatIdMatch[1];
+        const replyMessage = messageText.substring(chatIdMatch[0].length).trim();
+
+        if (!replyMessage) {
+          console.log('Empty reply message');
           return new Response(JSON.stringify({ ok: true }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
@@ -151,13 +112,30 @@ serve(async (req) => {
         const { error: messageError } = await supabaseClient
           .from('support_messages')
           .insert({
-            chat_id: chat.id,
+            chat_id: chatId,
             sender_type: 'support',
-            message: messageText,
+            message: replyMessage,
           });
 
         if (messageError) {
           console.error('Error saving message:', messageError);
+          await fetch(`${TELEGRAM_API_URL}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: telegramChatId,
+              text: `❌ Ошибка сохранения: ${messageError.message}`,
+            }),
+          });
+        } else {
+          await fetch(`${TELEGRAM_API_URL}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: telegramChatId,
+              text: '✅ Ответ отправлен',
+            }),
+          });
         }
 
         return new Response(JSON.stringify({ ok: true }), {
@@ -174,42 +152,24 @@ serve(async (req) => {
     if (action === 'send') {
       const { chatId, message } = await req.json();
 
-      // Get or create telegram chat
-      const { data: chat, error: chatError } = await supabaseClient
-        .from('support_chats')
-        .select('telegram_chat_id')
-        .eq('id', chatId)
-        .single();
-
-      if (chatError) {
-        throw new Error('Chat not found');
+      if (!TELEGRAM_SUPPORT_CHAT_ID) {
+        throw new Error('TELEGRAM_SUPPORT_CHAT_ID not configured');
       }
 
-      let telegramChatId = chat.telegram_chat_id;
-
-      // If telegram_chat_id doesn't exist, we need admin to link it
-      if (!telegramChatId) {
-        // For now, return success - admin will need to link chat manually
-        console.log('Telegram chat not linked yet for chat:', chatId);
-        return new Response(JSON.stringify({ 
-          success: true,
-          needsLink: true 
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-
-      // Send message to Telegram
+      // Send message to support Telegram chat with chat ID prefix
+      const formattedMessage = `[Chat: ${chatId}]\n${message}`;
+      
       const response = await fetch(`${TELEGRAM_API_URL}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          chat_id: telegramChatId,
-          text: `👤 Пользователь: ${message}`,
+          chat_id: TELEGRAM_SUPPORT_CHAT_ID,
+          text: formattedMessage,
         }),
       });
 
       const result = await response.json();
+      console.log('Message sent to Telegram:', result);
 
       if (!result.ok) {
         throw new Error('Failed to send Telegram message');
