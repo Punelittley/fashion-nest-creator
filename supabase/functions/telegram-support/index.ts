@@ -37,28 +37,48 @@ serve(async (req) => {
         if (uuidRegex.test(messageText.trim())) {
           const chatIdToLink = messageText.trim();
           
+          console.log(`Attempting to link chat ${chatIdToLink} to Telegram ${telegramChatId}`);
+          
           // Привязываем telegram_chat_id к чату
           const { error: linkError } = await supabaseClient
             .from('support_chats')
             .update({ telegram_chat_id: telegramChatId })
             .eq('id', chatIdToLink);
 
-          if (!linkError) {
-            await fetch(`${TELEGRAM_API_URL}/sendMessage`, {
+          if (linkError) {
+            console.error('Error linking chat:', linkError);
+            const errorResponse = await fetch(`${TELEGRAM_API_URL}/sendMessage`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 chat_id: telegramChatId,
-                text: '✅ Чат успешно привязан! Теперь вы будете получать сообщения от пользователя.',
+                text: '❌ Не удалось привязать чат. Проверьте правильность ID.',
               }),
             });
-            
-            console.log(`Chat ${chatIdToLink} linked to Telegram ${telegramChatId}`);
+            console.log('Error message send result:', await errorResponse.text());
             
             return new Response(JSON.stringify({ ok: true }), {
               headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             });
           }
+
+          console.log(`Chat ${chatIdToLink} linked successfully, sending confirmation`);
+          
+          const confirmResponse = await fetch(`${TELEGRAM_API_URL}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: telegramChatId,
+              text: '✅ Чат успешно привязан! Теперь вы будете получать сообщения от пользователя и сможете отвечать прямо здесь.',
+            }),
+          });
+          
+          const confirmResult = await confirmResponse.text();
+          console.log('Confirmation message send result:', confirmResult);
+          
+          return new Response(JSON.stringify({ ok: true }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
         }
 
         // Find the support chat by telegram_chat_id
@@ -69,15 +89,19 @@ serve(async (req) => {
           .single();
 
         if (chatError || !chat) {
+          console.log('Chat not found for telegram_chat_id:', telegramChatId, 'Error:', chatError);
           // Send message to telegram that this chat is not linked
-          await fetch(`${TELEGRAM_API_URL}/sendMessage`, {
+          const notLinkedResponse = await fetch(`${TELEGRAM_API_URL}/sendMessage`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               chat_id: telegramChatId,
-              text: 'Этот чат не связан ни с одним пользователем.',
+              text: '❌ Этот чат не привязан. Отправьте ID чата с сайта для привязки.',
             }),
           });
+          
+          const notLinkedResult = await notLinkedResponse.text();
+          console.log('Not linked message send result:', notLinkedResult);
           
           return new Response(JSON.stringify({ ok: true }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
