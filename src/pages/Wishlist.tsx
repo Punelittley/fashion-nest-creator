@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
-import { Heart, Trash2, ShoppingCart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface WishlistItem {
@@ -139,7 +138,6 @@ const Wishlist = () => {
             gap: "1rem",
             marginBottom: "3rem"
           }}>
-            <Heart size={36} style={{ color: "hsl(var(--accent))" }} />
             <h1 style={{
               fontSize: "3rem",
               fontWeight: "500",
@@ -155,11 +153,6 @@ const Wishlist = () => {
               padding: "4rem 2rem",
               backgroundColor: "hsl(var(--secondary))"
             }} className="animate-scale-in">
-              <Heart size={64} style={{ 
-                color: "hsl(var(--muted-foreground))",
-                margin: "0 auto 2rem",
-                opacity: 0.5
-              }} />
               <p style={{
                 fontSize: "1.25rem",
                 color: "hsl(var(--muted-foreground))",
@@ -293,12 +286,11 @@ const Wishlist = () => {
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          gap: "0.5rem"
-                        }}
-                      >
-                        <ShoppingCart size={16} />
-                        В корзину
-                      </button>
+                        gap: "0.5rem"
+                      }}
+                    >
+                      В корзину
+                    </button>
 
                       <button
                         onClick={() => removeFromWishlist(item.id)}
@@ -316,7 +308,7 @@ const Wishlist = () => {
                         }}
                         title="Удалить"
                       >
-                        <Trash2 size={16} />
+                        Удалить
                       </button>
                     </div>
                   </div>

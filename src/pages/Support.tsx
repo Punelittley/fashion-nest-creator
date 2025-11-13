@@ -4,7 +4,6 @@ import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { Send, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 
 interface Message {
@@ -226,10 +225,9 @@ const Support = () => {
           alignItems: "center",
           gap: "1rem",
           marginBottom: "2rem"
-        }}>
-          <MessageCircle style={{ width: "2rem", height: "2rem", color: "hsl(var(--primary))" }} />
-          <div>
-            <h1 style={{
+          }}>
+            <div>
+              <h1 style={{
               fontSize: "2rem",
               fontWeight: "600",
               color: "hsl(var(--foreground))",
@@ -314,12 +312,6 @@ const Support = () => {
                 padding: "3rem 1rem",
                 color: "hsl(var(--muted-foreground))"
               }}>
-                <MessageCircle style={{
-                  width: "3rem",
-                  height: "3rem",
-                  margin: "0 auto 1rem",
-                  opacity: 0.3
-                }} />
                 <p>Начните разговор, задав свой вопрос</p>
               </div>
             ) : (
@@ -398,14 +390,7 @@ const Support = () => {
                 color: "hsl(var(--primary-foreground))"
               }}
             >
-              {sending ? (
-                "Отправка..."
-              ) : (
-                <>
-                  <Send style={{ width: "1rem", height: "1rem", marginRight: "0.5rem" }} />
-                  Отправить
-                </>
-              )}
+              {sending ? "Отправка..." : "Отправить"}
             </Button>
           </form>
         </div>

@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface CartItem {
@@ -274,7 +273,7 @@ const Cart = () => {
                         transition: "var(--transition)"
                       }}
                     >
-                      <Trash2 size={20} />
+                      Удалить
                     </button>
                     <p style={{
                       fontSize: "1.25rem",

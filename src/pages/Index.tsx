@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
 import Layout from "@/components/Layout";
 import HeroSlider from "@/components/HeroSlider";
 import { useEffect, useState } from "react";
@@ -155,7 +154,6 @@ const Index = () => {
             e.currentTarget.style.borderColor = "transparent";
           }}>
             Перейти в каталог
-            <ArrowRight size={20} />
           </Link>
         </div>
       </section>

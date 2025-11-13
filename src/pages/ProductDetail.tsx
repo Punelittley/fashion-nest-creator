@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
-import { ShoppingCart, Minus, Plus, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ProductImageSlider } from "@/components/ProductImageSlider";
 
@@ -278,7 +277,6 @@ const ProductDetail = () => {
                   }
                 }}
               >
-                <ShoppingCart size={20} />
                 {product.stock === 0 ? "Нет в наличии" : (loading ? "Добавление..." : "Добавить в корзину")}
               </button>
 
@@ -310,7 +308,7 @@ const ProductDetail = () => {
                 }}
                 title={isFavorite ? "Удалить из избранного" : "Добавить в избранное"}
               >
-                <Heart size={20} fill={isFavorite ? "currentColor" : "none"} />
+                {isFavorite ? "★" : "☆"}
               </button>
             </div>
           </div>
