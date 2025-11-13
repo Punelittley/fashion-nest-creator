@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { ShoppingCart, User, LogOut, Menu, X, LayoutDashboard, Heart, MessageCircle } from "lucide-react";
+import { ShoppingCart, User, LogOut, Menu, X, LayoutDashboard, Heart } from "lucide-react";
 import { useState, useEffect } from "react";
 import { authApi, cartApi } from "@/lib/api";
 import { supabase } from "@/integrations/supabase/client";
@@ -201,15 +201,6 @@ const Header = () => {
               onMouseEnter={(e) => e.currentTarget.style.color = "hsl(var(--accent))"}
               onMouseLeave={(e) => e.currentTarget.style.color = "hsl(var(--foreground))"}>
                 <Heart size={22} />
-              </Link>
-              <Link to="/support" style={{
-                position: "relative",
-                color: "hsl(var(--foreground))",
-                transition: "var(--transition)"
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.color = "hsl(var(--accent))"}
-              onMouseLeave={(e) => e.currentTarget.style.color = "hsl(var(--foreground))"}>
-                <MessageCircle size={22} />
               </Link>
               <Link to="/cart" style={{
                 position: "relative",
