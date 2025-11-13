@@ -4,6 +4,7 @@ import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { ShoppingCart, Minus, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { ProductImageSlider } from "@/components/ProductImageSlider";
 
 interface Product {
   id: string;
@@ -11,6 +12,7 @@ interface Product {
   description: string;
   price: number;
   image_url: string;
+  images: string[] | null;
   stock: number;
 }
 
@@ -32,7 +34,7 @@ const ProductDetail = () => {
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('id, name, description, price, image_url, stock')
+        .select('id, name, description, price, image_url, images, stock')
         .eq('id', id!)
         .eq('is_active', true)
         .single();
@@ -102,23 +104,10 @@ const ProductDetail = () => {
           gap: "4rem",
           alignItems: "start"
         }}>
-          <div style={{
-            aspectRatio: "3/4",
-            backgroundColor: "hsl(var(--muted))",
-            overflow: "hidden"
-          }}>
-            {product.image_url && (
-              <img
-                src={product.image_url}
-                alt={product.name}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover"
-                }}
-              />
-            )}
-          </div>
+          <ProductImageSlider 
+            images={product.images || (product.image_url ? [product.image_url] : [])}
+            alt={product.name}
+          />
 
           <div>
             <h1 style={{
