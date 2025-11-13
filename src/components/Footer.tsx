@@ -21,7 +21,7 @@ const Footer = () => {
             fontWeight: "600",
             marginBottom: "1rem",
             letterSpacing: "0.05em"
-          }}>FASHION</h3>
+          }}>siaodqq</h3>
           <p style={{
             color: "hsl(var(--primary-foreground) / 0.8)",
             lineHeight: "1.6"
@@ -100,7 +100,7 @@ const Footer = () => {
         color: "hsl(var(--primary-foreground) / 0.6)",
         fontSize: "0.9rem"
       }}>
-        © 2025 FASHION. Все права защищены.
+        © 2025 siaodqq. Все права защищены.
       </div>
     </footer>
   );
