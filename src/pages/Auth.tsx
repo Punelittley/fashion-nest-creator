@@ -24,13 +24,21 @@ const Auth = () => {
 
   useEffect(() => {
     let isMounted = true;
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      navigate("/");
-    }
+
+    // 1) Если есть активная облачная сессия — уводим на главную
     supabase.auth.getSession().then(({ data }) => {
-      if (isMounted && data.session) navigate("/");
+      if (!isMounted) return;
+      if (data.session) navigate("/");
     });
+
+    // 2) Если в localStorage лежит токен локального сервера — проверяем его через /auth/me
+    const token = localStorage.getItem('auth_token');
+    if (token && token !== 'supabase') {
+      authApi.me()
+        .then(() => { if (isMounted) navigate("/"); })
+        .catch(() => {/* игнор, остаёмся на странице авторизации */});
+    }
+
     return () => { isMounted = false; };
   }, [navigate]);
 
