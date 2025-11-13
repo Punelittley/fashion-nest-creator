@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Session } from "@supabase/supabase-js";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, Minus, Plus } from "lucide-react";
+import { productsApi, cartApi } from "@/lib/api";
 
 interface Product {
   id: string;
@@ -19,21 +18,9 @@ const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [product, setProduct] = useState<Product | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [quantity, setQuantity] = useState(1);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+  const [loading, setLoading] = useState(true);
+  const [addingToCart, setAddingToCart] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -42,22 +29,37 @@ const ProductDetail = () => {
   }, [id]);
 
   const loadProduct = async () => {
-    const { data, error } = await supabase
-      .from("products")
-      .select("*")
-      .eq("id", id)
-      .eq("is_active", true)
-      .single();
-
-    if (error) {
+    try {
+      const data = await productsApi.getById(id!);
+      setProduct(data);
+    } catch (error) {
       toast.error("Товар не найден");
       navigate("/catalog");
-    } else {
-      setProduct(data);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleAddToCart = async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      toast.error("Войдите для добавления в корзину");
+      navigate("/auth");
+      return;
+    }
+
+    if (!product) return;
+
+    setAddingToCart(true);
+    try {
+      await cartApi.add(product.id, quantity);
+      toast.success("Товар добавлен в корзину");
+    } catch (error: any) {
+      toast.error(error.message || "Ошибка добавления в корзину");
+    } finally {
+      setAddingToCart(false);
+    }
+  };
     if (!session) {
       toast.error("Войдите в аккаунт для добавления в корзину");
       navigate("/auth");

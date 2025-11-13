@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
-import { supabase } from "@/integrations/supabase/client";
-import { Session } from "@supabase/supabase-js";
 import { toast } from "sonner";
-import { User, Package } from "lucide-react";
+import { User, Package, LogOut } from "lucide-react";
+import { profileApi, authApi } from "@/lib/api";
 
 interface Profile {
   full_name: string;
@@ -15,7 +14,6 @@ interface Profile {
 
 const Profile = () => {
   const navigate = useNavigate();
-  const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile>({
     full_name: "",
     email: "",
@@ -25,55 +23,44 @@ const Profile = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (!session) {
-        navigate("/auth");
-      } else {
-        loadProfile(session.user.id);
-      }
-    });
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      navigate("/auth");
+    } else {
+      loadProfile();
+    }
   }, [navigate]);
 
-  const loadProfile = async (userId: string) => {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
-
-    if (data) {
-      setProfile({
-        full_name: data.full_name || "",
-        email: data.email || "",
-        phone: data.phone || "",
-        address: data.address || ""
-      });
+  const loadProfile = async () => {
+    try {
+      const data = await profileApi.get();
+      setProfile(data);
+    } catch (error) {
+      toast.error("Ошибка загрузки профиля");
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!session) return;
-
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          full_name: profile.full_name,
-          phone: profile.phone,
-          address: profile.address
-        })
-        .eq("id", session.user.id);
-
-      if (error) throw error;
+      await profileApi.update({
+        full_name: profile.full_name,
+        phone: profile.phone,
+        address: profile.address
+      });
       toast.success("Профиль обновлен");
     } catch (error) {
       toast.error("Ошибка при обновлении профиля");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLogout = () => {
+    authApi.signout();
+    toast.success("Вы вышли из аккаунта");
+    navigate("/auth");
   };
 
   return (
