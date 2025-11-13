@@ -1,4 +1,5 @@
 import Layout from "@/components/Layout";
+import aboutImage from "@/assets/about-image.svg";
 
 const About = () => {
   return (
@@ -27,6 +28,25 @@ const About = () => {
             Мы тщательно отбираем каждую вещь в нашем каталоге, чтобы предложить вам только качественную 
             и стильную одежду, которая подчеркнет вашу индивидуальность.
           </p>
+
+          {/* Image Section */}
+          <div style={{
+            marginTop: "3rem",
+            marginBottom: "3rem",
+            borderRadius: "12px",
+            overflow: "hidden",
+            boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)"
+          }}>
+            <img 
+              src={aboutImage} 
+              alt="О нас" 
+              style={{
+                width: "100%",
+                height: "auto",
+                display: "block"
+              }}
+            />
+          </div>
 
           <h2 style={{
             fontSize: "2rem",
