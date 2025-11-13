@@ -55,6 +55,22 @@ serve(async (req) => {
         const telegramChatId = update.message.chat.id;
         const messageText = update.message.text;
 
+        // Handle /start command
+        if (messageText === '/start') {
+          await fetch(`${TELEGRAM_API_URL}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: telegramChatId,
+              text: `✅ Бот активирован!\n\nВаш Chat ID: ${telegramChatId}\n\nСохраните этот ID для настройки автоматической пересылки сообщений.`,
+            }),
+          });
+          
+          return new Response(JSON.stringify({ ok: true }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
         // Проверяем, является ли сообщение UUID (ID чата для привязки)
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         if (uuidRegex.test(messageText.trim())) {
