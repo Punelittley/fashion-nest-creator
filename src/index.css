@@ -20,17 +20,17 @@
     --primary: 0 0% 10%;
     --primary-foreground: 0 0% 98%;
     
-    /* Secondary - Warm Beige */
-    --secondary: 30 20% 95%;
+    /* Secondary - Cool Gray */
+    --secondary: 0 0% 95%;
     --secondary-foreground: 0 0% 10%;
     
     /* Muted - Soft Gray */
     --muted: 0 0% 96%;
     --muted-foreground: 0 0% 45%;
     
-    /* Accent - Warm Gold */
-    --accent: 38 60% 60%;
-    --accent-foreground: 0 0% 10%;
+    /* Accent - Elegant Silver Gray */
+    --accent: 220 10% 55%;
+    --accent-foreground: 0 0% 100%;
     
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
@@ -42,10 +42,10 @@
     --radius: 0rem;
     
     /* Custom Design Tokens */
-    --gradient-hero: linear-gradient(135deg, hsl(0 0% 98%), hsl(30 20% 95%));
+    --gradient-hero: linear-gradient(135deg, hsl(0 0% 98%), hsl(220 10% 96%));
     --gradient-overlay: linear-gradient(0deg, hsl(0 0% 10% / 0.6), transparent);
     --shadow-soft: 0 2px 20px hsl(0 0% 0% / 0.05);
-    --shadow-hover: 0 8px 30px hsl(0 0% 0% / 0.12);
+    --shadow-hover: 0 8px 30px hsl(220 10% 20% / 0.15);
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
@@ -68,7 +68,7 @@
     --muted: 0 0% 18%;
     --muted-foreground: 0 0% 65%;
     
-    --accent: 38 60% 55%;
+    --accent: 220 15% 65%;
     --accent-foreground: 0 0% 10%;
     
     --destructive: 0 62% 50%;
