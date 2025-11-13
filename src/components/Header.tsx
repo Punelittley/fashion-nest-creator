@@ -3,6 +3,7 @@ import { ShoppingCart, User, LogOut, Menu, X, LayoutDashboard, Heart, MessageCir
 import { useState, useEffect } from "react";
 import { authApi, cartApi } from "@/lib/api";
 import { supabase } from "@/integrations/supabase/client";
+import logo from "@/assets/logo.svg";
 
 const Header = () => {
   const navigate = useNavigate();
@@ -118,13 +119,18 @@ const Header = () => {
         justifyContent: "space-between"
       }}>
         <Link to="/" style={{
-          fontSize: "1.5rem",
-          fontWeight: "600",
-          color: "hsl(var(--foreground))",
-          textDecoration: "none",
-          letterSpacing: "0.05em"
+          display: "flex",
+          alignItems: "center",
+          textDecoration: "none"
         }}>
-          FASHION
+          <img 
+            src={logo} 
+            alt="Logo" 
+            style={{
+              height: "50px",
+              width: "auto"
+            }}
+          />
         </Link>
 
         {/* Desktop Menu */}
