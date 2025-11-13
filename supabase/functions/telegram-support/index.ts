@@ -23,6 +23,29 @@ serve(async (req) => {
     const url = new URL(req.url);
     const action = url.searchParams.get('action');
 
+    // Setup webhook endpoint
+    if (action === 'setup') {
+      const webhookUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/telegram-support`;
+      
+      console.log('Setting up webhook:', webhookUrl);
+      
+      const setupResponse = await fetch(`${TELEGRAM_API_URL}/setWebhook`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: webhookUrl,
+          allowed_updates: ['message'],
+        }),
+      });
+      
+      const result = await setupResponse.json();
+      console.log('Webhook setup result:', result);
+      
+      return new Response(JSON.stringify(result), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Handle webhook from Telegram
     if (req.method === 'POST' && !action) {
       const update = await req.json();
