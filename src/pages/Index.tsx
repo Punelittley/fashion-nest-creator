@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import Layout from "@/components/Layout";
+import HeroSlider from "@/components/HeroSlider";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -32,56 +33,8 @@ const Index = () => {
 
   return (
     <Layout>
-      {/* Hero Section */}
-      <section style={{
-        background: "var(--gradient-hero)",
-        padding: "8rem 2rem",
-        textAlign: "center"
-      }}>
-        <div style={{ maxWidth: "800px", margin: "0 auto" }}>
-          <h1 style={{
-            fontSize: "clamp(2.5rem, 5vw, 4rem)",
-            fontWeight: "500",
-            marginBottom: "1.5rem",
-            color: "hsl(var(--foreground))"
-          }}>
-            Новая коллекция<br />
-            <span style={{ color: "hsl(var(--accent))" }}>Весна 2025</span>
-          </h1>
-          <p style={{
-            fontSize: "1.125rem",
-            color: "hsl(var(--muted-foreground))",
-            marginBottom: "2.5rem",
-            lineHeight: "1.6"
-          }}>
-            Откройте для себя уникальные модели от ведущих дизайнеров
-          </p>
-          <Link to="/catalog" style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            padding: "1rem 2.5rem",
-            backgroundColor: "hsl(var(--primary))",
-            color: "hsl(var(--primary-foreground))",
-            textDecoration: "none",
-            fontSize: "1rem",
-            transition: "var(--transition)",
-            fontWeight: "500"
-          }} onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = "hsl(var(--accent))";
-            e.currentTarget.style.transform = "translateY(-2px)";
-            e.currentTarget.style.boxShadow = "var(--shadow-hover)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = "hsl(var(--primary))";
-            e.currentTarget.style.transform = "translateY(0)";
-            e.currentTarget.style.boxShadow = "none";
-          }}>
-            Смотреть каталог
-            <ArrowRight size={20} />
-          </Link>
-        </div>
-      </section>
+      {/* Hero Slider */}
+      <HeroSlider />
 
       {/* Featured Products */}
       {featuredProducts.length > 0 && (
