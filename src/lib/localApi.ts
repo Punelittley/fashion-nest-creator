@@ -39,17 +39,29 @@ class LocalApi {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
 
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      ...options,
-      headers,
-    });
+    const url = `${API_URL}${endpoint}`;
+    console.log('🌐 Request:', options.method || 'GET', url);
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Network error' }));
-      throw new Error(error.error || 'Request failed');
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers,
+      });
+
+      console.log('📡 Response:', response.status, response.statusText);
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Network error' }));
+        throw new Error(error.error || 'Request failed');
+      }
+
+      const data = await response.json();
+      console.log('✅ Data received:', Array.isArray(data) ? `${data.length} items` : typeof data);
+      return data;
+    } catch (error) {
+      console.error('❌ Request failed:', url, error);
+      throw error;
     }
-
-    return response.json();
   }
 
   // Auth methods

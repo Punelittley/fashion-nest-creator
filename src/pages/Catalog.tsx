@@ -34,16 +34,24 @@ const Catalog = () => {
 
   const loadData = async () => {
     try {
+      console.log('🔄 Loading catalog data...');
       const [productsData, categoriesData] = await Promise.all([
         localApi.getProducts(),
         localApi.getCategories()
       ]);
 
+      console.log('✅ Products loaded:', productsData?.length || 0);
+      console.log('✅ Categories loaded:', categoriesData?.length || 0);
+      
       setProducts(productsData || []);
       setCategories(categoriesData || []);
     } catch (error) {
-      console.error('Error loading catalog:', error);
-      toast.error("Ошибка загрузки каталога");
+      console.error('❌ Error loading catalog:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack
+      });
+      toast.error(`Ошибка загрузки каталога: ${error.message}`);
     } finally {
       setLoading(false);
     }
