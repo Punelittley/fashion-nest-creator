@@ -291,10 +291,13 @@ const ProductsManagement = () => {
       </div>
 
       <Dialog open={!!editingProduct} onOpenChange={() => setEditingProduct(null)}>
-        <DialogContent style={{
-          backgroundColor: "hsl(var(--card))",
-          maxWidth: "600px"
-        }}>
+        <DialogContent 
+          className="max-h-[90vh] overflow-y-auto"
+          style={{
+            backgroundColor: "hsl(var(--card))",
+            maxWidth: "600px"
+          }}
+        >
           <DialogHeader>
             <DialogTitle>Редактировать товар</DialogTitle>
           </DialogHeader>
