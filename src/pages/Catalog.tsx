@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
-import { productsApi, categoriesApi } from "@/lib/api";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Product {
   id: string;
@@ -29,13 +29,25 @@ const Catalog = () => {
 
   const loadData = async () => {
     try {
-      const [productsData, categoriesData] = await Promise.all([
-        productsApi.getAll(),
-        categoriesApi.getAll()
-      ]);
-      setProducts(productsData);
-      setCategories(categoriesData);
+      // Load products from Supabase
+      const { data: productsData, error: productsError } = await supabase
+        .from('products')
+        .select('id, name, price, image_url, category_id')
+        .eq('is_active', true);
+
+      if (productsError) throw productsError;
+
+      // Load categories from Supabase
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('categories')
+        .select('id, name');
+
+      if (categoriesError) throw categoriesError;
+
+      setProducts(productsData || []);
+      setCategories(categoriesData || []);
     } catch (error) {
+      console.error('Error loading catalog:', error);
       toast.error("Ошибка загрузки каталога");
     } finally {
       setLoading(false);
