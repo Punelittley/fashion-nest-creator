@@ -334,19 +334,6 @@ const Support = () => {
             </Button>
           </form>
         </div>
-
-        <div style={{
-          marginTop: "1.5rem",
-          padding: "1rem",
-          background: "hsl(var(--muted))",
-          borderRadius: "8px",
-          fontSize: "0.9rem",
-          color: "hsl(var(--muted-foreground))"
-        }}>
-          <p style={{ margin: 0 }}>
-            💬 Ваши сообщения отправляются напрямую нашим операторам в Telegram
-          </p>
-        </div>
       </div>
     </Layout>
   );
