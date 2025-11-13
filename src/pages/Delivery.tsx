@@ -1,5 +1,4 @@
 import Layout from "@/components/Layout";
-import { Package, Truck, CreditCard, RefreshCcw } from "lucide-react";
 
 const Delivery = () => {
   return (
@@ -29,14 +28,13 @@ const Delivery = () => {
             gap: "1rem",
             marginBottom: "2rem"
           }}>
-            <Truck size={32} style={{ color: "hsl(var(--accent))" }} />
-            <h2 style={{
-              fontSize: "2rem",
-              fontWeight: "500",
-              color: "hsl(var(--foreground))"
-            }}>
-              Доставка
-            </h2>
+          <h2 style={{
+            fontSize: "2rem",
+            fontWeight: "500",
+            color: "hsl(var(--foreground))"
+          }}>
+            Доставка
+          </h2>
           </div>
 
           <div style={{
@@ -158,14 +156,13 @@ const Delivery = () => {
             gap: "1rem",
             marginBottom: "2rem"
           }}>
-            <CreditCard size={32} style={{ color: "hsl(var(--accent))" }} />
-            <h2 style={{
-              fontSize: "2rem",
-              fontWeight: "500",
-              color: "hsl(var(--foreground))"
-            }}>
-              Способы оплаты
-            </h2>
+          <h2 style={{
+            fontSize: "2rem",
+            fontWeight: "500",
+            color: "hsl(var(--foreground))"
+          }}>
+            Способы оплаты
+          </h2>
           </div>
 
           <div style={{
@@ -249,14 +246,13 @@ const Delivery = () => {
             gap: "1rem",
             marginBottom: "2rem"
           }}>
-            <RefreshCcw size={32} style={{ color: "hsl(var(--accent))" }} />
-            <h2 style={{
-              fontSize: "2rem",
-              fontWeight: "500",
-              color: "hsl(var(--foreground))"
-            }}>
-              Возврат и обмен
-            </h2>
+          <h2 style={{
+            fontSize: "2rem",
+            fontWeight: "500",
+            color: "hsl(var(--foreground))"
+          }}>
+            Возврат и обмен
+          </h2>
           </div>
 
           <div style={{

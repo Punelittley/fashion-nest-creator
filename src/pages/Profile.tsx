@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
-import { User, Package, LogOut, Calendar, MapPin, Mail, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Profile {
@@ -198,7 +197,6 @@ const Profile = () => {
               textAlign: "left"
             }}
           >
-            <Package size={24} style={{ color: "hsl(var(--accent))" }} />
             <div>
               <h3 style={{
                 fontSize: "1.125rem",
@@ -231,7 +229,6 @@ const Profile = () => {
               textAlign: "left"
             }}
           >
-            <LogOut size={24} style={{ color: "hsl(var(--accent))" }} />
             <div>
               <h3 style={{
                 fontSize: "1.125rem",
@@ -307,12 +304,8 @@ const Profile = () => {
                   fontSize: "1.25rem",
                   fontWeight: "500",
                   marginBottom: "1.5rem",
-                  color: "hsl(var(--foreground))",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem"
+                  color: "hsl(var(--foreground))"
                 }}>
-                  <User size={20} />
                   Личная информация
                 </h3>
                 
@@ -407,12 +400,8 @@ const Profile = () => {
                   fontSize: "1.25rem",
                   fontWeight: "500",
                   marginBottom: "1.5rem",
-                  color: "hsl(var(--foreground))",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem"
+                  color: "hsl(var(--foreground))"
                 }}>
-                  <Mail size={20} />
                   Контактная информация
                 </h3>
                 
@@ -480,12 +469,8 @@ const Profile = () => {
                   fontSize: "1.25rem",
                   fontWeight: "500",
                   marginBottom: "1.5rem",
-                  color: "hsl(var(--foreground))",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem"
+                  color: "hsl(var(--foreground))"
                 }}>
-                  <MapPin size={20} />
                   Адрес доставки
                 </h3>
                 
@@ -578,12 +563,8 @@ const Profile = () => {
                   fontSize: "1.25rem",
                   fontWeight: "500",
                   marginBottom: "1.5rem",
-                  color: "hsl(var(--foreground))",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem"
+                  color: "hsl(var(--foreground))"
                 }}>
-                  <FileText size={20} />
                   О себе
                 </h3>
                 
@@ -639,7 +620,6 @@ const Profile = () => {
                 boxShadow: "var(--shadow-soft)",
                 textAlign: "center"
               }}>
-                <Package size={32} style={{ color: "hsl(var(--accent))", margin: "0 auto 1rem" }} />
                 <div style={{
                   fontSize: "2rem",
                   fontWeight: "600",
@@ -662,7 +642,6 @@ const Profile = () => {
                 boxShadow: "var(--shadow-soft)",
                 textAlign: "center"
               }}>
-                <Calendar size={32} style={{ color: "hsl(var(--accent))", margin: "0 auto 1rem" }} />
                 <div style={{
                   fontSize: "2rem",
                   fontWeight: "600",
@@ -685,7 +664,6 @@ const Profile = () => {
                 boxShadow: "var(--shadow-soft)",
                 textAlign: "center"
               }}>
-                <Package size={32} style={{ color: "hsl(var(--accent))", margin: "0 auto 1rem" }} />
                 <div style={{
                   fontSize: "2rem",
                   fontWeight: "600",
@@ -708,7 +686,6 @@ const Profile = () => {
                 boxShadow: "var(--shadow-soft)",
                 textAlign: "center"
               }}>
-                <Package size={32} style={{ color: "hsl(var(--accent))", margin: "0 auto 1rem" }} />
                 <div style={{
                   fontSize: "2rem",
                   fontWeight: "600",
