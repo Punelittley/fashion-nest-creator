@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { ShoppingCart, User, LogOut, Menu, X, LayoutDashboard, Heart, MessageSquare } from "lucide-react";
+import { ShoppingCart, User, LogOut, Menu, X, LayoutDashboard, Heart } from "lucide-react";
 import { useState, useEffect } from "react";
 import { authApi, cartApi } from "@/lib/api";
 
@@ -92,15 +92,6 @@ const Header = () => {
           }} onMouseEnter={(e) => e.currentTarget.style.color = "hsl(var(--accent))"}
              onMouseLeave={(e) => e.currentTarget.style.color = "hsl(var(--foreground))"}>
             Доставка
-          </Link>
-          <Link to="/reviews" style={{
-            color: "hsl(var(--foreground))",
-            textDecoration: "none",
-            fontSize: "0.95rem",
-            transition: "var(--transition)"
-          }} onMouseEnter={(e) => e.currentTarget.style.color = "hsl(var(--accent))"}
-             onMouseLeave={(e) => e.currentTarget.style.color = "hsl(var(--foreground))"}>
-            Отзывы
           </Link>
           <Link to="/contacts" style={{
             color: "hsl(var(--foreground))",
