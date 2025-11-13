@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { localApi } from "@/lib/localApi";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -34,20 +34,10 @@ const Catalog = () => {
 
   const loadData = async () => {
     try {
-      // Load products from Supabase
-      const { data: productsData, error: productsError } = await supabase
-        .from('products')
-        .select('id, name, price, image_url, images, category_id')
-        .eq('is_active', true);
-
-      if (productsError) throw productsError;
-
-      // Load categories from Supabase
-      const { data: categoriesData, error: categoriesError } = await supabase
-        .from('categories')
-        .select('id, name');
-
-      if (categoriesError) throw categoriesError;
+      const [productsData, categoriesData] = await Promise.all([
+        localApi.getProducts(),
+        localApi.getCategories()
+      ]);
 
       setProducts(productsData || []);
       setCategories(categoriesData || []);

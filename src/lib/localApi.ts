@@ -188,6 +188,50 @@ class LocalApi {
     });
   }
 
+  // Wishlist/Favorites methods
+  async getFavoriteProducts() {
+    return this.request('/favorites/products');
+  }
+
+  async addFavoriteProduct(productId: string) {
+    return this.request('/favorites/products', {
+      method: 'POST',
+      body: JSON.stringify({ product_id: productId }),
+    });
+  }
+
+  async removeFavoriteProduct(productId: string) {
+    return this.request(`/favorites/products/${productId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async isFavoriteProduct(productId: string) {
+    try {
+      const favorites = await this.getFavoriteProducts();
+      return favorites.some((f: any) => f.product_id === productId);
+    } catch {
+      return false;
+    }
+  }
+
+  async getFavoriteOrders() {
+    return this.request('/favorites/orders');
+  }
+
+  async addFavoriteOrder(orderId: string) {
+    return this.request('/favorites/orders', {
+      method: 'POST',
+      body: JSON.stringify({ order_id: orderId }),
+    });
+  }
+
+  async removeFavoriteOrder(orderId: string) {
+    return this.request(`/favorites/orders/${orderId}`, {
+      method: 'DELETE',
+    });
+  }
+
   isAuthenticated(): boolean {
     return !!this.token;
   }
