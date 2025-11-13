@@ -1,39 +1,29 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
-import { supabase } from "@/integrations/supabase/client";
-import { Session } from "@supabase/supabase-js";
 import { toast } from "sonner";
+import { profileApi } from "@/lib/api";
 
 const Admin = () => {
   const navigate = useNavigate();
-  const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (!session) {
-        navigate("/auth");
-      } else {
-        checkAdmin(session.user.id);
-      }
-    });
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      navigate("/auth");
+    } else {
+      checkAdmin();
+    }
   }, [navigate]);
 
-  const checkAdmin = async (userId: string) => {
-    const { data } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .eq("role", "admin")
-      .single();
-    
-    if (!data) {
+  const checkAdmin = async () => {
+    try {
+      await profileApi.get();
+      setIsAdmin(true);
+    } catch (error) {
       toast.error("Доступ запрещен");
       navigate("/");
-    } else {
-      setIsAdmin(true);
     }
   };
 

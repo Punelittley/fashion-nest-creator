@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
-import { supabase } from "@/integrations/supabase/client";
-import { Session } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { z } from "zod";
+import { cartApi, ordersApi, profileApi } from "@/lib/api";
 
 const checkoutSchema = z.object({
   phone: z.string().min(10, { message: "Введите корректный номер телефона" }),
@@ -14,17 +13,13 @@ const checkoutSchema = z.object({
 interface CartItem {
   id: string;
   quantity: number;
-  product: {
-    id: string;
-    name: string;
-    price: number;
-    stock: number;
-  };
+  name: string;
+  price: number;
+  image_url: string;
 }
 
 const Checkout = () => {
   const navigate = useNavigate();
-  const [session, setSession] = useState<Session | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -33,57 +28,34 @@ const Checkout = () => {
   });
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (!session) {
-        navigate("/auth");
-      } else {
-        loadCart(session.user.id);
-        loadProfile(session.user.id);
-      }
-    });
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      navigate("/auth");
+    } else {
+      loadData();
+    }
   }, [navigate]);
 
-  const loadProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("phone, address")
-      .eq("id", userId)
-      .single();
-
-    if (data) {
+  const loadData = async () => {
+    try {
+      const [cartData, profileData] = await Promise.all([
+        cartApi.get(),
+        profileApi.get()
+      ]);
+      setCartItems(cartData);
       setFormData({
-        phone: data.phone || "",
-        address: data.address || ""
+        phone: profileData.phone || "",
+        address: profileData.address || ""
       });
-    }
-  };
-
-  const loadCart = async (userId: string) => {
-    const { data } = await supabase
-      .from("cart_items")
-      .select(`
-        id,
-        quantity,
-        product:products (
-          id,
-          name,
-          price,
-          stock
-        )
-      `)
-      .eq("user_id", userId);
-
-    if (data) {
-      setCartItems(data as any);
+    } catch (error) {
+      toast.error("Ошибка загрузки данных");
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!session) return;
-
     setLoading(true);
+    
     try {
       const validation = checkoutSchema.safeParse(formData);
       if (!validation.success) {
@@ -98,64 +70,17 @@ const Checkout = () => {
         return;
       }
 
-      const total = cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-
-      // Create order
-      const { data: order, error: orderError } = await supabase
-        .from("orders")
-        .insert({
-          user_id: session.user.id,
-          total_amount: total,
-          shipping_address: formData.address,
-          phone: formData.phone,
-          status: "pending"
-        })
-        .select()
-        .single();
-
-      if (orderError) throw orderError;
-
-      // Create order items
-      const orderItems = cartItems.map(item => ({
-        order_id: order.id,
-        product_id: item.product.id,
-        quantity: item.quantity,
-        price: item.product.price
-      }));
-
-      const { error: itemsError } = await supabase
-        .from("order_items")
-        .insert(orderItems);
-
-      if (itemsError) throw itemsError;
-
-      // Clear cart
-      const { error: clearError } = await supabase
-        .from("cart_items")
-        .delete()
-        .eq("user_id", session.user.id);
-
-      if (clearError) throw clearError;
-
-      // Update profile
-      await supabase
-        .from("profiles")
-        .update({
-          phone: formData.phone,
-          address: formData.address
-        })
-        .eq("id", session.user.id);
-
+      await ordersApi.create(formData.address, formData.phone);
       toast.success("Заказ успешно оформлен!");
       navigate("/orders");
-    } catch (error) {
-      toast.error("Ошибка при оформлении заказа");
+    } catch (error: any) {
+      toast.error(error.message || "Ошибка оформления заказа");
     } finally {
       setLoading(false);
     }
   };
 
-  const total = cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   return (
     <Layout>
@@ -269,8 +194,8 @@ const Checkout = () => {
                   justifyContent: "space-between",
                   color: "hsl(var(--muted-foreground))"
                 }}>
-                  <span>{item.product.name} × {item.quantity}</span>
-                  <span>{(item.product.price * item.quantity).toLocaleString('ru-RU')} ₽</span>
+                  <span>{item.name} × {item.quantity}</span>
+                  <span>{(item.price * item.quantity).toLocaleString('ru-RU')} ₽</span>
                 </div>
               ))}
             </div>
