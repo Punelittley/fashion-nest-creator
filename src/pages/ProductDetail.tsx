@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
-import { ShoppingCart, Minus, Plus } from "lucide-react";
+import { ShoppingCart, Minus, Plus, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ProductImageSlider } from "@/components/ProductImageSlider";
 
@@ -23,10 +23,13 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [addingToCart, setAddingToCart] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [checkingFavorite, setCheckingFavorite] = useState(false);
 
   useEffect(() => {
     if (id) {
       loadProduct();
+      checkFavoriteStatus();
     }
   }, [id]);
 
@@ -49,6 +52,71 @@ const ProductDetail = () => {
       navigate("/catalog");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkFavoriteStatus = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session || !id) return;
+
+      const { data } = await supabase
+        .from('favorite_products')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .eq('product_id', id)
+        .maybeSingle();
+
+      setIsFavorite(!!data);
+    } catch (error) {
+      console.error('Error checking favorite status:', error);
+    }
+  };
+
+  const toggleFavorite = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      toast.error("Войдите для добавления в избранное");
+      navigate("/auth");
+      return;
+    }
+
+    if (!product) return;
+
+    setCheckingFavorite(true);
+    try {
+      if (isFavorite) {
+        // Remove from favorites
+        const { error } = await supabase
+          .from('favorite_products')
+          .delete()
+          .eq('user_id', session.user.id)
+          .eq('product_id', product.id);
+
+        if (error) throw error;
+
+        setIsFavorite(false);
+        toast.success("Удалено из избранного");
+      } else {
+        // Add to favorites
+        const { error } = await supabase
+          .from('favorite_products')
+          .insert({
+            user_id: session.user.id,
+            product_id: product.id
+          });
+
+        if (error) throw error;
+
+        setIsFavorite(true);
+        toast.success("Добавлено в избранное");
+      }
+    } catch (error: any) {
+      console.error('Error toggling favorite:', error);
+      toast.error(error.message || "Ошибка при обновлении избранного");
+    } finally {
+      setCheckingFavorite(false);
     }
   };
 
@@ -177,38 +245,74 @@ const ProductDetail = () => {
               />
             </div>
 
-            <button
-              onClick={handleAddToCart}
-              disabled={loading || product.stock === 0}
-              style={{
-                width: "100%",
-                padding: "1rem 2rem",
-                backgroundColor: loading || product.stock === 0 ? "hsl(var(--muted))" : "hsl(var(--primary))",
-                color: "hsl(var(--primary-foreground))",
-                border: "none",
-                fontSize: "1.05rem",
-                fontWeight: "500",
-                cursor: loading || product.stock === 0 ? "not-allowed" : "pointer",
-                transition: "var(--transition)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "0.75rem"
-              }}
-              onMouseEnter={(e) => {
-                if (!loading && product.stock > 0) {
-                  e.currentTarget.style.backgroundColor = "hsl(var(--accent))";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!loading && product.stock > 0) {
-                  e.currentTarget.style.backgroundColor = "hsl(var(--primary))";
-                }
-              }}
-            >
-              <ShoppingCart size={20} />
-              {product.stock === 0 ? "Нет в наличии" : (loading ? "Добавление..." : "Добавить в корзину")}
-            </button>
+            <div style={{
+              display: "flex",
+              gap: "1rem"
+            }}>
+              <button
+                onClick={handleAddToCart}
+                disabled={loading || product.stock === 0}
+                style={{
+                  flex: 1,
+                  padding: "1rem 2rem",
+                  backgroundColor: loading || product.stock === 0 ? "hsl(var(--muted))" : "hsl(var(--primary))",
+                  color: "hsl(var(--primary-foreground))",
+                  border: "none",
+                  fontSize: "1.05rem",
+                  fontWeight: "500",
+                  cursor: loading || product.stock === 0 ? "not-allowed" : "pointer",
+                  transition: "var(--transition)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "0.75rem"
+                }}
+                onMouseEnter={(e) => {
+                  if (!loading && product.stock > 0) {
+                    e.currentTarget.style.backgroundColor = "hsl(var(--accent))";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!loading && product.stock > 0) {
+                    e.currentTarget.style.backgroundColor = "hsl(var(--primary))";
+                  }
+                }}
+              >
+                <ShoppingCart size={20} />
+                {product.stock === 0 ? "Нет в наличии" : (loading ? "Добавление..." : "Добавить в корзину")}
+              </button>
+
+              <button
+                onClick={toggleFavorite}
+                disabled={checkingFavorite}
+                style={{
+                  padding: "1rem 1.5rem",
+                  backgroundColor: isFavorite ? "hsl(var(--accent))" : "hsl(var(--secondary))",
+                  color: isFavorite ? "hsl(var(--primary-foreground))" : "hsl(var(--foreground))",
+                  border: "1px solid hsl(var(--border))",
+                  fontSize: "1.05rem",
+                  fontWeight: "500",
+                  cursor: checkingFavorite ? "not-allowed" : "pointer",
+                  transition: "var(--transition)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}
+                onMouseEnter={(e) => {
+                  if (!checkingFavorite) {
+                    e.currentTarget.style.backgroundColor = isFavorite ? "hsl(var(--primary))" : "hsl(var(--accent))";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!checkingFavorite) {
+                    e.currentTarget.style.backgroundColor = isFavorite ? "hsl(var(--accent))" : "hsl(var(--secondary))";
+                  }
+                }}
+                title={isFavorite ? "Удалить из избранного" : "Добавить в избранное"}
+              >
+                <Heart size={20} fill={isFavorite ? "currentColor" : "none"} />
+              </button>
+            </div>
           </div>
         </div>
       </div>
