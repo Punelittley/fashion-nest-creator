@@ -236,6 +236,28 @@ class LocalApi {
     });
   }
 
+  // Support methods
+  async getOrCreateSupportChat() {
+    return this.request('/support/chat');
+  }
+
+  async getSupportMessages(chatId: string) {
+    return this.request(`/support/chat/${chatId}/messages`);
+  }
+
+  async sendSupportMessage(chatId: string, message: string) {
+    return this.request(`/support/chat/${chatId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ message }),
+    });
+  }
+
+  async closeSupportChat(chatId: string) {
+    return this.request(`/support/chat/${chatId}/close`, {
+      method: 'PATCH',
+    });
+  }
+
   isAuthenticated(): boolean {
     return !!this.token;
   }
