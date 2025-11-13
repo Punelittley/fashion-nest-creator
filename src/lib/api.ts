@@ -1,6 +1,15 @@
 // API клиент для работы с Express backend
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const getApiBaseUrl = () => {
+  if (typeof window !== 'undefined') {
+    const override = localStorage.getItem('api_base_url');
+    if (override) return override.replace(/\/$/, '');
+  }
+  const envUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+  return envUrl.replace(/\/$/, '');
+};
+
+const API_URL = getApiBaseUrl();
 
 // Получить токен из localStorage
 const getToken = () => localStorage.getItem('auth_token');
