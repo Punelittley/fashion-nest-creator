@@ -104,6 +104,24 @@ const Header = () => {
              onMouseLeave={(e) => e.currentTarget.style.color = "hsl(var(--foreground))"}>
             Каталог
           </Link>
+          <Link to="/delivery" style={{
+            color: "hsl(var(--foreground))",
+            textDecoration: "none",
+            fontSize: "0.95rem",
+            transition: "var(--transition)"
+          }} onMouseEnter={(e) => e.currentTarget.style.color = "hsl(var(--accent))"}
+             onMouseLeave={(e) => e.currentTarget.style.color = "hsl(var(--foreground))"}>
+            Доставка
+          </Link>
+          <Link to="/contacts" style={{
+            color: "hsl(var(--foreground))",
+            textDecoration: "none",
+            fontSize: "0.95rem",
+            transition: "var(--transition)"
+          }} onMouseEnter={(e) => e.currentTarget.style.color = "hsl(var(--accent))"}
+             onMouseLeave={(e) => e.currentTarget.style.color = "hsl(var(--foreground))"}>
+            Контакты
+          </Link>
           <Link to="/about" style={{
             color: "hsl(var(--foreground))",
             textDecoration: "none",
@@ -210,6 +228,24 @@ const Header = () => {
             borderBottom: "1px solid hsl(var(--border))"
           }}>
             Каталог
+          </Link>
+          <Link to="/delivery" onClick={() => setMobileMenuOpen(false)} style={{
+            display: "block",
+            padding: "0.75rem 0",
+            color: "hsl(var(--foreground))",
+            textDecoration: "none",
+            borderBottom: "1px solid hsl(var(--border))"
+          }}>
+            Доставка
+          </Link>
+          <Link to="/contacts" onClick={() => setMobileMenuOpen(false)} style={{
+            display: "block",
+            padding: "0.75rem 0",
+            color: "hsl(var(--foreground))",
+            textDecoration: "none",
+            borderBottom: "1px solid hsl(var(--border))"
+          }}>
+            Контакты
           </Link>
           <Link to="/about" onClick={() => setMobileMenuOpen(false)} style={{
             display: "block",
