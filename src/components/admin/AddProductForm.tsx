@@ -19,6 +19,8 @@ const AddProductForm = () => {
     image_url: ""
   });
   const [loading, setLoading] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     loadCategories();
@@ -36,6 +38,41 @@ const AddProductForm = () => {
     } catch (error) {
       toast.error("Ошибка загрузки категорий");
       console.error(error);
+    }
+  };
+
+  const handleImageUpload = async (file: File) => {
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(filePath);
+
+      setFormData({ ...formData, image_url: data.publicUrl });
+      toast.success("Изображение загружено");
+    } catch (error) {
+      toast.error("Ошибка загрузки изображения");
+      console.error(error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      handleImageUpload(file);
     }
   };
 
@@ -72,6 +109,7 @@ const AddProductForm = () => {
         category_id: "",
         image_url: ""
       });
+      setImageFile(null);
     } catch (error) {
       toast.error("Ошибка добавления товара");
       console.error(error);
@@ -263,13 +301,13 @@ const AddProductForm = () => {
             color: "hsl(var(--foreground))"
           }}>
             <Upload size={16} style={{ display: "inline", marginRight: "0.5rem" }} />
-            URL изображения
+            Изображение товара
           </label>
           <input
-            type="url"
-            value={formData.image_url}
-            onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-            placeholder="https://example.com/image.jpg"
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            disabled={uploading}
             style={{
               width: "100%",
               padding: "0.75rem",
@@ -280,6 +318,23 @@ const AddProductForm = () => {
               color: "hsl(var(--foreground))"
             }}
           />
+          {uploading && (
+            <p style={{ marginTop: "0.5rem", fontSize: "0.875rem", color: "hsl(var(--muted-foreground))" }}>
+              Загрузка изображения...
+            </p>
+          )}
+          {formData.image_url && (
+            <img 
+              src={formData.image_url} 
+              alt="Preview" 
+              style={{ 
+                marginTop: "0.5rem", 
+                maxWidth: "200px", 
+                borderRadius: "6px",
+                border: "1px solid hsl(var(--border))"
+              }} 
+            />
+          )}
         </div>
 
         <button

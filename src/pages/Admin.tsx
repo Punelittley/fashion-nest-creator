@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import UsersList from "@/components/admin/UsersList";
 import AddProductForm from "@/components/admin/AddProductForm";
+import ProductsManagement from "@/components/admin/ProductsManagement";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Admin = () => {
@@ -82,11 +83,17 @@ const Admin = () => {
             }}>
               Пользователи
             </TabsTrigger>
-            <TabsTrigger value="products" style={{
+            <TabsTrigger value="add-product" style={{
               padding: "0.75rem 1.5rem",
               fontSize: "1rem"
             }}>
               Добавить товар
+            </TabsTrigger>
+            <TabsTrigger value="manage-products" style={{
+              padding: "0.75rem 1.5rem",
+              fontSize: "1rem"
+            }}>
+              Управление товарами
             </TabsTrigger>
           </TabsList>
           
@@ -94,8 +101,12 @@ const Admin = () => {
             <UsersList />
           </TabsContent>
           
-          <TabsContent value="products">
+          <TabsContent value="add-product">
             <AddProductForm />
+          </TabsContent>
+          
+          <TabsContent value="manage-products">
+            <ProductsManagement />
           </TabsContent>
         </Tabs>
       </div>
