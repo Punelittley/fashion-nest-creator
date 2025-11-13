@@ -173,7 +173,7 @@ const Support = () => {
 
       // Send to Telegram
       const { data: functionData, error: functionError } = await supabase.functions.invoke(
-        'telegram-support',
+        'telegram-support?action=send',
         {
           body: { chatId, message: messageText },
           method: 'POST',
