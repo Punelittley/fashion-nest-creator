@@ -20,7 +20,6 @@ const Support = () => {
   const [chatId, setChatId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [needsTelegramLink, setNeedsTelegramLink] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -98,16 +97,6 @@ const Support = () => {
 
       if (existingChat) {
         setChatId(existingChat.id);
-        // Проверяем, привязан ли Telegram
-        const { data: chatData } = await supabase
-          .from('support_chats')
-          .select('telegram_chat_id')
-          .eq('id', existingChat.id)
-          .single();
-        
-        if (!chatData?.telegram_chat_id) {
-          setNeedsTelegramLink(true);
-        }
       } else {
         // Create new chat
         const { data: newChat, error: createError } = await supabase
@@ -122,7 +111,6 @@ const Support = () => {
         if (createError) throw createError;
 
         setChatId(newChat.id);
-        setNeedsTelegramLink(true); // Новый чат всегда требует привязки
       }
     } catch (error) {
       console.error('Error initializing chat:', error);
@@ -183,11 +171,6 @@ const Support = () => {
         console.error('Telegram send error:', functionError);
       }
 
-      if (functionData?.needsLink) {
-        setNeedsTelegramLink(true);
-        toast.info("Сообщение сохранено. Для получения ответов в Telegram напишите боту.");
-      }
-
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error("Не удалось отправить сообщение");
@@ -244,49 +227,6 @@ const Support = () => {
             </p>
           </div>
         </div>
-
-        {needsTelegramLink && (
-          <div style={{
-            backgroundColor: "hsl(var(--accent) / 0.1)",
-            border: "1px solid hsl(var(--accent))",
-            borderRadius: "8px",
-            padding: "1rem",
-            marginBottom: "1.5rem"
-          }}>
-            <p style={{
-              color: "hsl(var(--foreground))",
-              fontWeight: "500",
-              marginBottom: "0.5rem"
-            }}>
-              📱 Получайте ответы в Telegram
-            </p>
-            <p style={{
-              color: "hsl(var(--muted-foreground))",
-              fontSize: "0.9rem",
-              marginBottom: "0.75rem"
-            }}>
-              Чтобы получать ответы операторов в Telegram, напишите боту любое сообщение с ID вашего чата:
-            </p>
-            <code style={{
-              display: "block",
-              backgroundColor: "hsl(var(--muted))",
-              padding: "0.5rem",
-              borderRadius: "4px",
-              fontSize: "0.85rem",
-              color: "hsl(var(--foreground))",
-              fontFamily: "monospace"
-            }}>
-              {chatId}
-            </code>
-            <p style={{
-              color: "hsl(var(--muted-foreground))",
-              fontSize: "0.85rem",
-              marginTop: "0.75rem"
-            }}>
-              После этого все сообщения будут приходить в Telegram!
-            </p>
-          </div>
-        )}
 
         <div style={{
           background: "hsl(var(--card))",
