@@ -41,32 +41,10 @@ const Reviews = () => {
   }, []);
 
   const loadReviews = () => {
-    // Временно загружаем из localStorage
+    // Загружаем из localStorage
     const saved = localStorage.getItem('reviews');
     if (saved) {
       setReviews(JSON.parse(saved));
-    } else {
-      // Примеры отзывов
-      const exampleReviews: Review[] = [
-        {
-          id: "1",
-          productName: "Мужская рубашка",
-          rating: 5,
-          comment: "Отличное качество! Ткань приятная, сидит идеально. Рекомендую!",
-          author: "Александр",
-          date: new Date().toISOString()
-        },
-        {
-          id: "2",
-          productName: "Женское платье",
-          rating: 4,
-          comment: "Красивое платье, но размер маломерит. Советую брать на размер больше.",
-          author: "Мария",
-          date: new Date(Date.now() - 86400000).toISOString()
-        }
-      ];
-      setReviews(exampleReviews);
-      localStorage.setItem('reviews', JSON.stringify(exampleReviews));
     }
   };
 
