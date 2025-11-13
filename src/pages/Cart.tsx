@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { localApi } from "@/lib/localApi";
 
 interface CartItem {
   id: string;
@@ -24,8 +24,7 @@ const Cart = () => {
   }, [navigate]);
 
   const checkAuthAndLoadCart = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    if (!localApi.isAuthenticated()) {
       navigate("/auth");
     } else {
       loadCart();
@@ -34,38 +33,8 @@ const Cart = () => {
 
   const loadCart = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const { data: cartData, error } = await supabase
-        .from('cart_items')
-        .select(`
-          id,
-          quantity,
-          product_id,
-          products (
-            id,
-            name,
-            price,
-            image_url,
-            stock
-          )
-        `)
-        .eq('user_id', session.user.id);
-
-      if (error) throw error;
-
-      const formattedItems = cartData?.map((item: any) => ({
-        id: item.id,
-        quantity: item.quantity,
-        product_id: item.product_id,
-        name: item.products.name,
-        price: item.products.price,
-        image_url: item.products.image_url,
-        stock: item.products.stock
-      })) || [];
-
-      setCartItems(formattedItems);
+      const data = await localApi.getCart();
+      setCartItems(data);
     } catch (error) {
       console.error('Error loading cart:', error);
       toast.error("Ошибка загрузки корзины");
@@ -78,13 +47,7 @@ const Cart = () => {
     if (newQuantity < 1) return;
 
     try {
-      const { error } = await supabase
-        .from('cart_items')
-        .update({ quantity: newQuantity })
-        .eq('id', itemId);
-
-      if (error) throw error;
-
+      await localApi.updateCartItem(itemId, newQuantity);
       setCartItems(cartItems.map(item =>
         item.id === itemId ? { ...item, quantity: newQuantity } : item
       ));
@@ -96,13 +59,7 @@ const Cart = () => {
 
   const removeItem = async (itemId: string) => {
     try {
-      const { error } = await supabase
-        .from('cart_items')
-        .delete()
-        .eq('id', itemId);
-
-      if (error) throw error;
-
+      await localApi.removeFromCart(itemId);
       setCartItems(cartItems.filter(item => item.id !== itemId));
       toast.success("Товар удален из корзины");
     } catch (error) {
