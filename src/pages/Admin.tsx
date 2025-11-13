@@ -2,32 +2,49 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
-import { profileApi } from "@/lib/api";
+import { supabase } from "@/integrations/supabase/client";
 
 const Admin = () => {
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-      navigate("/auth");
-    } else {
-      checkAdmin();
-    }
+    checkAdmin();
   }, [navigate]);
 
   const checkAdmin = async () => {
     try {
-      await profileApi.get();
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast.error("Требуется авторизация");
+        navigate("/auth");
+        return;
+      }
+
+      const { data: roles, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin');
+
+      if (error || !roles || roles.length === 0) {
+        toast.error("Доступ запрещен");
+        navigate("/");
+        return;
+      }
+
       setIsAdmin(true);
     } catch (error) {
-      toast.error("Доступ запрещен");
+      toast.error("Ошибка проверки прав доступа");
       navigate("/");
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (!isAdmin) {
+  if (loading || !isAdmin) {
     return (
       <Layout>
         <div style={{ padding: "4rem 2rem", textAlign: "center" }}>
