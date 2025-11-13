@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ProductImageSlider } from "@/components/ProductImageSlider";
 
 interface Product {
   id: string;
@@ -194,11 +193,23 @@ const Catalog = () => {
                   display: "block"
                 }}
               >
-                <div style={{ marginBottom: "1rem" }}>
-                  <ProductImageSlider 
-                    images={product.images || (product.image_url ? [product.image_url] : [])}
-                    alt={product.name}
-                  />
+                <div style={{
+                  aspectRatio: "3/4",
+                  backgroundColor: "hsl(var(--muted))",
+                  overflow: "hidden",
+                  marginBottom: "1rem"
+                }}>
+                  {product.image_url && (
+                    <img
+                      src={product.image_url}
+                      alt={product.name}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover"
+                      }}
+                    />
+                  )}
                 </div>
                 <h3 style={{
                   fontSize: "1.125rem",
