@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { ShoppingCart, User, LogOut, Menu, X, LayoutDashboard } from "lucide-react";
+import { ShoppingCart, User, LogOut, Menu, X, LayoutDashboard, Heart, MessageSquare } from "lucide-react";
 import { useState, useEffect } from "react";
 import { authApi, cartApi } from "@/lib/api";
 
@@ -93,6 +93,15 @@ const Header = () => {
              onMouseLeave={(e) => e.currentTarget.style.color = "hsl(var(--foreground))"}>
             Доставка
           </Link>
+          <Link to="/reviews" style={{
+            color: "hsl(var(--foreground))",
+            textDecoration: "none",
+            fontSize: "0.95rem",
+            transition: "var(--transition)"
+          }} onMouseEnter={(e) => e.currentTarget.style.color = "hsl(var(--accent))"}
+             onMouseLeave={(e) => e.currentTarget.style.color = "hsl(var(--foreground))"}>
+            Отзывы
+          </Link>
           <Link to="/contacts" style={{
             color: "hsl(var(--foreground))",
             textDecoration: "none",
@@ -120,11 +129,22 @@ const Header = () => {
         }}>
           {isAuthenticated ? (
             <>
+              <Link to="/wishlist" style={{
+                position: "relative",
+                color: "hsl(var(--foreground))",
+                transition: "var(--transition)"
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.color = "hsl(var(--accent))"}
+              onMouseLeave={(e) => e.currentTarget.style.color = "hsl(var(--foreground))"}>
+                <Heart size={22} />
+              </Link>
               <Link to="/cart" style={{
                 position: "relative",
                 color: "hsl(var(--foreground))",
                 transition: "var(--transition)"
-              }}>
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.color = "hsl(var(--accent))"}
+              onMouseLeave={(e) => e.currentTarget.style.color = "hsl(var(--foreground))"}>
                 <ShoppingCart size={22} />
                 {cartCount > 0 && (
                   <span style={{
@@ -146,7 +166,12 @@ const Header = () => {
                   </span>
                 )}
               </Link>
-              <Link to="/profile" style={{ color: "hsl(var(--foreground))", transition: "var(--transition)" }}>
+              <Link to="/profile" style={{ 
+                color: "hsl(var(--foreground))", 
+                transition: "var(--transition)" 
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.color = "hsl(var(--accent))"}
+              onMouseLeave={(e) => e.currentTarget.style.color = "hsl(var(--foreground))"}>
                 <User size={22} />
               </Link>
               {isAdmin && (
