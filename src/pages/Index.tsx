@@ -105,76 +105,163 @@ const Index = () => {
         </section>
       )}
 
-      {/* Features */}
+      {/* Promo Banner */}
       <section style={{
-        backgroundColor: "hsl(var(--secondary))",
-        padding: "6rem 2rem"
+        backgroundColor: "hsl(var(--accent))",
+        padding: "4rem 2rem",
+        textAlign: "center"
       }}>
         <div style={{
-          maxWidth: "1400px",
-          margin: "0 auto",
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-          gap: "3rem"
+          maxWidth: "800px",
+          margin: "0 auto"
         }}>
-          <div style={{ textAlign: "center" }}>
+          <h2 style={{
+            fontSize: "2.5rem",
+            fontWeight: "600",
+            marginBottom: "1rem",
+            color: "hsl(var(--accent-foreground))"
+          }}>
+            Скидка 30% на новую коллекцию
+          </h2>
+          <p style={{
+            fontSize: "1.25rem",
+            marginBottom: "2rem",
+            color: "hsl(var(--accent-foreground))",
+            opacity: 0.9
+          }}>
+            Успейте приобрести лучшие модели сезона по специальной цене
+          </p>
+          <Link to="/catalog" style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "0.5rem",
+            padding: "1rem 2.5rem",
+            backgroundColor: "hsl(var(--background))",
+            color: "hsl(var(--foreground))",
+            textDecoration: "none",
+            fontSize: "1.125rem",
+            fontWeight: "500",
+            transition: "var(--transition)",
+            border: "2px solid transparent"
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = "transparent";
+            e.currentTarget.style.color = "hsl(var(--accent-foreground))";
+            e.currentTarget.style.borderColor = "hsl(var(--accent-foreground))";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = "hsl(var(--background))";
+            e.currentTarget.style.color = "hsl(var(--foreground))";
+            e.currentTarget.style.borderColor = "transparent";
+          }}>
+            Перейти в каталог
+            <ArrowRight size={20} />
+          </Link>
+        </div>
+      </section>
+
+      {/* Reviews */}
+      <section style={{
+        padding: "6rem 2rem",
+        maxWidth: "1400px",
+        margin: "0 auto"
+      }}>
+        <h2 style={{
+          fontSize: "2.5rem",
+          fontWeight: "500",
+          textAlign: "center",
+          marginBottom: "3rem",
+          color: "hsl(var(--foreground))"
+        }}>
+          Отзывы клиентов
+        </h2>
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+          gap: "2rem"
+        }}>
+          <div style={{
+            backgroundColor: "hsl(var(--secondary))",
+            padding: "2rem",
+            borderRadius: "8px"
+          }}>
             <div style={{
-              fontSize: "2rem",
+              display: "flex",
+              gap: "0.25rem",
               marginBottom: "1rem"
-            }}>🚚</div>
-            <h3 style={{
-              fontSize: "1.25rem",
-              fontWeight: "500",
-              marginBottom: "0.75rem",
+            }}>
+              {[...Array(5)].map((_, i) => (
+                <span key={i} style={{ color: "hsl(var(--accent))", fontSize: "1.25rem" }}>★</span>
+              ))}
+            </div>
+            <p style={{
+              marginBottom: "1rem",
+              lineHeight: "1.6",
               color: "hsl(var(--foreground))"
             }}>
-              Быстрая доставка
-            </h3>
+              "Отличное качество одежды! Все соответствует описанию. Доставка быстрая, упаковка аккуратная."
+            </p>
             <p style={{
-              color: "hsl(var(--muted-foreground))",
-              lineHeight: "1.6"
+              fontWeight: "500",
+              color: "hsl(var(--muted-foreground))"
             }}>
-              Доставим ваш заказ в течение 1-3 дней по всей России
+              — Анна К.
             </p>
           </div>
-          <div style={{ textAlign: "center" }}>
+          <div style={{
+            backgroundColor: "hsl(var(--secondary))",
+            padding: "2rem",
+            borderRadius: "8px"
+          }}>
             <div style={{
-              fontSize: "2rem",
+              display: "flex",
+              gap: "0.25rem",
               marginBottom: "1rem"
-            }}>✨</div>
-            <h3 style={{
-              fontSize: "1.25rem",
-              fontWeight: "500",
-              marginBottom: "0.75rem",
+            }}>
+              {[...Array(5)].map((_, i) => (
+                <span key={i} style={{ color: "hsl(var(--accent))", fontSize: "1.25rem" }}>★</span>
+              ))}
+            </div>
+            <p style={{
+              marginBottom: "1rem",
+              lineHeight: "1.6",
               color: "hsl(var(--foreground))"
             }}>
-              Качество
-            </h3>
+              "Впервые заказываю здесь и очень довольна! Стильные вещи по приятным ценам. Обязательно вернусь за покупками."
+            </p>
             <p style={{
-              color: "hsl(var(--muted-foreground))",
-              lineHeight: "1.6"
+              fontWeight: "500",
+              color: "hsl(var(--muted-foreground))"
             }}>
-              Работаем только с проверенными брендами и поставщиками
+              — Мария С.
             </p>
           </div>
-          <div style={{ textAlign: "center" }}>
+          <div style={{
+            backgroundColor: "hsl(var(--secondary))",
+            padding: "2rem",
+            borderRadius: "8px"
+          }}>
             <div style={{
-              fontSize: "2rem",
+              display: "flex",
+              gap: "0.25rem",
               marginBottom: "1rem"
-            }}>💳</div>
-            <h3 style={{
-              fontSize: "1.25rem",
-              fontWeight: "500",
-              marginBottom: "0.75rem",
+            }}>
+              {[...Array(5)].map((_, i) => (
+                <span key={i} style={{ color: "hsl(var(--accent))", fontSize: "1.25rem" }}>★</span>
+              ))}
+            </div>
+            <p style={{
+              marginBottom: "1rem",
+              lineHeight: "1.6",
               color: "hsl(var(--foreground))"
             }}>
-              Безопасная оплата
-            </h3>
+              "Прекрасный сервис! Консультанты помогли с выбором размера. Товар пришел точно в срок."
+            </p>
             <p style={{
-              color: "hsl(var(--muted-foreground))",
-              lineHeight: "1.6"
+              fontWeight: "500",
+              color: "hsl(var(--muted-foreground))"
             }}>
-              Принимаем все виды оплаты с защитой данных
+              — Елена В.
             </p>
           </div>
         </div>
