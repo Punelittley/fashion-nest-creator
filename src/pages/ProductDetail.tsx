@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { ShoppingCart, Minus, Plus } from "lucide-react";
-import { productsApi, cartApi } from "@/lib/api";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Product {
   id: string;
@@ -30,9 +30,19 @@ const ProductDetail = () => {
 
   const loadProduct = async () => {
     try {
-      const data = await productsApi.getById(id!);
+      const { data, error } = await supabase
+        .from('products')
+        .select('id, name, description, price, image_url, stock')
+        .eq('id', id!)
+        .eq('is_active', true)
+        .single();
+
+      if (error) throw error;
+      if (!data) throw new Error('Product not found');
+
       setProduct(data);
     } catch (error) {
+      console.error('Error loading product:', error);
       toast.error("Товар не найден");
       navigate("/catalog");
     } finally {
@@ -41,8 +51,10 @@ const ProductDetail = () => {
   };
 
   const handleAddToCart = async () => {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
+    // Check Supabase auth
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
       toast.error("Войдите для добавления в корзину");
       navigate("/auth");
       return;
@@ -52,9 +64,19 @@ const ProductDetail = () => {
 
     setAddingToCart(true);
     try {
-      await cartApi.add(product.id, quantity);
+      const { error } = await supabase
+        .from('cart_items')
+        .insert({
+          user_id: session.user.id,
+          product_id: product.id,
+          quantity: quantity
+        });
+
+      if (error) throw error;
+
       toast.success("Товар добавлен в корзину");
     } catch (error: any) {
+      console.error('Error adding to cart:', error);
       toast.error(error.message || "Ошибка добавления в корзину");
     } finally {
       setAddingToCart(false);

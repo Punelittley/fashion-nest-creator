@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Product {
   id: string;
@@ -22,6 +24,8 @@ const Catalog = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("name");
 
   useEffect(() => {
     loadData();
@@ -58,6 +62,26 @@ const Catalog = () => {
     ? products.filter(p => p.category_id === selectedCategory)
     : products;
 
+  // Apply search filter
+  const searchedProducts = searchQuery
+    ? filteredProducts.filter(p => 
+        p.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : filteredProducts;
+
+  // Apply sorting
+  const sortedProducts = [...searchedProducts].sort((a, b) => {
+    switch (sortBy) {
+      case "price-asc":
+        return a.price - b.price;
+      case "price-desc":
+        return b.price - a.price;
+      case "name":
+      default:
+        return a.name.localeCompare(b.name);
+    }
+  });
+
   return (
     <Layout>
       <div style={{ padding: "4rem 2rem", maxWidth: "1400px", margin: "0 auto" }}>
@@ -78,6 +102,32 @@ const Catalog = () => {
         </p>
 
         {/* Filters */}
+        <div style={{
+          display: "flex",
+          gap: "1rem",
+          marginBottom: "2rem",
+          flexWrap: "wrap",
+          alignItems: "center"
+        }}>
+          <Input
+            placeholder="Поиск товаров..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{ maxWidth: "300px" }}
+          />
+          
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger style={{ width: "200px" }}>
+              <SelectValue placeholder="Сортировка" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">По названию</SelectItem>
+              <SelectItem value="price-asc">Цена: по возрастанию</SelectItem>
+              <SelectItem value="price-desc">Цена: по убыванию</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         <div style={{
           display: "flex",
           gap: "1rem",
@@ -122,7 +172,7 @@ const Catalog = () => {
           <div style={{ textAlign: "center", padding: "4rem", color: "hsl(var(--muted-foreground))" }}>
             Загрузка...
           </div>
-        ) : filteredProducts.length === 0 ? (
+        ) : sortedProducts.length === 0 ? (
           <div style={{ textAlign: "center", padding: "4rem", color: "hsl(var(--muted-foreground))" }}>
             Товары не найдены
           </div>
@@ -132,18 +182,15 @@ const Catalog = () => {
             gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
             gap: "2rem"
           }}>
-            {filteredProducts.map(product => (
+            {sortedProducts.map(product => (
               <Link
                 key={product.id}
                 to={`/product/${product.id}`}
                 style={{
                   textDecoration: "none",
                   color: "inherit",
-                  display: "block",
-                  transition: "var(--transition)"
+                  display: "block"
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-8px)"}
-                onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
               >
                 <div style={{
                   aspectRatio: "3/4",
