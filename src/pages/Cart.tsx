@@ -1,96 +1,68 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
-import { supabase } from "@/integrations/supabase/client";
-import { Session } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
+import { cartApi } from "@/lib/api";
 
 interface CartItem {
   id: string;
   quantity: number;
-  product: {
-    id: string;
-    name: string;
-    price: number;
-    image_url: string;
-    stock: number;
-  };
+  name: string;
+  price: number;
+  image_url: string;
+  stock: number;
 }
 
 const Cart = () => {
   const navigate = useNavigate();
-  const [session, setSession] = useState<Session | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (!session) {
-        navigate("/auth");
-      } else {
-        loadCart(session.user.id);
-      }
-    });
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      navigate("/auth");
+    } else {
+      loadCart();
+    }
   }, [navigate]);
 
-  const loadCart = async (userId: string) => {
-    const { data, error } = await supabase
-      .from("cart_items")
-      .select(`
-        id,
-        quantity,
-        product:products (
-          id,
-          name,
-          price,
-          image_url,
-          stock
-        )
-      `)
-      .eq("user_id", userId);
-
-    if (error) {
+  const loadCart = async () => {
+    try {
+      const data = await cartApi.get();
+      setCartItems(data);
+    } catch (error) {
       toast.error("Ошибка загрузки корзины");
-    } else if (data) {
-      setCartItems(data as any);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const updateQuantity = async (itemId: string, newQuantity: number) => {
     if (newQuantity < 1) return;
 
-    const { error } = await supabase
-      .from("cart_items")
-      .update({ quantity: newQuantity })
-      .eq("id", itemId);
-
-    if (error) {
-      toast.error("Ошибка обновления количества");
-    } else {
+    try {
+      await cartApi.update(itemId, newQuantity);
       setCartItems(cartItems.map(item =>
         item.id === itemId ? { ...item, quantity: newQuantity } : item
       ));
+    } catch (error) {
+      toast.error("Ошибка обновления количества");
     }
   };
 
   const removeItem = async (itemId: string) => {
-    const { error } = await supabase
-      .from("cart_items")
-      .delete()
-      .eq("id", itemId);
-
-    if (error) {
-      toast.error("Ошибка удаления товара");
-    } else {
+    try {
+      await cartApi.remove(itemId);
       setCartItems(cartItems.filter(item => item.id !== itemId));
       toast.success("Товар удален из корзины");
+    } catch (error) {
+      toast.error("Ошибка удаления товара");
     }
   };
 
-  const total = cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   if (loading) {
     return (
@@ -165,10 +137,10 @@ const Cart = () => {
                     backgroundColor: "hsl(var(--muted))",
                     overflow: "hidden"
                   }}>
-                    {item.product.image_url && (
+                    {item.image_url && (
                       <img
-                        src={item.product.image_url}
-                        alt={item.product.name}
+                        src={item.image_url}
+                        alt={item.name}
                         style={{
                           width: "100%",
                           height: "100%",
@@ -185,7 +157,7 @@ const Cart = () => {
                       marginBottom: "0.5rem",
                       color: "hsl(var(--foreground))"
                     }}>
-                      {item.product.name}
+                      {item.name}
                     </h3>
                     <p style={{
                       fontSize: "1.125rem",
@@ -193,7 +165,7 @@ const Cart = () => {
                       fontWeight: "600",
                       marginBottom: "1rem"
                     }}>
-                      {item.product.price.toLocaleString('ru-RU')} ₽
+                      {item.price.toLocaleString('ru-RU')} ₽
                     </p>
 
                     <div style={{
@@ -220,12 +192,12 @@ const Cart = () => {
                       </span>
                       <button
                         onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        disabled={item.quantity >= item.product.stock}
+                        disabled={item.quantity >= item.stock}
                         style={{
                           padding: "0.25rem 0.75rem",
                           backgroundColor: "hsl(var(--secondary))",
                           border: "none",
-                          cursor: item.quantity >= item.product.stock ? "not-allowed" : "pointer",
+                          cursor: item.quantity >= item.stock ? "not-allowed" : "pointer",
                           fontSize: "1.25rem",
                           color: "hsl(var(--foreground))"
                         }}
@@ -259,7 +231,7 @@ const Cart = () => {
                       fontWeight: "600",
                       color: "hsl(var(--foreground))"
                     }}>
-                      {(item.product.price * item.quantity).toLocaleString('ru-RU')} ₽
+                      {(item.price * item.quantity).toLocaleString('ru-RU')} ₽
                     </p>
                   </div>
                 </div>

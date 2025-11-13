@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Session } from "@supabase/supabase-js";
+import { authApi, setToken } from "@/lib/api";
 
 const authSchema = z.object({
   email: z.string().email({ message: "Некорректный email адрес" }),
@@ -14,7 +13,6 @@ const authSchema = z.object({
 
 const Auth = () => {
   const navigate = useNavigate();
-  const [session, setSession] = useState<Session | null>(null);
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -24,21 +22,10 @@ const Auth = () => {
   });
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        navigate("/");
-      }
-      setSession(session);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session) {
-        navigate("/");
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      navigate("/");
+    }
   }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -54,44 +41,27 @@ const Auth = () => {
       }
 
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
-          email: formData.email,
-          password: formData.password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-            data: {
-              full_name: formData.fullName
-            }
-          }
-        });
-
-        if (error) {
-          if (error.message.includes("already registered")) {
-            toast.error("Пользователь с таким email уже существует");
-          } else {
-            toast.error(error.message);
-          }
-        } else {
-          toast.success("Регистрация успешна! Добро пожаловать!");
-        }
+        const response = await authApi.signup(
+          formData.email,
+          formData.password,
+          formData.fullName
+        );
+        
+        setToken(response.token);
+        toast.success("Регистрация успешна! Добро пожаловать!");
+        navigate("/");
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: formData.email,
-          password: formData.password
-        });
-
-        if (error) {
-          if (error.message.includes("Invalid login credentials")) {
-            toast.error("Неверный email или пароль");
-          } else {
-            toast.error(error.message);
-          }
-        } else {
-          toast.success("Вход выполнен успешно!");
-        }
+        const response = await authApi.signin(
+          formData.email,
+          formData.password
+        );
+        
+        setToken(response.token);
+        toast.success("Вход выполнен успешно!");
+        navigate("/");
       }
-    } catch (error) {
-      toast.error("Произошла ошибка. Попробуйте снова.");
+    } catch (error: any) {
+      toast.error(error.message || "Произошла ошибка. Попробуйте снова.");
     } finally {
       setLoading(false);
     }

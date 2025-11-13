@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
-import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { productsApi, categoriesApi } from "@/lib/api";
 
 interface Product {
   id: string;
@@ -27,14 +28,18 @@ const Catalog = () => {
   }, []);
 
   const loadData = async () => {
-    const [{ data: productsData }, { data: categoriesData }] = await Promise.all([
-      supabase.from("products").select("*").eq("is_active", true),
-      supabase.from("categories").select("*")
-    ]);
-
-    if (productsData) setProducts(productsData);
-    if (categoriesData) setCategories(categoriesData);
-    setLoading(false);
+    try {
+      const [productsData, categoriesData] = await Promise.all([
+        productsApi.getAll(),
+        categoriesApi.getAll()
+      ]);
+      setProducts(productsData);
+      setCategories(categoriesData);
+    } catch (error) {
+      toast.error("Ошибка загрузки каталога");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filteredProducts = selectedCategory
