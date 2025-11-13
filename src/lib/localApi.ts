@@ -258,6 +258,24 @@ class LocalApi {
     });
   }
 
+  // Admin methods
+  async checkAdminRole() {
+    try {
+      await this.request('/admin/users');
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async getAllUsers() {
+    return this.request('/admin/users');
+  }
+
+  async getAllOrders() {
+    return this.request('/admin/orders');
+  }
+
   isAuthenticated(): boolean {
     return !!this.token;
   }

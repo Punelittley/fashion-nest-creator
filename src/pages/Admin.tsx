@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { localApi } from "@/lib/localApi";
 import UsersList from "@/components/admin/UsersList";
 import AddProductForm from "@/components/admin/AddProductForm";
 import ProductsManagement from "@/components/admin/ProductsManagement";
@@ -19,21 +19,15 @@ const Admin = () => {
 
   const checkAdmin = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
+      if (!localApi.isAuthenticated()) {
         toast.error("Требуется авторизация");
         navigate("/auth");
         return;
       }
 
-      const { data: roles, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .eq('role', 'admin');
-
-      if (error || !roles || roles.length === 0) {
+      const isAdminUser = await localApi.checkAdminRole();
+      
+      if (!isAdminUser) {
         toast.error("Доступ запрещен");
         navigate("/");
         return;
