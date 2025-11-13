@@ -2,15 +2,15 @@ import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
-import { localApi } from "@/lib/localApi";
+import { supabase } from "@/integrations/supabase/client";
 
 interface WishlistItem {
   id: string;
-  product_id: string;
   name: string;
   price: number;
   image_url: string;
   stock: number;
+  product_id: string;
 }
 
 const Wishlist = () => {
@@ -23,7 +23,8 @@ const Wishlist = () => {
   }, [navigate]);
 
   const checkAuthAndLoadWishlist = async () => {
-    if (!localApi.isAuthenticated()) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
       navigate("/auth");
     } else {
       loadWishlist();
@@ -32,8 +33,36 @@ const Wishlist = () => {
 
   const loadWishlist = async () => {
     try {
-      const data = await localApi.getFavoriteProducts();
-      setWishlistItems(data || []);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase
+        .from('favorite_products')
+        .select(`
+          id,
+          product_id,
+          products (
+            id,
+            name,
+            price,
+            image_url,
+            stock
+          )
+        `)
+        .eq('user_id', session.user.id);
+
+      if (error) throw error;
+
+      const formattedItems = data?.map((item: any) => ({
+        id: item.id,
+        product_id: item.products.id,
+        name: item.products.name,
+        price: item.products.price,
+        image_url: item.products.image_url,
+        stock: item.products.stock
+      })) || [];
+
+      setWishlistItems(formattedItems);
     } catch (error) {
       console.error('Error loading wishlist:', error);
       toast.error("Ошибка загрузки избранного");
@@ -42,10 +71,20 @@ const Wishlist = () => {
     }
   };
 
-  const removeFromWishlist = async (productId: string) => {
+  const removeFromWishlist = async (favoriteId: string) => {
     try {
-      await localApi.removeFavoriteProduct(productId);
-      setWishlistItems(prev => prev.filter(item => item.product_id !== productId));
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { error } = await supabase
+        .from('favorite_products')
+        .delete()
+        .eq('id', favoriteId)
+        .eq('user_id', session.user.id);
+
+      if (error) throw error;
+
+      setWishlistItems(prev => prev.filter(item => item.id !== favoriteId));
       toast.success("Товар удален из избранного");
     } catch (error) {
       console.error('Error removing from wishlist:', error);
@@ -55,13 +94,23 @@ const Wishlist = () => {
 
   const addToCart = async (item: WishlistItem) => {
     try {
-      if (!localApi.isAuthenticated()) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
         toast.error("Войдите для добавления в корзину");
         navigate("/auth");
         return;
       }
 
-      await localApi.addToCart(item.product_id, 1);
+      const { error } = await supabase
+        .from('cart_items')
+        .insert({
+          user_id: session.user.id,
+          product_id: item.product_id,
+          quantity: 1
+        });
+
+      if (error) throw error;
+
       toast.success(`${item.name} добавлен в корзину`);
     } catch (error: any) {
       console.error('Error adding to cart:', error);
@@ -244,7 +293,7 @@ const Wishlist = () => {
                     </button>
 
                       <button
-                        onClick={() => removeFromWishlist(item.product_id)}
+                        onClick={() => removeFromWishlist(item.id)}
                         style={{
                           padding: "0.75rem",
                           backgroundColor: "hsl(var(--secondary))",

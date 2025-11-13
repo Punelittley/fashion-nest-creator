@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { localApi } from "@/lib/localApi";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { User } from "lucide-react";
 
@@ -21,7 +21,12 @@ const UsersList = () => {
 
   const loadUsers = async () => {
     try {
-      const data = await localApi.getAllUsers();
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, email, full_name, phone, created_at')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
       setUsers(data || []);
     } catch (error) {
       toast.error("Ошибка загрузки пользователей");

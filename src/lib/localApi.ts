@@ -39,29 +39,17 @@ class LocalApi {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
 
-    const url = `${API_URL}${endpoint}`;
-    console.log('🌐 Request:', options.method || 'GET', url);
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers,
+    });
 
-    try {
-      const response = await fetch(url, {
-        ...options,
-        headers,
-      });
-
-      console.log('📡 Response:', response.status, response.statusText);
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Network error' }));
-        throw new Error(error.error || 'Request failed');
-      }
-
-      const data = await response.json();
-      console.log('✅ Data received:', Array.isArray(data) ? `${data.length} items` : typeof data);
-      return data;
-    } catch (error) {
-      console.error('❌ Request failed:', url, error);
-      throw error;
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Network error' }));
+      throw new Error(error.error || 'Request failed');
     }
+
+    return response.json();
   }
 
   // Auth methods
@@ -198,94 +186,6 @@ class LocalApi {
       method: 'PUT',
       body: JSON.stringify({ status }),
     });
-  }
-
-  async getOrderWithItems(orderId: string) {
-    return this.request(`/orders/${orderId}`);
-  }
-
-  // Wishlist/Favorites methods
-  async getFavoriteProducts() {
-    return this.request('/favorites/products');
-  }
-
-  async addFavoriteProduct(productId: string) {
-    return this.request('/favorites/products', {
-      method: 'POST',
-      body: JSON.stringify({ product_id: productId }),
-    });
-  }
-
-  async removeFavoriteProduct(productId: string) {
-    return this.request(`/favorites/products/${productId}`, {
-      method: 'DELETE',
-    });
-  }
-
-  async isFavoriteProduct(productId: string) {
-    try {
-      const favorites = await this.getFavoriteProducts();
-      return favorites.some((f: any) => f.product_id === productId);
-    } catch {
-      return false;
-    }
-  }
-
-  async getFavoriteOrders() {
-    return this.request('/favorites/orders');
-  }
-
-  async addFavoriteOrder(orderId: string) {
-    return this.request('/favorites/orders', {
-      method: 'POST',
-      body: JSON.stringify({ order_id: orderId }),
-    });
-  }
-
-  async removeFavoriteOrder(orderId: string) {
-    return this.request(`/favorites/orders/${orderId}`, {
-      method: 'DELETE',
-    });
-  }
-
-  // Support methods
-  async getOrCreateSupportChat() {
-    return this.request('/support/chat');
-  }
-
-  async getSupportMessages(chatId: string) {
-    return this.request(`/support/chat/${chatId}/messages`);
-  }
-
-  async sendSupportMessage(chatId: string, message: string) {
-    return this.request(`/support/chat/${chatId}/messages`, {
-      method: 'POST',
-      body: JSON.stringify({ message }),
-    });
-  }
-
-  async closeSupportChat(chatId: string) {
-    return this.request(`/support/chat/${chatId}/close`, {
-      method: 'PATCH',
-    });
-  }
-
-  // Admin methods
-  async checkAdminRole() {
-    try {
-      await this.request('/admin/users');
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  async getAllUsers() {
-    return this.request('/admin/users');
-  }
-
-  async getAllOrders() {
-    return this.request('/admin/orders');
   }
 
   isAuthenticated(): boolean {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { localApi } from "@/lib/localApi";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { PackagePlus, Upload } from "lucide-react";
 
@@ -28,7 +28,12 @@ const AddProductForm = () => {
 
   const loadCategories = async () => {
     try {
-      const data = await localApi.getCategories();
+      const { data, error } = await supabase
+        .from('categories')
+        .select('id, name')
+        .order('name');
+
+      if (error) throw error;
       setCategories(data || []);
     } catch (error) {
       toast.error("Ошибка загрузки категорий");
@@ -37,10 +42,30 @@ const AddProductForm = () => {
   };
 
   const handleImageUpload = async (file: File) => {
-    // Для SQLite просто используем локальный URL или placeholder
-    // В production можно добавить загрузку на CDN
-    setFormData({ ...formData, image_url: '/placeholder-product.jpg' });
-    toast.info("Функция загрузки изображений будет добавлена позже");
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(filePath);
+
+      setFormData({ ...formData, image_url: data.publicUrl });
+      toast.success("Изображение загружено");
+    } catch (error) {
+      toast.error("Ошибка загрузки изображения");
+      console.error(error);
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,14 +86,19 @@ const AddProductForm = () => {
 
     setLoading(true);
     try {
-      await localApi.createProduct({
-        name: formData.name,
-        description: formData.description || null,
-        price: parseFloat(formData.price),
-        stock: parseInt(formData.stock),
-        category_id: formData.category_id,
-        image_url: formData.image_url || null,
-      });
+      const { error } = await supabase
+        .from('products')
+        .insert([{
+          name: formData.name,
+          description: formData.description || null,
+          price: parseFloat(formData.price),
+          stock: parseInt(formData.stock),
+          category_id: formData.category_id,
+          image_url: formData.image_url || null,
+          is_active: true
+        }]);
+
+      if (error) throw error;
 
       toast.success("Товар успешно добавлен");
       setFormData({

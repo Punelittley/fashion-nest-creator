@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
-import { localApi } from "@/lib/localApi";
+import { supabase } from "@/integrations/supabase/client";
 import { ProductImageSlider } from "@/components/ProductImageSlider";
 
 interface Product {
@@ -34,7 +34,16 @@ const ProductDetail = () => {
 
   const loadProduct = async () => {
     try {
-      const data = await localApi.getProduct(id!);
+      const { data, error } = await supabase
+        .from('products')
+        .select('id, name, description, price, image_url, images, stock')
+        .eq('id', id!)
+        .eq('is_active', true)
+        .single();
+
+      if (error) throw error;
+      if (!data) throw new Error('Product not found');
+
       setProduct(data);
     } catch (error) {
       console.error('Error loading product:', error);
@@ -46,18 +55,27 @@ const ProductDetail = () => {
   };
 
   const checkFavoriteStatus = async () => {
-    if (!localApi.isAuthenticated() || !id) return;
-    
     try {
-      const isFav = await localApi.isFavoriteProduct(id);
-      setIsFavorite(isFav);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session || !id) return;
+
+      const { data } = await supabase
+        .from('favorite_products')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .eq('product_id', id)
+        .maybeSingle();
+
+      setIsFavorite(!!data);
     } catch (error) {
       console.error('Error checking favorite status:', error);
     }
   };
 
   const toggleFavorite = async () => {
-    if (!localApi.isAuthenticated()) {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
       toast.error("Войдите для добавления в избранное");
       navigate("/auth");
       return;
@@ -68,11 +86,28 @@ const ProductDetail = () => {
     setCheckingFavorite(true);
     try {
       if (isFavorite) {
-        await localApi.removeFavoriteProduct(product.id);
+        // Remove from favorites
+        const { error } = await supabase
+          .from('favorite_products')
+          .delete()
+          .eq('user_id', session.user.id)
+          .eq('product_id', product.id);
+
+        if (error) throw error;
+
         setIsFavorite(false);
         toast.success("Удалено из избранного");
       } else {
-        await localApi.addFavoriteProduct(product.id);
+        // Add to favorites
+        const { error } = await supabase
+          .from('favorite_products')
+          .insert({
+            user_id: session.user.id,
+            product_id: product.id
+          });
+
+        if (error) throw error;
+
         setIsFavorite(true);
         toast.success("Добавлено в избранное");
       }
@@ -85,20 +120,29 @@ const ProductDetail = () => {
   };
 
   const handleAddToCart = async () => {
-    if (!localApi.isAuthenticated()) {
+    // Check Supabase auth
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
       toast.error("Войдите для добавления в корзину");
       navigate("/auth");
       return;
     }
 
-    if (quantity > product.stock) {
-      toast.error(`Доступно только ${product.stock} шт.`);
-      return;
-    }
+    if (!product) return;
 
     setAddingToCart(true);
     try {
-      await localApi.addToCart(product.id, quantity);
+      const { error } = await supabase
+        .from('cart_items')
+        .insert({
+          user_id: session.user.id,
+          product_id: product.id,
+          quantity: quantity
+        });
+
+      if (error) throw error;
+
       toast.success("Товар добавлен в корзину");
     } catch (error: any) {
       console.error('Error adding to cart:', error);

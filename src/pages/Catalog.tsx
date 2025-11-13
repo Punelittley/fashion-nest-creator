@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
-import { localApi } from "@/lib/localApi";
+import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -34,24 +34,26 @@ const Catalog = () => {
 
   const loadData = async () => {
     try {
-      console.log('🔄 Loading catalog data...');
-      const [productsData, categoriesData] = await Promise.all([
-        localApi.getProducts(),
-        localApi.getCategories()
-      ]);
+      // Load products from Supabase
+      const { data: productsData, error: productsError } = await supabase
+        .from('products')
+        .select('id, name, price, image_url, images, category_id')
+        .eq('is_active', true);
 
-      console.log('✅ Products loaded:', productsData?.length || 0);
-      console.log('✅ Categories loaded:', categoriesData?.length || 0);
-      
+      if (productsError) throw productsError;
+
+      // Load categories from Supabase
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('categories')
+        .select('id, name');
+
+      if (categoriesError) throw categoriesError;
+
       setProducts(productsData || []);
       setCategories(categoriesData || []);
     } catch (error) {
-      console.error('❌ Error loading catalog:', error);
-      console.error('Error details:', {
-        message: error.message,
-        stack: error.stack
-      });
-      toast.error(`Ошибка загрузки каталога: ${error.message}`);
+      console.error('Error loading catalog:', error);
+      toast.error("Ошибка загрузки каталога");
     } finally {
       setLoading(false);
     }

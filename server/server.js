@@ -10,19 +10,16 @@ import categoriesRoutes from './routes/categories.js';
 import cartRoutes from './routes/cart.js';
 import ordersRoutes from './routes/orders.js';
 import profileRoutes from './routes/profile.js';
-import favoritesRoutes from './routes/favorites.js';
-import supportRoutes from './routes/support.js';
-import adminRoutes from './routes/admin.js';
 
 // Загрузка переменных окружения
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: process.env.FRONTEND_URL || 'http://localhost:8080',
   credentials: true
 }));
 app.use(express.json());
@@ -41,9 +38,6 @@ app.use('/api/categories', categoriesRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/profile', profileRoutes);
-app.use('/api/favorites', favoritesRoutes);
-app.use('/api/support', supportRoutes);
-app.use('/api/admin', adminRoutes);
 
 // Проверка здоровья сервера
 app.get('/health', (req, res) => {
