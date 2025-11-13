@@ -35,28 +35,35 @@ const Footer = () => {
             fontSize: "1rem",
             fontWeight: "600",
             marginBottom: "1rem"
-          }}>Навигация</h4>
+          }}>Каталог</h4>
           <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
             <li style={{ marginBottom: "0.5rem" }}>
               <Link to="/catalog" style={{
                 color: "hsl(var(--primary-foreground) / 0.8)",
                 textDecoration: "none",
                 transition: "var(--transition)"
-              }}>Каталог</Link>
+              }}>Все товары</Link>
             </li>
             <li style={{ marginBottom: "0.5rem" }}>
-              <Link to="/about" style={{
+              <Link to="/catalog?category=coats" style={{
                 color: "hsl(var(--primary-foreground) / 0.8)",
                 textDecoration: "none",
                 transition: "var(--transition)"
-              }}>О нас</Link>
+              }}>Пальто</Link>
             </li>
             <li style={{ marginBottom: "0.5rem" }}>
-              <Link to="/profile" style={{
+              <Link to="/catalog?category=pants" style={{
                 color: "hsl(var(--primary-foreground) / 0.8)",
                 textDecoration: "none",
                 transition: "var(--transition)"
-              }}>Личный кабинет</Link>
+              }}>Брюки</Link>
+            </li>
+            <li style={{ marginBottom: "0.5rem" }}>
+              <Link to="/catalog?category=shoes" style={{
+                color: "hsl(var(--primary-foreground) / 0.8)",
+                textDecoration: "none",
+                transition: "var(--transition)"
+              }}>Обувь</Link>
             </li>
           </ul>
         </div>
@@ -66,25 +73,73 @@ const Footer = () => {
             fontSize: "1rem",
             fontWeight: "600",
             marginBottom: "1rem"
-          }}>Контакты</h4>
+          }}>Информация</h4>
           <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-            <li style={{
-              color: "hsl(var(--primary-foreground) / 0.8)",
-              marginBottom: "0.5rem"
-            }}>
-              Email: info@fashion.ru
+            <li style={{ marginBottom: "0.5rem" }}>
+              <Link to="/about" style={{
+                color: "hsl(var(--primary-foreground) / 0.8)",
+                textDecoration: "none",
+                transition: "var(--transition)"
+              }}>О нас</Link>
             </li>
-            <li style={{
-              color: "hsl(var(--primary-foreground) / 0.8)",
-              marginBottom: "0.5rem"
-            }}>
-              Телефон: +7 (999) 123-45-67
+            <li style={{ marginBottom: "0.5rem" }}>
+              <Link to="/delivery" style={{
+                color: "hsl(var(--primary-foreground) / 0.8)",
+                textDecoration: "none",
+                transition: "var(--transition)"
+              }}>Доставка</Link>
             </li>
-            <li style={{
-              color: "hsl(var(--primary-foreground) / 0.8)",
-              marginBottom: "0.5rem"
-            }}>
-              Адрес: Москва, ул. Модная, 1
+            <li style={{ marginBottom: "0.5rem" }}>
+              <Link to="/contacts" style={{
+                color: "hsl(var(--primary-foreground) / 0.8)",
+                textDecoration: "none",
+                transition: "var(--transition)"
+              }}>Контакты</Link>
+            </li>
+            <li style={{ marginBottom: "0.5rem" }}>
+              <Link to="/support" style={{
+                color: "hsl(var(--primary-foreground) / 0.8)",
+                textDecoration: "none",
+                transition: "var(--transition)"
+              }}>Поддержка</Link>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 style={{
+            fontSize: "1rem",
+            fontWeight: "600",
+            marginBottom: "1rem"
+          }}>Личный кабинет</h4>
+          <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+            <li style={{ marginBottom: "0.5rem" }}>
+              <Link to="/profile" style={{
+                color: "hsl(var(--primary-foreground) / 0.8)",
+                textDecoration: "none",
+                transition: "var(--transition)"
+              }}>Профиль</Link>
+            </li>
+            <li style={{ marginBottom: "0.5rem" }}>
+              <Link to="/orders" style={{
+                color: "hsl(var(--primary-foreground) / 0.8)",
+                textDecoration: "none",
+                transition: "var(--transition)"
+              }}>Заказы</Link>
+            </li>
+            <li style={{ marginBottom: "0.5rem" }}>
+              <Link to="/wishlist" style={{
+                color: "hsl(var(--primary-foreground) / 0.8)",
+                textDecoration: "none",
+                transition: "var(--transition)"
+              }}>Избранное</Link>
+            </li>
+            <li style={{ marginBottom: "0.5rem" }}>
+              <Link to="/cart" style={{
+                color: "hsl(var(--primary-foreground) / 0.8)",
+                textDecoration: "none",
+                transition: "var(--transition)"
+              }}>Корзина</Link>
             </li>
           </ul>
         </div>
