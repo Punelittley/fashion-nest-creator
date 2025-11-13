@@ -5,12 +5,14 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ProductImageSlider } from "@/components/ProductImageSlider";
 
 interface Product {
   id: string;
   name: string;
   price: number;
   image_url: string;
+  images: string[] | null;
   category_id: string | null;
 }
 
@@ -36,7 +38,7 @@ const Catalog = () => {
       // Load products from Supabase
       const { data: productsData, error: productsError } = await supabase
         .from('products')
-        .select('id, name, price, image_url, category_id')
+        .select('id, name, price, image_url, images, category_id')
         .eq('is_active', true);
 
       if (productsError) throw productsError;
@@ -192,23 +194,11 @@ const Catalog = () => {
                   display: "block"
                 }}
               >
-                <div style={{
-                  aspectRatio: "3/4",
-                  backgroundColor: "hsl(var(--muted))",
-                  marginBottom: "1rem",
-                  overflow: "hidden"
-                }}>
-                  {product.image_url && (
-                    <img
-                      src={product.image_url}
-                      alt={product.name}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover"
-                      }}
-                    />
-                  )}
+                <div style={{ marginBottom: "1rem" }}>
+                  <ProductImageSlider 
+                    images={product.images || (product.image_url ? [product.image_url] : [])}
+                    alt={product.name}
+                  />
                 </div>
                 <h3 style={{
                   fontSize: "1.125rem",
