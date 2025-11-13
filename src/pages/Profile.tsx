@@ -91,22 +91,14 @@ const Profile = () => {
 
   const loadOrderStats = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const { data: orders, error } = await supabase
-        .from('orders')
-        .select('status, total_amount')
-        .eq('user_id', session.user.id);
-
-      if (error) throw error;
-
+      const orders = await localApi.getOrders();
+      
       if (orders) {
         const stats = {
           total: orders.length,
-          pending: orders.filter(o => o.status === 'pending').length,
-          completed: orders.filter(o => o.status === 'completed').length,
-          totalSpent: orders.reduce((sum, o) => sum + Number(o.total_amount), 0)
+          pending: orders.filter((o: any) => o.status === 'pending').length,
+          completed: orders.filter((o: any) => o.status === 'completed').length,
+          totalSpent: orders.reduce((sum: number, o: any) => sum + Number(o.total_amount), 0)
         };
         setOrderStats(stats);
       }
@@ -137,7 +129,7 @@ const Profile = () => {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await localApi.signOut();
     toast.success("Вы вышли из аккаунта");
     navigate("/auth");
   };

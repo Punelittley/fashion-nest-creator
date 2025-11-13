@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { localApi } from "@/lib/localApi";
 import { ProductImageSlider } from "@/components/ProductImageSlider";
 
 interface Product {
@@ -34,16 +34,7 @@ const ProductDetail = () => {
 
   const loadProduct = async () => {
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('id, name, description, price, image_url, images, stock')
-        .eq('id', id!)
-        .eq('is_active', true)
-        .single();
-
-      if (error) throw error;
-      if (!data) throw new Error('Product not found');
-
+      const data = await localApi.getProduct(id!);
       setProduct(data);
     } catch (error) {
       console.error('Error loading product:', error);
@@ -55,27 +46,18 @@ const ProductDetail = () => {
   };
 
   const checkFavoriteStatus = async () => {
+    if (!localApi.isAuthenticated() || !id) return;
+    
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session || !id) return;
-
-      const { data } = await supabase
-        .from('favorite_products')
-        .select('id')
-        .eq('user_id', session.user.id)
-        .eq('product_id', id)
-        .maybeSingle();
-
-      setIsFavorite(!!data);
+      const isFav = await localApi.isFavoriteProduct(id);
+      setIsFavorite(isFav);
     } catch (error) {
       console.error('Error checking favorite status:', error);
     }
   };
 
   const toggleFavorite = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
+    if (!localApi.isAuthenticated()) {
       toast.error("Войдите для добавления в избранное");
       navigate("/auth");
       return;
@@ -86,28 +68,11 @@ const ProductDetail = () => {
     setCheckingFavorite(true);
     try {
       if (isFavorite) {
-        // Remove from favorites
-        const { error } = await supabase
-          .from('favorite_products')
-          .delete()
-          .eq('user_id', session.user.id)
-          .eq('product_id', product.id);
-
-        if (error) throw error;
-
+        await localApi.removeFavoriteProduct(product.id);
         setIsFavorite(false);
         toast.success("Удалено из избранного");
       } else {
-        // Add to favorites
-        const { error } = await supabase
-          .from('favorite_products')
-          .insert({
-            user_id: session.user.id,
-            product_id: product.id
-          });
-
-        if (error) throw error;
-
+        await localApi.addFavoriteProduct(product.id);
         setIsFavorite(true);
         toast.success("Добавлено в избранное");
       }
@@ -120,29 +85,20 @@ const ProductDetail = () => {
   };
 
   const handleAddToCart = async () => {
-    // Check Supabase auth
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
+    if (!localApi.isAuthenticated()) {
       toast.error("Войдите для добавления в корзину");
       navigate("/auth");
       return;
     }
 
-    if (!product) return;
+    if (quantity > product.stock) {
+      toast.error(`Доступно только ${product.stock} шт.`);
+      return;
+    }
 
     setAddingToCart(true);
     try {
-      const { error } = await supabase
-        .from('cart_items')
-        .insert({
-          user_id: session.user.id,
-          product_id: product.id,
-          quantity: quantity
-        });
-
-      if (error) throw error;
-
+      await localApi.addToCart(product.id, quantity);
       toast.success("Товар добавлен в корзину");
     } catch (error: any) {
       console.error('Error adding to cart:', error);
