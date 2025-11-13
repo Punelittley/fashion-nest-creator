@@ -24,14 +24,21 @@ const Support = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
+    checkAuthAndInitialize();
+  }, [navigate]);
+
+  const checkAuthAndInitialize = async () => {
+    // Проверяем авторизацию через Supabase
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = localStorage.getItem("auth_token");
+    
+    if (!session && !token) {
       navigate("/auth");
       return;
     }
 
     initializeChat();
-  }, [navigate]);
+  };
 
   useEffect(() => {
     if (!chatId) return;
