@@ -188,6 +188,10 @@ class LocalApi {
     });
   }
 
+  async getOrderWithItems(orderId: string) {
+    return this.request(`/orders/${orderId}`);
+  }
+
   // Wishlist/Favorites methods
   async getFavoriteProducts() {
     return this.request('/favorites/products');
