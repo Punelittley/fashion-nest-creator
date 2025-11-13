@@ -1,73 +1,179 @@
-# Welcome to your Lovable project
+# Fashion Store - Магазин одежды
 
-## Project info
+Полнофункциональный интернет-магазин одежды с backend на **Node.js + Express + SQLite**.
 
-**URL**: https://lovable.dev/projects/695e84c5-70c3-4898-b6d4-41acf9243549
+## 🚀 Особенности
 
-## How can I edit this code?
+### Frontend
+- ⚡ React + TypeScript + Vite
+- 🎨 Минималистичный дизайн без Tailwind классов
+- 📱 Адаптивный интерфейс
+- 🛒 Корзина покупок
+- 👤 Личный кабинет
+- 📦 История заказов
 
-There are several ways of editing your application.
+### Backend  
+- 🔐 JWT авторизация
+- 🗄️ SQLite база данных
+- 🔒 Разделение ролей (admin/user)
+- 📊 7 связанных таблиц
+- 🚀 Express REST API
+- ✅ Валидация данных
 
-**Use Lovable**
+### Страницы (10 шт)
+1. Главная - с баннером и популярными товарами
+2. Каталог - фильтры по категориям
+3. Страница товара - детали и добавление в корзину
+4. Корзина - управление количеством
+5. Оформление заказа
+6. Личный кабинет
+7. Мои заказы - история и статусы
+8. О нас
+9. Контакты - форма обратной связи
+10. Доставка и оплата
+11. Админ-панель (только для админов)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/695e84c5-70c3-4898-b6d4-41acf9243549) and start prompting.
+### База данных (7 таблиц)
+1. **profiles** - пользователи
+2. **user_roles** - роли (admin/user)
+3. **categories** - категории товаров
+4. **products** - товары
+5. **cart_items** - корзина
+6. **orders** - заказы
+7. **order_items** - позиции заказов
 
-Changes made via Lovable will be committed automatically to this repo.
+## 📋 Требования
 
-**Use your preferred IDE**
+- Node.js 18+
+- npm или yarn
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## ⚙️ Установка и запуск
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Быстрый старт
 
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
+```bash
+# Клонируйте репозиторий
 git clone <YOUR_GIT_URL>
+cd <PROJECT_NAME>
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# 1. Запустите Backend
+cd server
+npm install
+cp .env.example .env
+npm start
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# 2. В новом терминале запустите Frontend
+cd ..
+npm install
+cp .env.example .env
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+**Frontend:** http://localhost:8080  
+**Backend API:** http://localhost:3001/api
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Подробная инструкция: [SETUP.md](./SETUP.md)
 
-**Use GitHub Codespaces**
+## 📁 Структура проекта
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```
+├── server/              # Backend (Node.js + Express + SQLite)
+│   ├── routes/          # API эндпоинты
+│   ├── middleware/      # JWT auth middleware
+│   ├── database.js      # SQLite настройка
+│   ├── init-db.sql      # SQL схема БД
+│   ├── server.js        # Express сервер
+│   └── fashion_store.db # SQLite файл (создается auto)
+│
+├── src/                 # Frontend (React)
+│   ├── pages/           # 10 страниц приложения
+│   ├── components/      # React компоненты
+│   └── lib/
+│       └── api.ts       # API клиент
+│
+└── README.md
+```
 
-## What technologies are used for this project?
+## 🔑 API Endpoints
 
-This project is built with:
+### Авторизация
+- `POST /api/auth/signup` - Регистрация
+- `POST /api/auth/signin` - Вход
+- `GET /api/auth/me` - Текущий пользователь
 
-- Vite
+### Товары
+- `GET /api/products` - Список товаров
+- `GET /api/products/:id` - Товар по ID
+- `POST /api/products` - Создать (admin)
+- `PUT /api/products/:id` - Обновить (admin)
+
+### Корзина
+- `GET /api/cart` - Получить корзину
+- `POST /api/cart` - Добавить товар
+- `PUT /api/cart/:id` - Изменить количество
+- `DELETE /api/cart/:id` - Удалить
+
+### Заказы
+- `GET /api/orders` - Мои заказы
+- `POST /api/orders` - Создать заказ
+- `GET /api/orders/all` - Все заказы (admin)
+
+Полная документация: [server/README.md](./server/README.md)
+
+## 🧪 Тестовые данные
+
+При первом запуске создаются:
+- 3 категории (Мужское, Женское, Аксессуары)
+- 5 товаров
+- Триггеры и индексы
+
+## 👨‍💻 Разработка
+
+```bash
+# Backend с автоперезагрузкой
+cd server
+npm run dev
+
+# Frontend с hot reload
+npm run dev
+```
+
+## 🏗️ Production
+
+```bash
+# Frontend build
+npm run build
+
+# Backend с PM2
+npm install -g pm2
+cd server
+pm2 start server.js --name fashion-backend
+```
+
+## 🛠️ Технологии
+
+**Frontend:**
+- React 18
 - TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- Vite
+- React Router
+- Fetch API
 
-## How can I deploy this project?
+**Backend:**
+- Node.js
+- Express 4
+- SQLite3
+- JWT
+- bcrypt
 
-Simply open [Lovable](https://lovable.dev/projects/695e84c5-70c3-4898-b6d4-41acf9243549) and click on Share -> Publish.
+## 📝 Лицензия
 
-## Can I connect a custom domain to my Lovable project?
+MIT
 
-Yes, you can!
+## 🤝 Контрибьюция
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Pull requests приветствуются!
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+---
+
+Разработано с ❤️ для демонстрации fullstack разработки

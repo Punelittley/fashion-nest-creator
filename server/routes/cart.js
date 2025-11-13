@@ -1,0 +1,127 @@
+import express from 'express';
+import { dbRun, dbGet, dbAll } from '../database.js';
+import { authenticateToken } from '../middleware/auth.js';
+import { randomUUID } from 'crypto';
+
+const router = express.Router();
+
+// Получить корзину пользователя
+router.get('/', authenticateToken, async (req, res) => {
+  try {
+    const items = await dbAll(
+      `SELECT ci.*, p.name, p.price, p.image_url, p.stock
+       FROM cart_items ci
+       JOIN products p ON ci.product_id = p.id
+       WHERE ci.user_id = ?`,
+      [req.user.id]
+    );
+
+    res.json(items);
+  } catch (error) {
+    console.error('Ошибка получения корзины:', error);
+    res.status(500).json({ error: 'Ошибка получения корзины' });
+  }
+});
+
+// Добавить товар в корзину
+router.post('/', authenticateToken, async (req, res) => {
+  try {
+    const { product_id, quantity } = req.body;
+
+    if (!product_id || !quantity || quantity < 1) {
+      return res.status(400).json({ error: 'Некорректные данные' });
+    }
+
+    // Проверка наличия товара
+    const product = await dbGet('SELECT * FROM products WHERE id = ? AND is_active = 1', [product_id]);
+    if (!product) {
+      return res.status(404).json({ error: 'Товар не найден' });
+    }
+
+    if (product.stock < quantity) {
+      return res.status(400).json({ error: 'Недостаточно товара на складе' });
+    }
+
+    // Проверка существования в корзине
+    const existing = await dbGet(
+      'SELECT * FROM cart_items WHERE user_id = ? AND product_id = ?',
+      [req.user.id, product_id]
+    );
+
+    if (existing) {
+      // Обновить количество
+      await dbRun(
+        'UPDATE cart_items SET quantity = quantity + ? WHERE id = ?',
+        [quantity, existing.id]
+      );
+    } else {
+      // Добавить новый товар
+      await dbRun(
+        'INSERT INTO cart_items (id, user_id, product_id, quantity) VALUES (?, ?, ?, ?)',
+        [randomUUID(), req.user.id, product_id, quantity]
+      );
+    }
+
+    const items = await dbAll(
+      `SELECT ci.*, p.name, p.price, p.image_url, p.stock
+       FROM cart_items ci
+       JOIN products p ON ci.product_id = p.id
+       WHERE ci.user_id = ?`,
+      [req.user.id]
+    );
+
+    res.json(items);
+  } catch (error) {
+    console.error('Ошибка добавления в корзину:', error);
+    res.status(500).json({ error: 'Ошибка добавления в корзину' });
+  }
+});
+
+// Обновить количество товара в корзине
+router.put('/:id', authenticateToken, async (req, res) => {
+  try {
+    const { quantity } = req.body;
+
+    if (!quantity || quantity < 1) {
+      return res.status(400).json({ error: 'Некорректное количество' });
+    }
+
+    await dbRun(
+      'UPDATE cart_items SET quantity = ? WHERE id = ? AND user_id = ?',
+      [quantity, req.params.id, req.user.id]
+    );
+
+    res.json({ message: 'Количество обновлено' });
+  } catch (error) {
+    console.error('Ошибка обновления корзины:', error);
+    res.status(500).json({ error: 'Ошибка обновления корзины' });
+  }
+});
+
+// Удалить товар из корзины
+router.delete('/:id', authenticateToken, async (req, res) => {
+  try {
+    await dbRun(
+      'DELETE FROM cart_items WHERE id = ? AND user_id = ?',
+      [req.params.id, req.user.id]
+    );
+
+    res.json({ message: 'Товар удален из корзины' });
+  } catch (error) {
+    console.error('Ошибка удаления из корзины:', error);
+    res.status(500).json({ error: 'Ошибка удаления из корзины' });
+  }
+});
+
+// Очистить корзину
+router.delete('/', authenticateToken, async (req, res) => {
+  try {
+    await dbRun('DELETE FROM cart_items WHERE user_id = ?', [req.user.id]);
+    res.json({ message: 'Корзина очищена' });
+  } catch (error) {
+    console.error('Ошибка очистки корзины:', error);
+    res.status(500).json({ error: 'Ошибка очистки корзины' });
+  }
+});
+
+export default router;
