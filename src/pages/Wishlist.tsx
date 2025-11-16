@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { mockProducts } from "@/data/mockProducts";
 
 interface WishlistItem {
   id: string;
@@ -38,31 +39,24 @@ const Wishlist = () => {
 
       const { data, error } = await supabase
         .from('favorite_products')
-        .select(`
-          id,
-          product_id,
-          products (
-            id,
-            name,
-            price,
-            image_url,
-            stock
-          )
-        `)
+        .select('id, product_id')
         .eq('user_id', session.user.id);
 
       if (error) throw error;
 
-      const formattedItems = data?.map((item: any) => ({
-        id: item.id,
-        product_id: item.products.id,
-        name: item.products.name,
-        price: item.products.price,
-        image_url: item.products.image_url,
-        stock: item.products.stock
-      })) || [];
+      const formattedItems = data?.map((item: any) => {
+        const product = mockProducts.find(p => p.id === item.product_id);
+        return product ? {
+          id: item.id,
+          product_id: product.id,
+          name: product.name,
+          price: product.price,
+          image_url: product.image_url,
+          stock: product.stock
+        } : null;
+      }).filter(Boolean) || [];
 
-      setWishlistItems(formattedItems);
+      setWishlistItems(formattedItems as WishlistItem[]);
     } catch (error) {
       console.error('Error loading wishlist:', error);
       toast.error("Ошибка загрузки избранного");
