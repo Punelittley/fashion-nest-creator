@@ -31,10 +31,7 @@ export const mockProducts: MockProduct[] = [
     description: "Элегантное чёрное пальто из шерсти",
     price: 15990,
     image_url: "/images/coats/black-coat.jpg",
-    images: [
-      "/images/coats/black-coat.jpg",
-      "/images/coats/black-coat-2.jpg"
-    ],
+    images: ["/images/coats/black-coat.jpg", "/images/coats/black-coat-2.jpg"],
     category_id: "718cdc3d-26bc-4e4f-bf49-1477e8e9104e",
     stock: 5,
     is_active: true,
@@ -71,7 +68,7 @@ export const mockProducts: MockProduct[] = [
   },
   {
     id: "c9d0e1f2-a3b4-4c5d-6e7f-8a9b0c1d2e3f",
-    name: "Кашемировый шарф",
+    name: "Курсед",
     description: "Мягкий кашемировый шарф бежевого цвета",
     price: 2990,
     image_url: "/images/scarves/cashmere-scarf.jpg",
