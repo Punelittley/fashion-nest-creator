@@ -68,7 +68,7 @@ export const mockProducts: MockProduct[] = [
   },
   {
     id: "c9d0e1f2-a3b4-4c5d-6e7f-8a9b0c1d2e3f",
-    name: "Курсед",
+    name: "Кашемировый шарф",
     description: "Мягкий кашемировый шарф бежевого цвета",
     price: 2990,
     image_url: "/images/scarves/cashmere-scarf.jpg",
