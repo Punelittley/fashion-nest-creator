@@ -4,7 +4,6 @@ import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { mockProducts } from "@/data/mockProducts";
 
 const checkoutSchema = z.object({
   phone: z.string().min(10, { message: "Введите корректный номер телефона" }),
@@ -47,7 +46,7 @@ const Checkout = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      // Load cart items
+      // Load cart items with product data from DB
       const { data: cartData, error: cartError } = await supabase
         .from('cart_items')
         .select('id, quantity, product_id')
@@ -55,19 +54,34 @@ const Checkout = () => {
 
       if (cartError) throw cartError;
 
-      const formattedItems = cartData?.map((item: any) => {
-        const product = mockProducts.find(p => p.id === item.product_id);
-        return product ? {
-          id: item.id,
-          product_id: item.product_id,
-          quantity: item.quantity,
-          name: product.name,
-          price: product.price,
-          image_url: product.image_url
-        } : null;
-      }).filter(Boolean) || [];
+      const ids = (cartData || []).map((c: any) => c.product_id);
+      if (ids.length === 0) {
+        setCartItems([]);
+      } else {
+        const { data: products, error: pErr } = await supabase
+          .from('products')
+          .select('id, name, price, image_url, is_active')
+          .in('id', ids);
+        if (pErr) throw pErr;
 
-      setCartItems(formattedItems as CartItem[]);
+        const map = new Map((products || []).map((p: any) => [p.id, p]));
+        const formattedItems: CartItem[] = (cartData || [])
+          .map((item: any) => {
+            const product = map.get(item.product_id);
+            if (!product || product.is_active === false) return null;
+            return {
+              id: item.id,
+              product_id: item.product_id,
+              quantity: item.quantity,
+              name: product.name,
+              price: product.price,
+              image_url: product.image_url
+            } as CartItem;
+          })
+          .filter(Boolean) as CartItem[];
+
+        setCartItems(formattedItems);
+      }
 
       // Load profile data
       const { data: profileData, error: profileError } = await supabase
