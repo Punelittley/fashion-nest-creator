@@ -4,6 +4,7 @@ import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ProductImageSlider } from "@/components/ProductImageSlider";
+import { mockProducts } from "@/data/mockProducts";
 
 interface Product {
   id: string;
@@ -48,20 +49,13 @@ const ProductDetail = () => {
 
   const loadProduct = async () => {
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('id, name, description, price, image_url, images, stock')
-        .eq('id', id)
-        .eq('is_active', true)
-        .maybeSingle();
+      const foundProduct = mockProducts.find(p => p.id === id && p.is_active);
 
-      if (error) throw error;
-
-      if (!data) {
+      if (!foundProduct) {
         throw new Error('Product not found');
       }
 
-      setProduct(data as Product);
+      setProduct(foundProduct);
     } catch (error) {
       console.error('Error loading product:', error);
       toast.error("Товар не найден");
