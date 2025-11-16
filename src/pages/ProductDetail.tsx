@@ -136,15 +136,34 @@ const ProductDetail = () => {
 
     setAddingToCart(true);
     try {
-      const { error } = await supabase
+      // Проверяем, есть ли уже товар в корзине
+      const { data: existingItem } = await supabase
         .from('cart_items')
-        .insert({
-          user_id: session.user.id,
-          product_id: product.id,
-          quantity: quantity
-        });
+        .select('id, quantity')
+        .eq('user_id', session.user.id)
+        .eq('product_id', product.id)
+        .maybeSingle();
 
-      if (error) throw error;
+      if (existingItem) {
+        // Если товар уже в корзине - увеличиваем количество
+        const { error } = await supabase
+          .from('cart_items')
+          .update({ quantity: existingItem.quantity + quantity })
+          .eq('id', existingItem.id);
+
+        if (error) throw error;
+      } else {
+        // Если товара нет - добавляем новый
+        const { error } = await supabase
+          .from('cart_items')
+          .insert({
+            user_id: session.user.id,
+            product_id: product.id,
+            quantity: quantity
+          });
+
+        if (error) throw error;
+      }
 
       toast.success("Товар добавлен в корзину");
     } catch (error: any) {
