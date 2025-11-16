@@ -4,7 +4,6 @@ import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ProductImageSlider } from "@/components/ProductImageSlider";
-import { mockProducts } from "@/data/mockProducts";
 
 interface Product {
   id: string;
@@ -130,12 +129,19 @@ const ProductDetail = () => {
           });
 
         if (error) {
-          console.error('Favorite insert error:', error);
-          throw error;
+          // Если товар уже в избранном (уникальный конфликт), считаем как успех
+          // @ts-ignore
+          if (error.code === '23505') {
+            setIsFavorite(true);
+            toast.success("Уже в избранном");
+          } else {
+            console.error('Favorite insert error:', error);
+            throw error;
+          }
+        } else {
+          setIsFavorite(true);
+          toast.success("Добавлено в избранное");
         }
-
-        setIsFavorite(true);
-        toast.success("Добавлено в избранное");
       }
     } catch (error: any) {
       console.error('Error toggling favorite:', error);
@@ -159,9 +165,29 @@ const ProductDetail = () => {
 
     console.log('Adding to cart:', { product_id: product.id, quantity });
 
-    setAddingToCart(true);
-    try {
-      const { error } = await supabase
+  setAddingToCart(true);
+  try {
+    // Проверяем, есть ли уже этот товар в корзине
+    const { data: existing, error: selErr } = await supabase
+      .from('cart_items')
+      .select('id, quantity')
+      .eq('user_id', session.user.id)
+      .eq('product_id', product.id)
+      .maybeSingle();
+
+    if (selErr) throw selErr;
+
+    if (existing) {
+      // Увеличиваем количество
+      const { error: updErr } = await supabase
+        .from('cart_items')
+        .update({ quantity: (existing.quantity || 0) + quantity })
+        .eq('id', existing.id);
+
+      if (updErr) throw updErr;
+    } else {
+      // Вставляем новую позицию
+      const { error: insErr } = await supabase
         .from('cart_items')
         .insert({
           user_id: session.user.id,
@@ -169,18 +195,16 @@ const ProductDetail = () => {
           quantity: quantity
         });
 
-      if (error) {
-        console.error('Cart insert error:', error);
-        throw error;
-      }
-
-      toast.success("Товар добавлен в корзину");
-    } catch (error: any) {
-      console.error('Error adding to cart:', error);
-      toast.error(error.message || "Ошибка добавления в корзину");
-    } finally {
-      setAddingToCart(false);
+      if (insErr) throw insErr;
     }
+
+    toast.success("Товар добавлен в корзину");
+  } catch (error: any) {
+    console.error('Error adding to cart:', error);
+    toast.error(error.message || "Ошибка добавления в корзину");
+  } finally {
+    setAddingToCart(false);
+  }
   };
 
   if (!product) {
