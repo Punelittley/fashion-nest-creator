@@ -46,6 +46,15 @@ const ProductsManagement = () => {
     loadCategories();
   }, []);
 
+  useEffect(() => {
+    const handler = () => loadProducts();
+    // @ts-ignore
+    window.addEventListener('products:refresh', handler);
+    return () => {
+      // @ts-ignore
+      window.removeEventListener('products:refresh', handler);
+    };
+  }, []);
   const loadProducts = async () => {
     try {
       const { data, error } = await supabase
