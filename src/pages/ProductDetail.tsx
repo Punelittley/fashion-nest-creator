@@ -35,14 +35,20 @@ const ProductDetail = () => {
 
   const loadProduct = async () => {
     try {
-      // Используем моковые данные вместо загрузки из базы
-      const foundProduct = mockProducts.find(p => p.id === id && p.is_active);
+      const { data, error } = await supabase
+        .from('products')
+        .select('id, name, description, price, image_url, images, stock')
+        .eq('id', id)
+        .eq('is_active', true)
+        .maybeSingle();
 
-      if (!foundProduct) {
+      if (error) throw error;
+
+      if (!data) {
         throw new Error('Product not found');
       }
 
-      setProduct(foundProduct);
+      setProduct(data as Product);
     } catch (error) {
       console.error('Error loading product:', error);
       toast.error("Товар не найден");
