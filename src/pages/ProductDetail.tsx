@@ -162,152 +162,312 @@ const ProductDetail = () => {
 
   return (
     <Layout>
-      <div style={{ padding: "4rem 2rem", maxWidth: "1200px", margin: "0 auto" }}>
+      <div style={{ 
+        padding: "6rem 2rem", 
+        maxWidth: "1600px", 
+        margin: "0 auto"
+      }}>
+        {/* Breadcrumb */}
+        <div style={{ 
+          marginBottom: "3rem", 
+          fontSize: "0.95rem",
+          color: "hsl(var(--muted-foreground))"
+        }}>
+          <button 
+            onClick={() => navigate('/catalog')}
+            style={{
+              background: "none",
+              border: "none",
+              color: "hsl(var(--muted-foreground))",
+              cursor: "pointer",
+              textDecoration: "underline"
+            }}
+          >
+            Каталог
+          </button>
+          {" "} / {" "}
+          <span style={{ color: "hsl(var(--foreground))" }}>{product.name}</span>
+        </div>
+
         <div style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))",
-          gap: "4rem",
+          gridTemplateColumns: "1.2fr 1fr",
+          gap: "5rem",
           alignItems: "start"
         }}>
-          <ProductImageSlider 
-            images={product.images || (product.image_url ? [product.image_url] : [])}
-            alt={product.name}
-          />
-
+          {/* Image Section */}
           <div>
+            <ProductImageSlider 
+              images={product.images || (product.image_url ? [product.image_url] : [])}
+              alt={product.name}
+            />
+          </div>
+
+          {/* Product Info Section */}
+          <div style={{
+            position: "sticky",
+            top: "2rem"
+          }}>
             <h1 style={{
-              fontSize: "2.5rem",
-              fontWeight: "500",
-              marginBottom: "1rem",
-              color: "hsl(var(--foreground))"
+              fontSize: "3.5rem",
+              fontWeight: "600",
+              marginBottom: "1.5rem",
+              color: "hsl(var(--foreground))",
+              lineHeight: "1.2"
             }}>
               {product.name}
             </h1>
 
-            <p style={{
-              fontSize: "2rem",
-              color: "hsl(var(--accent))",
-              fontWeight: "600",
-              marginBottom: "2rem"
-            }}>
-              {product.price.toLocaleString('ru-RU')} ₽
-            </p>
-
-            <p style={{
-              lineHeight: "1.8",
-              color: "hsl(var(--muted-foreground))",
-              marginBottom: "2rem",
-              fontSize: "1.05rem"
-            }}>
-              {product.description || "Описание товара отсутствует"}
-            </p>
-
             <div style={{
-              padding: "1.5rem",
-              backgroundColor: "hsl(var(--secondary))",
-              marginBottom: "2rem"
+              display: "flex",
+              alignItems: "baseline",
+              gap: "1rem",
+              marginBottom: "2.5rem"
             }}>
-              <p style={{ color: "hsl(var(--muted-foreground))" }}>
-                <strong>В наличии:</strong> {product.stock} шт.
+              <p style={{
+                fontSize: "3rem",
+                color: "hsl(var(--accent))",
+                fontWeight: "700"
+              }}>
+                {product.price.toLocaleString('ru-RU')} ₽
               </p>
             </div>
 
+            {/* Description */}
             <div style={{
-              display: "flex",
+              padding: "2rem",
+              backgroundColor: "hsl(var(--secondary))",
+              borderRadius: "0.5rem",
+              marginBottom: "2.5rem"
+            }}>
+              <h3 style={{
+                fontSize: "1.2rem",
+                fontWeight: "600",
+                marginBottom: "1rem",
+                color: "hsl(var(--foreground))"
+              }}>
+                Описание
+              </h3>
+              <p style={{
+                lineHeight: "1.8",
+                color: "hsl(var(--muted-foreground))",
+                fontSize: "1.1rem"
+              }}>
+                {product.description || "Описание товара отсутствует"}
+              </p>
+            </div>
+
+            {/* Stock & Availability */}
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
               gap: "1rem",
-              alignItems: "center",
+              marginBottom: "2.5rem"
+            }}>
+              <div style={{
+                padding: "1.5rem",
+                backgroundColor: "hsl(var(--muted))",
+                borderRadius: "0.5rem",
+                textAlign: "center"
+              }}>
+                <p style={{ 
+                  fontSize: "0.9rem",
+                  color: "hsl(var(--muted-foreground))",
+                  marginBottom: "0.5rem"
+                }}>
+                  В наличии
+                </p>
+                <p style={{ 
+                  fontSize: "2rem",
+                  fontWeight: "700",
+                  color: "hsl(var(--foreground))"
+                }}>
+                  {product.stock} шт
+                </p>
+              </div>
+              <div style={{
+                padding: "1.5rem",
+                backgroundColor: "hsl(var(--muted))",
+                borderRadius: "0.5rem",
+                textAlign: "center"
+              }}>
+                <p style={{ 
+                  fontSize: "0.9rem",
+                  color: "hsl(var(--muted-foreground))",
+                  marginBottom: "0.5rem"
+                }}>
+                  Статус
+                </p>
+                <p style={{ 
+                  fontSize: "1.5rem",
+                  fontWeight: "600",
+                  color: product.stock > 0 ? "hsl(142, 76%, 36%)" : "hsl(0, 84%, 60%)"
+                }}>
+                  {product.stock > 0 ? "✓ Доступно" : "✗ Нет в наличии"}
+                </p>
+              </div>
+            </div>
+
+            {/* Quantity Selector */}
+            <div style={{
+              padding: "2rem",
+              backgroundColor: "hsl(var(--secondary))",
+              borderRadius: "0.5rem",
               marginBottom: "2rem"
             }}>
               <label style={{
-                fontSize: "1rem",
-                fontWeight: "500",
+                display: "block",
+                fontSize: "1.1rem",
+                fontWeight: "600",
+                marginBottom: "1rem",
                 color: "hsl(var(--foreground))"
               }}>
                 Количество:
               </label>
-              <input
-                type="number"
-                min="1"
-                max={product.stock}
-                value={quantity}
-                onChange={(e) => setQuantity(Math.max(1, Math.min(product.stock, parseInt(e.target.value) || 1)))}
-                style={{
-                  width: "80px",
-                  padding: "0.5rem",
-                  backgroundColor: "hsl(var(--background))",
-                  border: "1px solid hsl(var(--border))",
-                  color: "hsl(var(--foreground))",
-                  fontSize: "1rem"
-                }}
-              />
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "1rem"
+              }}>
+                <button
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  style={{
+                    width: "50px",
+                    height: "50px",
+                    backgroundColor: "hsl(var(--background))",
+                    border: "2px solid hsl(var(--border))",
+                    color: "hsl(var(--foreground))",
+                    fontSize: "1.5rem",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    borderRadius: "0.25rem",
+                    transition: "var(--transition)"
+                  }}
+                >
+                  −
+                </button>
+                <input
+                  type="number"
+                  min="1"
+                  max={product.stock}
+                  value={quantity}
+                  onChange={(e) => setQuantity(Math.max(1, Math.min(product.stock, parseInt(e.target.value) || 1)))}
+                  style={{
+                    flex: 1,
+                    height: "50px",
+                    padding: "0 1rem",
+                    backgroundColor: "hsl(var(--background))",
+                    border: "2px solid hsl(var(--border))",
+                    color: "hsl(var(--foreground))",
+                    fontSize: "1.2rem",
+                    fontWeight: "600",
+                    textAlign: "center",
+                    borderRadius: "0.25rem"
+                  }}
+                />
+                <button
+                  onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                  disabled={quantity >= product.stock}
+                  style={{
+                    width: "50px",
+                    height: "50px",
+                    backgroundColor: quantity >= product.stock ? "hsl(var(--muted))" : "hsl(var(--background))",
+                    border: "2px solid hsl(var(--border))",
+                    color: "hsl(var(--foreground))",
+                    fontSize: "1.5rem",
+                    fontWeight: "600",
+                    cursor: quantity >= product.stock ? "not-allowed" : "pointer",
+                    borderRadius: "0.25rem",
+                    transition: "var(--transition)"
+                  }}
+                >
+                  +
+                </button>
+              </div>
             </div>
 
+            {/* Action Buttons */}
             <div style={{
               display: "flex",
-              gap: "1rem"
+              gap: "1rem",
+              marginBottom: "2rem"
             }}>
               <button
                 onClick={handleAddToCart}
-                disabled={loading || product.stock === 0}
+                disabled={addingToCart || product.stock === 0}
                 style={{
                   flex: 1,
-                  padding: "1rem 2rem",
-                  backgroundColor: loading || product.stock === 0 ? "hsl(var(--muted))" : "hsl(var(--primary))",
+                  padding: "1.5rem 2rem",
+                  backgroundColor: addingToCart || product.stock === 0 ? "hsl(var(--muted))" : "hsl(var(--primary))",
                   color: "hsl(var(--primary-foreground))",
                   border: "none",
-                  fontSize: "1.05rem",
-                  fontWeight: "500",
-                  cursor: loading || product.stock === 0 ? "not-allowed" : "pointer",
+                  fontSize: "1.2rem",
+                  fontWeight: "600",
+                  cursor: addingToCart || product.stock === 0 ? "not-allowed" : "pointer",
                   transition: "var(--transition)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "0.75rem"
-                }}
-                onMouseEnter={(e) => {
-                  if (!loading && product.stock > 0) {
-                    e.currentTarget.style.backgroundColor = "hsl(var(--accent))";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!loading && product.stock > 0) {
-                    e.currentTarget.style.backgroundColor = "hsl(var(--primary))";
-                  }
+                  borderRadius: "0.5rem",
+                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)"
                 }}
               >
-                {product.stock === 0 ? "Нет в наличии" : (loading ? "Добавление..." : "Добавить в корзину")}
+                {addingToCart ? "Добавление..." : product.stock === 0 ? "Нет в наличии" : "🛒 Добавить в корзину"}
               </button>
 
               <button
                 onClick={toggleFavorite}
                 disabled={checkingFavorite}
                 style={{
-                  padding: "1rem 1.5rem",
+                  padding: "1.5rem",
                   backgroundColor: isFavorite ? "hsl(var(--accent))" : "hsl(var(--secondary))",
                   color: isFavorite ? "hsl(var(--primary-foreground))" : "hsl(var(--foreground))",
-                  border: "1px solid hsl(var(--border))",
-                  fontSize: "1.05rem",
-                  fontWeight: "500",
-                  cursor: checkingFavorite ? "not-allowed" : "pointer",
+                  border: "none",
+                  fontSize: "1.5rem",
+                  cursor: checkingFavorite ? "wait" : "pointer",
                   transition: "var(--transition)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center"
+                  borderRadius: "0.5rem",
+                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)"
                 }}
-                onMouseEnter={(e) => {
-                  if (!checkingFavorite) {
-                    e.currentTarget.style.backgroundColor = isFavorite ? "hsl(var(--primary))" : "hsl(var(--accent))";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!checkingFavorite) {
-                    e.currentTarget.style.backgroundColor = isFavorite ? "hsl(var(--accent))" : "hsl(var(--secondary))";
-                  }
-                }}
-                title={isFavorite ? "Удалить из избранного" : "Добавить в избранное"}
               >
-                {isFavorite ? "★" : "☆"}
+                {isFavorite ? "❤️" : "🤍"}
               </button>
+            </div>
+
+            {/* Features */}
+            <div style={{
+              padding: "2rem",
+              backgroundColor: "hsl(var(--muted))",
+              borderRadius: "0.5rem"
+            }}>
+              <h3 style={{
+                fontSize: "1.1rem",
+                fontWeight: "600",
+                marginBottom: "1.5rem",
+                color: "hsl(var(--foreground))"
+              }}>
+                Преимущества
+              </h3>
+              <div style={{
+                display: "grid",
+                gap: "1rem"
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                  <span style={{ fontSize: "1.5rem" }}>🚚</span>
+                  <span style={{ color: "hsl(var(--muted-foreground))", fontSize: "1rem" }}>
+                    Бесплатная доставка от 5000 ₽
+                  </span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                  <span style={{ fontSize: "1.5rem" }}>↩️</span>
+                  <span style={{ color: "hsl(var(--muted-foreground))", fontSize: "1rem" }}>
+                    Возврат в течение 14 дней
+                  </span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                  <span style={{ fontSize: "1.5rem" }}>✨</span>
+                  <span style={{ color: "hsl(var(--muted-foreground))", fontSize: "1rem" }}>
+                    Гарантия качества
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
