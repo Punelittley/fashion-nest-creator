@@ -59,7 +59,7 @@ const Cart = () => {
         quantity: item.quantity,
         product_id: item.product_id,
         name: item.products.name,
-        price: item.products.price,
+        price: parseFloat(item.products.price),
         image_url: item.products.image_url,
         stock: item.products.stock
       })) || [];

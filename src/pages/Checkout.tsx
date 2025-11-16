@@ -68,7 +68,7 @@ const Checkout = () => {
         product_id: item.product_id,
         quantity: item.quantity,
         name: item.products.name,
-        price: item.products.price,
+        price: parseFloat(item.products.price),
         image_url: item.products.image_url
       })) || [];
 
