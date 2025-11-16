@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Pencil, Trash2, Upload } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
+import { mockProducts, mockCategories } from "@/data/mockProducts";
 import {
   Dialog,
   DialogContent,
@@ -46,35 +46,13 @@ const ProductsManagement = () => {
     loadCategories();
   }, []);
 
-  const loadProducts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setProducts(data || []);
-    } catch (error) {
-      toast.error("Ошибка загрузки товаров");
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
+  const loadProducts = () => {
+    setProducts(mockProducts);
+    setLoading(false);
   };
 
-  const loadCategories = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('id, name')
-        .order('name');
-
-      if (error) throw error;
-      setCategories(data || []);
-    } catch (error) {
-      console.error(error);
-    }
+  const loadCategories = () => {
+    setCategories(mockCategories);
   };
 
   const handleEdit = (product: Product) => {
@@ -90,87 +68,14 @@ const ProductsManagement = () => {
     });
   };
 
-  const handleImageUpload = async (file: File) => {
-    setUploading(true);
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('product-images')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data } = supabase.storage
-        .from('product-images')
-        .getPublicUrl(filePath);
-
-      setFormData({ ...formData, image_url: data.publicUrl });
-      toast.success("Изображение загружено");
-    } catch (error) {
-      toast.error("Ошибка загрузки изображения");
-      console.error(error);
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleImageUpload(file);
-    }
-  };
-
-  const handleUpdate = async (e: React.FormEvent) => {
+  const handleUpdate = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!editingProduct) return;
-
-    try {
-      const { error } = await supabase
-        .from('products')
-        .update({
-          name: formData.name,
-          description: formData.description || null,
-          price: parseFloat(formData.price),
-          stock: parseInt(formData.stock),
-          category_id: formData.category_id,
-          image_url: formData.image_url || null,
-          is_active: formData.is_active
-        })
-        .eq('id', editingProduct.id);
-
-      if (error) throw error;
-
-      toast.success("Товар обновлен");
-      setEditingProduct(null);
-      loadProducts();
-    } catch (error) {
-      toast.error("Ошибка обновления товара");
-      console.error(error);
-    }
+    toast.info("Для изменения товаров отредактируйте файл src/data/mockProducts.ts");
+    setEditingProduct(null);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Вы уверены, что хотите удалить этот товар?")) return;
-
-    try {
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      toast.success("Товар удален");
-      loadProducts();
-    } catch (error) {
-      toast.error("Ошибка удаления товара");
-      console.error(error);
-    }
+  const handleDelete = (id: string) => {
+    toast.info("Для удаления товаров отредактируйте файл src/data/mockProducts.ts");
   };
 
   if (loading) {
@@ -463,14 +368,13 @@ const ProductsManagement = () => {
                 marginBottom: "0.5rem",
                 color: "hsl(var(--foreground))"
               }}>
-                <Upload size={16} style={{ display: "inline", marginRight: "0.5rem" }} />
-                Изображение товара
+                URL изображения
               </label>
               <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                disabled={uploading}
+                type="text"
+                value={formData.image_url}
+                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                placeholder="/images/category/image.jpg"
                 style={{
                   width: "100%",
                   padding: "0.75rem",
@@ -481,11 +385,6 @@ const ProductsManagement = () => {
                   color: "hsl(var(--foreground))"
                 }}
               />
-              {uploading && (
-                <p style={{ marginTop: "0.5rem", fontSize: "0.875rem", color: "hsl(var(--muted-foreground))" }}>
-                  Загрузка изображения...
-                </p>
-              )}
               {formData.image_url && (
                 <img 
                   src={formData.image_url} 
