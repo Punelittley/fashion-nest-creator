@@ -113,6 +113,7 @@ const AddProductForm = () => {
         image_url: ""
       });
       setImageFile(null);
+      window.dispatchEvent(new CustomEvent('products:refresh'));
     } catch (error) {
       toast.error(`Ошибка добавления товара: ${error instanceof Error ? error.message : ''}`);
       console.error(error);
