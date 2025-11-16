@@ -128,6 +128,9 @@ const ProductsManagement = () => {
 
       toast.success('Товар успешно обновлен');
       setEditingProduct(null);
+      // оповестим каталог о необходимости обновить список
+      // @ts-ignore
+      window.dispatchEvent(new CustomEvent('products:refresh'));
       loadProducts();
     } catch (error) {
       console.error('Ошибка обновления товара:', error);
