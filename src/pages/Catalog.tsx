@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
+import { mockProducts, mockCategories } from "@/data/mockProducts";
 
 interface Product {
   id: string;
@@ -28,60 +28,11 @@ const Catalog = () => {
   const [sortBy, setSortBy] = useState("name");
 
   useEffect(() => {
-    loadProducts();
-    loadCategories();
-
-    // Подписка на реал-тайм обновления товаров
-    const channel = supabase
-      .channel('products-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'products'
-        },
-        () => {
-          loadProducts(); // Перезагружаем товары при любом изменении
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    // Используем моковые данные вместо загрузки из базы
+    setProducts(mockProducts);
+    setCategories(mockCategories);
+    setLoading(false);
   }, []);
-
-  const loadProducts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setProducts(data || []);
-    } catch (error) {
-      console.error('Ошибка загрузки товаров:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadCategories = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('name');
-
-      if (error) throw error;
-      setCategories(data || []);
-    } catch (error) {
-      console.error('Ошибка загрузки категорий:', error);
-    }
-  };
 
   const filteredProducts = selectedCategory
     ? products.filter(p => p.category_id === selectedCategory)

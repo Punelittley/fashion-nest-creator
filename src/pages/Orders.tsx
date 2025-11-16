@@ -87,10 +87,9 @@ const Orders = () => {
 
       const formattedOrders = data?.map(order => ({
         ...order,
-        total_amount: typeof order.total_amount === 'string' ? parseFloat(order.total_amount) : order.total_amount,
         order_items: order.order_items.map((item: any) => ({
           quantity: item.quantity,
-          price: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
+          price: item.price,
           name: item.products.name,
           image_url: item.products.image_url
         })),

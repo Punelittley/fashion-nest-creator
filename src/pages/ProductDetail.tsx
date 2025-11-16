@@ -4,6 +4,7 @@ import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ProductImageSlider } from "@/components/ProductImageSlider";
+import { mockProducts } from "@/data/mockProducts";
 
 interface Product {
   id: string;
@@ -34,20 +35,14 @@ const ProductDetail = () => {
 
   const loadProduct = async () => {
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('id', id)
-        .eq('is_active', true)
-        .maybeSingle();
+      // Используем моковые данные вместо загрузки из базы
+      const foundProduct = mockProducts.find(p => p.id === id && p.is_active);
 
-      if (error) throw error;
-
-      if (!data) {
+      if (!foundProduct) {
         throw new Error('Product not found');
       }
 
-      setProduct(data);
+      setProduct(foundProduct);
     } catch (error) {
       console.error('Error loading product:', error);
       toast.error("Товар не найден");
@@ -136,34 +131,15 @@ const ProductDetail = () => {
 
     setAddingToCart(true);
     try {
-      // Проверяем, есть ли уже товар в корзине
-      const { data: existingItem } = await supabase
+      const { error } = await supabase
         .from('cart_items')
-        .select('id, quantity')
-        .eq('user_id', session.user.id)
-        .eq('product_id', product.id)
-        .maybeSingle();
+        .insert({
+          user_id: session.user.id,
+          product_id: product.id,
+          quantity: quantity
+        });
 
-      if (existingItem) {
-        // Если товар уже в корзине - увеличиваем количество
-        const { error } = await supabase
-          .from('cart_items')
-          .update({ quantity: existingItem.quantity + quantity })
-          .eq('id', existingItem.id);
-
-        if (error) throw error;
-      } else {
-        // Если товара нет - добавляем новый
-        const { error } = await supabase
-          .from('cart_items')
-          .insert({
-            user_id: session.user.id,
-            product_id: product.id,
-            quantity: quantity
-          });
-
-        if (error) throw error;
-      }
+      if (error) throw error;
 
       toast.success("Товар добавлен в корзину");
     } catch (error: any) {
