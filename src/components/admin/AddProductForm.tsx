@@ -79,7 +79,7 @@ const AddProductForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.price || !formData.stock || !formData.category_id) {
+    if (!formData.name || !formData.price || !formData.stock) {
       toast.error("Заполните все обязательные поля");
       return;
     }
@@ -93,7 +93,7 @@ const AddProductForm = () => {
           description: formData.description || null,
           price: parseFloat(formData.price),
           stock: parseInt(formData.stock),
-          category_id: formData.category_id,
+          category_id: formData.category_id || null,
           image_url: formData.image_url || null,
           is_active: true
         }]);
@@ -267,12 +267,11 @@ const AddProductForm = () => {
             marginBottom: "0.5rem",
             color: "hsl(var(--foreground))"
           }}>
-            Категория *
+            Категория
           </label>
           <select
             value={formData.category_id}
             onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-            required
             style={{
               width: "100%",
               padding: "0.75rem",

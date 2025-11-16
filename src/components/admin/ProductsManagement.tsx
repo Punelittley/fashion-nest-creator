@@ -406,7 +406,6 @@ const ProductsManagement = () => {
               <select
                 value={formData.category_id}
                 onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-                required
                 style={{
                   width: "100%",
                   padding: "0.75rem",
