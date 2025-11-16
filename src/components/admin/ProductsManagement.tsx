@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Pencil, Trash2 } from "lucide-react";
-import { mockProducts, mockCategories } from "@/data/mockProducts";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
   DialogContent,
@@ -46,13 +46,36 @@ const ProductsManagement = () => {
     loadCategories();
   }, []);
 
-  const loadProducts = () => {
-    setProducts(mockProducts);
-    setLoading(false);
+  const loadProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setProducts(data || []);
+    } catch (error) {
+      console.error('Ошибка загрузки товаров:', error);
+      toast.error('Ошибка загрузки товаров');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const loadCategories = () => {
-    setCategories(mockCategories);
+  const loadCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Ошибка загрузки категорий:', error);
+      toast.error('Ошибка загрузки категорий');
+    }
   };
 
   const handleEdit = (product: Product) => {
@@ -68,14 +91,57 @@ const ProductsManagement = () => {
     });
   };
 
-  const handleUpdate = (e: React.FormEvent) => {
+  const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.info("Для изменения товаров отредактируйте файл src/data/mockProducts.ts");
-    setEditingProduct(null);
+    
+    if (!editingProduct) return;
+
+    try {
+      setUploading(true);
+
+      const { error } = await supabase
+        .from('products')
+        .update({
+          name: formData.name,
+          description: formData.description || null,
+          price: parseFloat(formData.price),
+          stock: parseInt(formData.stock),
+          category_id: formData.category_id || null,
+          image_url: formData.image_url || null,
+          is_active: formData.is_active
+        })
+        .eq('id', editingProduct.id);
+
+      if (error) throw error;
+
+      toast.success('Товар успешно обновлен');
+      setEditingProduct(null);
+      loadProducts();
+    } catch (error) {
+      console.error('Ошибка обновления товара:', error);
+      toast.error('Ошибка обновления товара');
+    } finally {
+      setUploading(false);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    toast.info("Для удаления товаров отредактируйте файл src/data/mockProducts.ts");
+  const handleDelete = async (id: string) => {
+    if (!confirm('Вы уверены, что хотите удалить этот товар?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast.success('Товар успешно удален');
+      loadProducts();
+    } catch (error) {
+      console.error('Ошибка удаления товара:', error);
+      toast.error('Ошибка удаления товара');
+    }
   };
 
   if (loading) {
