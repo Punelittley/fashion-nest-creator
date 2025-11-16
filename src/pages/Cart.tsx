@@ -4,7 +4,6 @@ import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { mockProducts } from "@/data/mockProducts";
-import { mockProducts } from "@/data/mockProducts";
 
 interface CartItem {
   id: string;
