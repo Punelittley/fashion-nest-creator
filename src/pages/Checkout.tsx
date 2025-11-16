@@ -4,7 +4,6 @@ import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { mockProducts } from "@/data/mockProducts";
 
 const checkoutSchema = z.object({
   phone: z.string().min(10, { message: "Введите корректный номер телефона" }),
@@ -50,22 +49,28 @@ const Checkout = () => {
       // Load cart items
       const { data: cartData, error: cartError } = await supabase
         .from('cart_items')
-        .select('id, quantity, product_id')
+        .select(`
+          id,
+          quantity,
+          product_id,
+          products (
+            name,
+            price,
+            image_url
+          )
+        `)
         .eq('user_id', session.user.id);
 
       if (cartError) throw cartError;
 
-      const formattedItems = cartData?.map((item: any) => {
-        const product = mockProducts.find(p => p.id === item.product_id);
-        return product ? {
-          id: item.id,
-          product_id: item.product_id,
-          quantity: item.quantity,
-          name: product.name,
-          price: product.price,
-          image_url: product.image_url
-        } : null;
-      }).filter(Boolean) || [];
+      const formattedItems = cartData?.map((item: any) => ({
+        id: item.id,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        name: item.products.name,
+        price: item.products.price,
+        image_url: item.products.image_url
+      })) || [];
 
       setCartItems(formattedItems as CartItem[]);
 
@@ -76,7 +81,7 @@ const Checkout = () => {
         .eq('id', session.user.id)
         .single();
 
-      if (profileError) throw profileError;
+      if (profileError && profileError.code !== 'PGRST116') throw profileError;
 
       if (profileData) {
         setFormData({
