@@ -4,6 +4,7 @@ import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { mockProducts } from "@/data/mockProducts";
 
 const checkoutSchema = z.object({
   phone: z.string().min(10, { message: "Введите корректный номер телефона" }),
@@ -49,31 +50,24 @@ const Checkout = () => {
       // Load cart items
       const { data: cartData, error: cartError } = await supabase
         .from('cart_items')
-        .select(`
-          id,
-          quantity,
-          product_id,
-          products (
-            id,
-            name,
-            price,
-            image_url
-          )
-        `)
+        .select('id, quantity, product_id')
         .eq('user_id', session.user.id);
 
       if (cartError) throw cartError;
 
-      const formattedItems = cartData?.map((item: any) => ({
-        id: item.id,
-        product_id: item.product_id,
-        quantity: item.quantity,
-        name: item.products.name,
-        price: item.products.price,
-        image_url: item.products.image_url
-      })) || [];
+      const formattedItems = cartData?.map((item: any) => {
+        const product = mockProducts.find(p => p.id === item.product_id);
+        return product ? {
+          id: item.id,
+          product_id: item.product_id,
+          quantity: item.quantity,
+          name: product.name,
+          price: product.price,
+          image_url: product.image_url
+        } : null;
+      }).filter(Boolean) || [];
 
-      setCartItems(formattedItems);
+      setCartItems(formattedItems as CartItem[]);
 
       // Load profile data
       const { data: profileData, error: profileError } = await supabase

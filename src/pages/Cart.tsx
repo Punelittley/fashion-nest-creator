@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { mockProducts } from "@/data/mockProducts";
 
 interface CartItem {
   id: string;
@@ -39,33 +40,25 @@ const Cart = () => {
 
       const { data: cartData, error } = await supabase
         .from('cart_items')
-        .select(`
-          id,
-          quantity,
-          product_id,
-          products (
-            id,
-            name,
-            price,
-            image_url,
-            stock
-          )
-        `)
+        .select('id, quantity, product_id')
         .eq('user_id', session.user.id);
 
       if (error) throw error;
 
-      const formattedItems = cartData?.map((item: any) => ({
-        id: item.id,
-        quantity: item.quantity,
-        product_id: item.product_id,
-        name: item.products.name,
-        price: item.products.price,
-        image_url: item.products.image_url,
-        stock: item.products.stock
-      })) || [];
+      const formattedItems = cartData?.map((item: any) => {
+        const product = mockProducts.find(p => p.id === item.product_id);
+        return product ? {
+          id: item.id,
+          quantity: item.quantity,
+          product_id: item.product_id,
+          name: product.name,
+          price: product.price,
+          image_url: product.image_url,
+          stock: product.stock
+        } : null;
+      }).filter(Boolean) || [];
 
-      setCartItems(formattedItems);
+      setCartItems(formattedItems as CartItem[]);
     } catch (error) {
       console.error('Error loading cart:', error);
       toast.error("Ошибка загрузки корзины");
