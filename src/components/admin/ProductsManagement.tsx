@@ -116,6 +116,15 @@ const ProductsManagement = () => {
 
       toast.success('Товар успешно обновлен');
       setEditingProduct(null);
+      setFormData({
+        name: "",
+        description: "",
+        price: "",
+        stock: "",
+        category_id: "",
+        image_url: "",
+        is_active: true
+      });
       loadProducts();
     } catch (error) {
       console.error('Ошибка обновления товара:', error);
