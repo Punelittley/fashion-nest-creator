@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import HeroSlider from "@/components/HeroSlider";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Product {
   id: string;
@@ -9,13 +11,24 @@ interface Product {
   image_url: string;
 }
 
-const featuredProducts: Product[] = [
-  { id: "1", name: "Футболка", price: 1200, image_url: "/images/coats/lol.png" },
-  { id: "2", name: "Худи", price: 2500, image_url: "/images/coats/hoodie.png" },
-  { id: "3", name: "Шапка", price: 800, image_url: "/images/coats/hat.png" },
-];
-
 const Index = () => {
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    loadFeaturedProducts();
+  }, []);
+
+  const loadFeaturedProducts = async () => {
+    const { data } = await supabase
+      .from("products")
+      .select("id, name, price, image_url")
+      .eq("is_active", true)
+      .limit(3);
+    
+    if (data) {
+      setFeaturedProducts(data);
+    }
+  };
 
   return (
     <Layout>

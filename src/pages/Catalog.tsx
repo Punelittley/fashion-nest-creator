@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -18,21 +20,44 @@ interface Category {
   name: string;
 }
 
-const products: Product[] = [
-  { id: "1", name: "Футболка", price: 1200, image_url: "/images/coats/lol.png", images: null, category_id: "a" },
-  { id: "2", name: "Худи", price: 2500, image_url: "/images/coats/hoodie.png", images: null, category_id: "a" },
-  { id: "3", name: "Шапка", price: 800, image_url: "/images/coats/hat.png", images: null, category_id: "b" },
-];
-
-const categories: Category[] = [
-  { id: "a", name: "Верхняя одежда" },
-  { id: "b", name: "Аксессуары" },
-];
-
 const Catalog = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("name");
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      // Load products from Supabase
+      const { data: productsData, error: productsError } = await supabase
+        .from('products')
+        .select('id, name, price, image_url, images, category_id')
+        .eq('is_active', true);
+
+      if (productsError) throw productsError;
+
+      // Load categories from Supabase
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('categories')
+        .select('id, name');
+
+      if (categoriesError) throw categoriesError;
+
+      setProducts(productsData || []);
+      setCategories(categoriesData || []);
+    } catch (error) {
+      console.error('Error loading catalog:', error);
+      toast.error("Ошибка загрузки каталога");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredProducts = selectedCategory
     ? products.filter(p => p.category_id === selectedCategory)
@@ -144,7 +169,11 @@ const Catalog = () => {
         </div>
 
         {/* Products Grid */}
-        {sortedProducts.length === 0 ? (
+        {loading ? (
+          <div style={{ textAlign: "center", padding: "4rem", color: "hsl(var(--muted-foreground))" }}>
+            Загрузка...
+          </div>
+        ) : sortedProducts.length === 0 ? (
           <div style={{ textAlign: "center", padding: "4rem", color: "hsl(var(--muted-foreground))" }}>
             Товары не найдены
           </div>
