@@ -4,7 +4,6 @@ import Layout from "@/components/Layout";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { mockProducts, mockCategories } from "@/data/mockProducts";
-import { supabase } from "@/integrations/supabase/client";
 
 interface Product {
   id: string;
@@ -29,55 +28,9 @@ const Catalog = () => {
   const [sortBy, setSortBy] = useState("name");
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const { data: dbProducts, error: pErr } = await supabase
-          .from('products')
-          .select('id, name, price, image_url, images, category_id, is_active')
-          .eq('is_active', true)
-          .order('created_at', { ascending: false });
-
-        if (pErr) throw pErr;
-
-        const { data: dbCategories, error: cErr } = await supabase
-          .from('categories')
-          .select('id, name')
-          .order('name');
-
-        if (cErr) throw cErr;
-
-        setProducts((dbProducts || []) as any);
-        setCategories((dbCategories || []) as any);
-      } catch (e) {
-        // Фолбэк на мок-данные
-        setProducts(mockProducts as any);
-        setCategories(mockCategories as any);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    load();
-  }, []);
-
-  useEffect(() => {
-    const refresh = () => {
-      // перезагрузить данные каталога после добавления из админки
-      (async () => {
-        const { data: dbProducts } = await supabase
-          .from('products')
-          .select('id, name, price, image_url, images, category_id, is_active')
-          .eq('is_active', true)
-          .order('created_at', { ascending: false });
-        if (dbProducts) setProducts(dbProducts as any);
-      })();
-    };
-    // @ts-ignore
-    window.addEventListener('products:refresh', refresh);
-    return () => {
-      // @ts-ignore
-      window.removeEventListener('products:refresh', refresh);
-    };
+    setProducts(mockProducts);
+    setCategories(mockCategories);
+    setLoading(false);
   }, []);
 
   const filteredProducts = selectedCategory

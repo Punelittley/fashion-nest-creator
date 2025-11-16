@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { mockProducts } from "@/data/mockProducts";
 
 interface WishlistItem {
   id: string;
@@ -43,35 +44,19 @@ const Wishlist = () => {
 
       if (error) throw error;
 
-      // Подтягиваем карточки товаров из базы по id
-      const ids = (data || []).map((i: any) => i.product_id);
-      if (ids.length === 0) {
-        setWishlistItems([]);
-      } else {
-        const { data: products, error: pErr } = await supabase
-          .from('products')
-          .select('id, name, price, image_url, stock, is_active')
-          .in('id', ids);
-        if (pErr) throw pErr;
+      const formattedItems = data?.map((item: any) => {
+        const product = mockProducts.find(p => p.id === item.product_id);
+        return product ? {
+          id: item.id,
+          product_id: product.id,
+          name: product.name,
+          price: product.price,
+          image_url: product.image_url,
+          stock: product.stock
+        } : null;
+      }).filter(Boolean) || [];
 
-        const map = new Map((products || []).map((p: any) => [p.id, p]));
-        const formattedItems: WishlistItem[] = (data || [])
-          .map((fav: any) => {
-            const product = map.get(fav.product_id);
-            if (!product || product.is_active === false) return null;
-            return {
-              id: fav.id,
-              product_id: product.id,
-              name: product.name,
-              price: product.price,
-              image_url: product.image_url,
-              stock: product.stock,
-            } as WishlistItem;
-          })
-          .filter(Boolean) as WishlistItem[];
-
-        setWishlistItems(formattedItems);
-      }
+      setWishlistItems(formattedItems as WishlistItem[]);
     } catch (error) {
       console.error('Error loading wishlist:', error);
       toast.error("Ошибка загрузки избранного");
