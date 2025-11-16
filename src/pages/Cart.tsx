@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { mockProducts } from "@/data/mockProducts";
 
 interface CartItem {
   id: string;
@@ -45,20 +44,36 @@ const Cart = () => {
 
       if (error) throw error;
 
-      const formattedItems = cartData?.map((item: any) => {
-        const product = mockProducts.find(p => p.id === item.product_id);
-        return product ? {
-          id: item.id,
-          quantity: item.quantity,
-          product_id: item.product_id,
-          name: product.name,
-          price: product.price,
-          image_url: product.image_url,
-          stock: product.stock
-        } : null;
-      }).filter(Boolean) || [];
+      // Подтягиваем карточки товаров из базы по id
+      const ids = (cartData || []).map((c: any) => c.product_id);
+      if (ids.length === 0) {
+        setCartItems([]);
+      } else {
+        const { data: products, error: pErr } = await supabase
+          .from('products')
+          .select('id, name, price, image_url, stock, is_active')
+          .in('id', ids);
+        if (pErr) throw pErr;
 
-      setCartItems(formattedItems as CartItem[]);
+        const map = new Map((products || []).map((p: any) => [p.id, p]));
+        const formattedItems: CartItem[] = (cartData || [])
+          .map((item: any) => {
+            const product = map.get(item.product_id);
+            if (!product || product.is_active === false) return null;
+            return {
+              id: item.id,
+              quantity: item.quantity,
+              product_id: item.product_id,
+              name: product.name,
+              price: product.price,
+              image_url: product.image_url,
+              stock: product.stock,
+            } as CartItem;
+          })
+          .filter(Boolean) as CartItem[];
+
+        setCartItems(formattedItems);
+      }
     } catch (error) {
       console.error('Error loading cart:', error);
       toast.error("Ошибка загрузки корзины");

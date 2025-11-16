@@ -3,7 +3,6 @@ import { useNavigate, Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { mockProducts } from "@/data/mockProducts";
 
 interface WishlistItem {
   id: string;
@@ -44,19 +43,35 @@ const Wishlist = () => {
 
       if (error) throw error;
 
-      const formattedItems = data?.map((item: any) => {
-        const product = mockProducts.find(p => p.id === item.product_id);
-        return product ? {
-          id: item.id,
-          product_id: product.id,
-          name: product.name,
-          price: product.price,
-          image_url: product.image_url,
-          stock: product.stock
-        } : null;
-      }).filter(Boolean) || [];
+      // Подтягиваем карточки товаров из базы по id
+      const ids = (data || []).map((i: any) => i.product_id);
+      if (ids.length === 0) {
+        setWishlistItems([]);
+      } else {
+        const { data: products, error: pErr } = await supabase
+          .from('products')
+          .select('id, name, price, image_url, stock, is_active')
+          .in('id', ids);
+        if (pErr) throw pErr;
 
-      setWishlistItems(formattedItems as WishlistItem[]);
+        const map = new Map((products || []).map((p: any) => [p.id, p]));
+        const formattedItems: WishlistItem[] = (data || [])
+          .map((fav: any) => {
+            const product = map.get(fav.product_id);
+            if (!product || product.is_active === false) return null;
+            return {
+              id: fav.id,
+              product_id: product.id,
+              name: product.name,
+              price: product.price,
+              image_url: product.image_url,
+              stock: product.stock,
+            } as WishlistItem;
+          })
+          .filter(Boolean) as WishlistItem[];
+
+        setWishlistItems(formattedItems);
+      }
     } catch (error) {
       console.error('Error loading wishlist:', error);
       toast.error("Ошибка загрузки избранного");
@@ -95,15 +110,32 @@ const Wishlist = () => {
         return;
       }
 
-      const { error } = await supabase
+      // Проверим наличие и увеличим количество, чтобы не ловить уникальный конфликт
+      const { data: existing, error: selErr } = await supabase
         .from('cart_items')
-        .insert({
-          user_id: session.user.id,
-          product_id: item.product_id,
-          quantity: 1
-        });
+        .select('id, quantity')
+        .eq('user_id', session.user.id)
+        .eq('product_id', item.product_id)
+        .maybeSingle();
 
-      if (error) throw error;
+      if (selErr) throw selErr;
+
+      if (existing) {
+        const { error: updErr } = await supabase
+          .from('cart_items')
+          .update({ quantity: (existing.quantity || 0) + 1 })
+          .eq('id', existing.id);
+        if (updErr) throw updErr;
+      } else {
+        const { error: insErr } = await supabase
+          .from('cart_items')
+          .insert({
+            user_id: session.user.id,
+            product_id: item.product_id,
+            quantity: 1
+          });
+        if (insErr) throw insErr;
+      }
 
       toast.success(`${item.name} добавлен в корзину`);
     } catch (error: any) {
