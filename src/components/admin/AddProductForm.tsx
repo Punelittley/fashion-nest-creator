@@ -86,17 +86,20 @@ const AddProductForm = () => {
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('products')
-        .insert([{
-          name: formData.name,
-          description: formData.description || null,
-          price: parseFloat(formData.price),
-          stock: parseInt(formData.stock),
-          category_id: formData.category_id || null,
-          image_url: formData.image_url || null,
-          is_active: true
-        }]);
+      const { data, error } = await supabase.functions.invoke('admin-products', {
+        body: {
+          action: 'create',
+          payload: {
+            name: formData.name,
+            description: formData.description || null,
+            price: parseFloat(formData.price),
+            stock: parseInt(formData.stock),
+            category_id: formData.category_id || null,
+            image_url: formData.image_url || null,
+            is_active: true,
+          },
+        },
+      });
 
       if (error) throw error;
 
@@ -111,7 +114,7 @@ const AddProductForm = () => {
       });
       setImageFile(null);
     } catch (error) {
-      toast.error("Ошибка добавления товара");
+      toast.error(`Ошибка добавления товара: ${error instanceof Error ? error.message : ''}`);
       console.error(error);
     } finally {
       setLoading(false);

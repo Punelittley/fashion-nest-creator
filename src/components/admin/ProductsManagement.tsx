@@ -99,18 +99,21 @@ const ProductsManagement = () => {
     try {
       setUploading(true);
 
-      const { error } = await supabase
-        .from('products')
-        .update({
-          name: formData.name,
-          description: formData.description || null,
-          price: parseFloat(formData.price),
-          stock: parseInt(formData.stock),
-          category_id: formData.category_id || null,
-          image_url: formData.image_url || null,
-          is_active: formData.is_active
-        })
-        .eq('id', editingProduct.id);
+      const { data, error } = await supabase.functions.invoke('admin-products', {
+        body: {
+          action: 'update',
+          id: editingProduct.id,
+          payload: {
+            name: formData.name,
+            description: formData.description || null,
+            price: parseFloat(formData.price),
+            stock: parseInt(formData.stock),
+            category_id: formData.category_id || null,
+            image_url: formData.image_url || null,
+            is_active: formData.is_active,
+          },
+        },
+      });
 
       if (error) throw error;
 
@@ -119,7 +122,7 @@ const ProductsManagement = () => {
       loadProducts();
     } catch (error) {
       console.error('Ошибка обновления товара:', error);
-      toast.error('Ошибка обновления товара');
+      toast.error(`Ошибка обновления товара: ${error instanceof Error ? error.message : ''}`);
     } finally {
       setUploading(false);
     }
