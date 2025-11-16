@@ -30,6 +30,26 @@ const Catalog = () => {
   useEffect(() => {
     loadProducts();
     loadCategories();
+
+    // Подписка на реал-тайм обновления товаров
+    const channel = supabase
+      .channel('products-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'products'
+        },
+        () => {
+          loadProducts(); // Перезагружаем товары при любом изменении
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const loadProducts = async () => {
