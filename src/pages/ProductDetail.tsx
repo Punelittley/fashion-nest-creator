@@ -9,9 +9,9 @@ import { mockProducts } from "@/data/mockProducts";
 interface Product {
   id: string;
   name: string;
-  description: string;
+  description: string | null;
   price: number;
-  image_url: string;
+  image_url: string | null;
   images?: string[] | null;
   stock: number;
 }
@@ -31,6 +31,20 @@ const ProductDetail = () => {
       loadProduct();
       checkFavoriteStatus();
     }
+  }, [id]);
+
+  useEffect(() => {
+    const refresh = () => {
+      if (id) {
+        loadProduct();
+      }
+    };
+    // @ts-ignore
+    window.addEventListener('products:refresh', refresh);
+    return () => {
+      // @ts-ignore
+      window.removeEventListener('products:refresh', refresh);
+    };
   }, [id]);
 
   const loadProduct = async () => {
@@ -87,6 +101,8 @@ const ProductDetail = () => {
 
     if (!product) return;
 
+    console.log('Toggling favorite:', { product_id: product.id, isFavorite });
+
     setCheckingFavorite(true);
     try {
       if (isFavorite) {
@@ -97,7 +113,10 @@ const ProductDetail = () => {
           .eq('user_id', session.user.id)
           .eq('product_id', product.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Favorite delete error:', error);
+          throw error;
+        }
 
         setIsFavorite(false);
         toast.success("Удалено из избранного");
@@ -110,7 +129,10 @@ const ProductDetail = () => {
             product_id: product.id
           });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Favorite insert error:', error);
+          throw error;
+        }
 
         setIsFavorite(true);
         toast.success("Добавлено в избранное");
@@ -135,6 +157,8 @@ const ProductDetail = () => {
 
     if (!product) return;
 
+    console.log('Adding to cart:', { product_id: product.id, quantity });
+
     setAddingToCart(true);
     try {
       const { error } = await supabase
@@ -145,7 +169,10 @@ const ProductDetail = () => {
           quantity: quantity
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Cart insert error:', error);
+        throw error;
+      }
 
       toast.success("Товар добавлен в корзину");
     } catch (error: any) {
