@@ -1,17 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { mockProducts, mockCategories } from "@/data/mockProducts";
 
 interface Product {
   id: string;
   name: string;
   price: number;
   image_url: string;
-  images: string[] | null;
+  images?: string[] | null;
   category_id: string | null;
 }
 
@@ -29,35 +28,11 @@ const Catalog = () => {
   const [sortBy, setSortBy] = useState("name");
 
   useEffect(() => {
-    loadData();
+    // Используем моковые данные вместо загрузки из базы
+    setProducts(mockProducts);
+    setCategories(mockCategories);
+    setLoading(false);
   }, []);
-
-  const loadData = async () => {
-    try {
-      // Load products from Supabase
-      const { data: productsData, error: productsError } = await supabase
-        .from('products')
-        .select('id, name, price, image_url, images, category_id')
-        .eq('is_active', true);
-
-      if (productsError) throw productsError;
-
-      // Load categories from Supabase
-      const { data: categoriesData, error: categoriesError } = await supabase
-        .from('categories')
-        .select('id, name');
-
-      if (categoriesError) throw categoriesError;
-
-      setProducts(productsData || []);
-      setCategories(categoriesData || []);
-    } catch (error) {
-      console.error('Error loading catalog:', error);
-      toast.error("Ошибка загрузки каталога");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const filteredProducts = selectedCategory
     ? products.filter(p => p.category_id === selectedCategory)
