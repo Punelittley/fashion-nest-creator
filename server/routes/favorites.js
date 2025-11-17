@@ -3,7 +3,7 @@ import { dbRun, dbGet, dbAll } from '../database.js';
 import { randomUUID } from 'crypto';
 
 const router = express.Router();
-const LOCAL_USER_ID = 'local-user-001';
+const LOCAL_USER_ID = 'admin-001';
 
 // Получить избранное
 router.get('/', async (req, res) => {
