@@ -4,12 +4,13 @@ import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Получить профиль
-router.get('/', authenticateToken, async (req, res) => {
+// Получить профиль (для локальной разработки без auth)
+router.get('/', async (req, res) => {
   try {
+    const userId = 'admin-001';
     const profile = await dbGet(
       'SELECT id, email, full_name, phone, address, created_at FROM profiles WHERE id = ?',
-      [req.user.id]
+      [userId]
     );
 
     if (!profile) {
@@ -23,19 +24,20 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
-// Обновить профиль
-router.put('/', authenticateToken, async (req, res) => {
+// Обновить профиль (для локальной разработки без auth)
+router.put('/', async (req, res) => {
   try {
     const { full_name, phone, address } = req.body;
+    const userId = 'admin-001';
 
     await dbRun(
       'UPDATE profiles SET full_name = ?, phone = ?, address = ? WHERE id = ?',
-      [full_name, phone, address, req.user.id]
+      [full_name, phone, address, userId]
     );
 
     const profile = await dbGet(
       'SELECT id, email, full_name, phone, address FROM profiles WHERE id = ?',
-      [req.user.id]
+      [userId]
     );
 
     res.json(profile);

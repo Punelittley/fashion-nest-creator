@@ -21,17 +21,8 @@ const Cart = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    checkAuthAndLoadCart();
+    loadCart();
   }, [navigate]);
-
-  const checkAuthAndLoadCart = async () => {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-      navigate("/auth");
-    } else {
-      loadCart();
-    }
-  };
 
   const loadCart = async () => {
     try {

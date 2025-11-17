@@ -30,17 +30,8 @@ const Checkout = () => {
   });
 
   useEffect(() => {
-    checkAuthAndLoadData();
+    loadData();
   }, [navigate]);
-
-  const checkAuthAndLoadData = async () => {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-      navigate("/auth");
-    } else {
-      loadData();
-    }
-  };
 
   const loadData = async () => {
     try {
