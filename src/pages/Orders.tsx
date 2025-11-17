@@ -37,17 +37,8 @@ const Orders = () => {
   const [favoriteOrderIds, setFavoriteOrderIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    checkAuthAndLoadOrders();
+    loadOrders();
   }, [navigate]);
-
-  const checkAuthAndLoadOrders = async () => {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-      navigate("/auth");
-    } else {
-      loadOrders();
-    }
-  };
 
   const loadOrders = async () => {
     try {

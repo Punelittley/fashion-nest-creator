@@ -55,18 +55,9 @@ const Profile = () => {
   const [activeTab, setActiveTab] = useState<'profile' | 'stats'>('profile');
 
   useEffect(() => {
-    checkAuthAndLoadData();
+    loadProfile();
+    loadOrderStats();
   }, [navigate]);
-
-  const checkAuthAndLoadData = async () => {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-      navigate("/auth");
-    } else {
-      loadProfile();
-      loadOrderStats();
-    }
-  };
 
   const loadProfile = async () => {
     try {

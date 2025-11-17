@@ -5,12 +5,13 @@ import { randomUUID } from 'crypto';
 
 const router = express.Router();
 
-// Получить заказы пользователя
-router.get('/', authenticateToken, async (req, res) => {
+// Получить заказы пользователя (для локальной разработки без auth)
+router.get('/', async (req, res) => {
   try {
+    const userId = 'admin-001';
     const orders = await dbAll(
       `SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC`,
-      [req.user.id]
+      [userId]
     );
 
     // Получить items для каждого заказа
@@ -31,10 +32,11 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
-// Создать заказ
-router.post('/', authenticateToken, async (req, res) => {
+// Создать заказ (для локальной разработки без auth)
+router.post('/', async (req, res) => {
   try {
     const { shipping_address, phone } = req.body;
+    const userId = 'admin-001';
 
     if (!shipping_address || !phone) {
       return res.status(400).json({ error: 'Адрес и телефон обязательны' });
@@ -45,7 +47,7 @@ router.post('/', authenticateToken, async (req, res) => {
       `SELECT ci.*, p.price FROM cart_items ci
        JOIN products p ON ci.product_id = p.id
        WHERE ci.user_id = ?`,
-      [req.user.id]
+      [userId]
     );
 
     if (cartItems.length === 0) {
@@ -60,7 +62,7 @@ router.post('/', authenticateToken, async (req, res) => {
     await dbRun(
       `INSERT INTO orders (id, user_id, total_amount, shipping_address, phone)
        VALUES (?, ?, ?, ?, ?)`,
-      [orderId, req.user.id, total, shipping_address, phone]
+      [orderId, userId, total, shipping_address, phone]
     );
 
     // Создать items заказа
@@ -73,12 +75,12 @@ router.post('/', authenticateToken, async (req, res) => {
     }
 
     // Очистить корзину
-    await dbRun('DELETE FROM cart_items WHERE user_id = ?', [req.user.id]);
+    await dbRun('DELETE FROM cart_items WHERE user_id = ?', [userId]);
 
     // Обновить профиль
     await dbRun(
       'UPDATE profiles SET phone = ?, address = ? WHERE id = ?',
-      [phone, shipping_address, req.user.id]
+      [phone, shipping_address, userId]
     );
 
     const order = await dbGet('SELECT * FROM orders WHERE id = ?', [orderId]);
