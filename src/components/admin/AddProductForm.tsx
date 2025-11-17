@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { PackagePlus, Upload } from "lucide-react";
+import { productsApi, categoriesApi } from "@/lib/api";
 
 interface Category {
   id: string;
@@ -28,16 +29,24 @@ const AddProductForm = () => {
 
   const loadCategories = async () => {
     try {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('id, name')
-        .order('name');
-
-      if (error) throw error;
-      setCategories(data || []);
+      // Пробуем загрузить из Express API (SQLite)
+      const data = await categoriesApi.getAll();
+      setCategories(data);
     } catch (error) {
-      toast.error("Ошибка загрузки категорий");
-      console.error(error);
+      console.log('Express API недоступен, используем Supabase');
+      // Fallback на Supabase
+      try {
+        const { data, error } = await supabase
+          .from('categories')
+          .select('id, name')
+          .order('name');
+
+        if (error) throw error;
+        setCategories(data || []);
+      } catch (supabaseError) {
+        toast.error("Ошибка загрузки категорий");
+        console.error(supabaseError);
+      }
     }
   };
 
@@ -86,22 +95,31 @@ const AddProductForm = () => {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('admin-products', {
-        body: {
-          action: 'create',
-          payload: {
-            name: formData.name,
-            description: formData.description || null,
-            price: parseFloat(formData.price),
-            stock: parseInt(formData.stock),
-            category_id: formData.category_id || null,
-            image_url: formData.image_url || null,
-            is_active: true,
-          },
-        },
-      });
+      const productData = {
+        name: formData.name,
+        description: formData.description || null,
+        price: parseFloat(formData.price),
+        stock: parseInt(formData.stock),
+        category_id: formData.category_id || null,
+        image_url: formData.image_url || null,
+        is_active: true,
+      };
 
-      if (error) throw error;
+      try {
+        // Пробуем создать через Express API (SQLite)
+        await productsApi.create(productData);
+      } catch (error) {
+        console.log('Express API недоступен, используем Supabase');
+        // Fallback на Supabase
+        const { error: supabaseError } = await supabase.functions.invoke('admin-products', {
+          body: {
+            action: 'create',
+            payload: productData,
+          },
+        });
+
+        if (supabaseError) throw supabaseError;
+      }
 
       toast.success("Товар успешно добавлен");
       setFormData({
