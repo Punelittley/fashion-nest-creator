@@ -4,7 +4,7 @@ import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ProductImageSlider } from "@/components/ProductImageSlider";
-import { productsApi, cartApi } from "@/lib/api";
+import { productsApi, cartApi, favoritesApi } from "@/lib/api";
 
 interface Product {
   id: string;
@@ -86,14 +86,22 @@ const ProductDetail = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session || !id) return;
 
-      const { data } = await supabase
-        .from('favorite_products')
-        .select('id')
-        .eq('user_id', session.user.id)
-        .eq('product_id', id)
-        .maybeSingle();
+      try {
+        // Пробуем через Express API (SQLite)
+        const result = await favoritesApi.check(id);
+        setIsFavorite(result.isFavorite);
+      } catch (error) {
+        console.log('Express API недоступен, используем Supabase');
+        // Fallback на Supabase
+        const { data } = await supabase
+          .from('favorite_products')
+          .select('id')
+          .eq('user_id', session.user.id)
+          .eq('product_id', id)
+          .maybeSingle();
 
-      setIsFavorite(!!data);
+        setIsFavorite(!!data);
+      }
     } catch (error) {
       console.error('Error checking favorite status:', error);
     }
@@ -116,41 +124,56 @@ const ProductDetail = () => {
     try {
       if (isFavorite) {
         // Remove from favorites
-        const { error } = await supabase
-          .from('favorite_products')
-          .delete()
-          .eq('user_id', session.user.id)
-          .eq('product_id', product.id);
+        try {
+          // Пробуем через Express API (SQLite)
+          await favoritesApi.removeByProductId(product.id);
+        } catch (error) {
+          console.log('Express API недоступен, используем Supabase');
+          // Fallback на Supabase
+          const { error: supabaseError } = await supabase
+            .from('favorite_products')
+            .delete()
+            .eq('user_id', session.user.id)
+            .eq('product_id', product.id);
 
-        if (error) {
-          console.error('Favorite delete error:', error);
-          throw error;
+          if (supabaseError) {
+            console.error('Favorite delete error:', supabaseError);
+            throw supabaseError;
+          }
         }
 
         setIsFavorite(false);
         toast.success("Удалено из избранного");
       } else {
         // Add to favorites
-        const { error } = await supabase
-          .from('favorite_products')
-          .insert({
-            user_id: session.user.id,
-            product_id: product.id
-          });
-
-        if (error) {
-          // Если товар уже в избранном (уникальный конфликт), считаем как успех
-          // @ts-ignore
-          if (error.code === '23505') {
-            setIsFavorite(true);
-            toast.success("Уже в избранном");
-          } else {
-            console.error('Favorite insert error:', error);
-            throw error;
-          }
-        } else {
+        try {
+          // Пробуем через Express API (SQLite)
+          await favoritesApi.add(product.id);
           setIsFavorite(true);
           toast.success("Добавлено в избранное");
+        } catch (error) {
+          console.log('Express API недоступен, используем Supabase');
+          // Fallback на Supabase
+          const { error: supabaseError } = await supabase
+            .from('favorite_products')
+            .insert({
+              user_id: session.user.id,
+              product_id: product.id
+            });
+
+          if (supabaseError) {
+            // @ts-ignore
+            if (supabaseError.code === '23505') {
+              setIsFavorite(true);
+              toast.success("Уже в избранном");
+            } else {
+              console.error('Favorite insert error:', supabaseError);
+              throw supabaseError;
+            }
+          } else {
+            setIsFavorite(true);
+            toast.success("Добавлено в избранное");
+          }
         }
       }
     } catch (error: any) {

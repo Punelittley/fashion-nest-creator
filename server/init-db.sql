@@ -59,6 +59,17 @@ CREATE TABLE IF NOT EXISTS cart_items (
   UNIQUE(user_id, product_id)
 );
 
+-- Таблица избранного (favorite_products)
+CREATE TABLE IF NOT EXISTS favorite_products (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  product_id TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE,
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+  UNIQUE(user_id, product_id)
+);
+
 -- Таблица заказов (orders)
 CREATE TABLE IF NOT EXISTS orders (
   id TEXT PRIMARY KEY,
@@ -116,6 +127,7 @@ CREATE INDEX IF NOT EXISTS idx_cart_user ON cart_items(user_id);
 CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
 CREATE INDEX IF NOT EXISTS idx_user_roles_user ON user_roles(user_id);
+CREATE INDEX IF NOT EXISTS idx_favorite_user ON favorite_products(user_id);
 
 -- Вставка тестовых данных
 
