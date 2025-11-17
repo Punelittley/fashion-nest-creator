@@ -4,6 +4,7 @@ import Layout from "@/components/Layout";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { productsApi, categoriesApi } from "@/lib/api";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Product {
   id: string;
@@ -37,7 +38,18 @@ const Catalog = () => {
       const data = await productsApi.getAll();
       setProducts(data || []);
     } catch (error) {
-      console.error('Error loading products from SQLite:', error);
+      console.log('📦 SQLite недоступен, загружаю из Supabase...');
+      try {
+        const { data, error: supabaseError } = await supabase
+          .from('products')
+          .select('*')
+          .eq('is_active', true);
+        
+        if (supabaseError) throw supabaseError;
+        setProducts(data || []);
+      } catch (supabaseErr) {
+        console.error('Error loading products:', supabaseErr);
+      }
     }
     setLoading(false);
   };
@@ -47,7 +59,17 @@ const Catalog = () => {
       const data = await categoriesApi.getAll();
       setCategories(data || []);
     } catch (error) {
-      console.error('Error loading categories from SQLite:', error);
+      console.log('📦 SQLite недоступен, загружаю категории из Supabase...');
+      try {
+        const { data, error: supabaseError } = await supabase
+          .from('categories')
+          .select('*');
+        
+        if (supabaseError) throw supabaseError;
+        setCategories(data || []);
+      } catch (supabaseErr) {
+        console.error('Error loading categories:', supabaseErr);
+      }
     }
   };
 
