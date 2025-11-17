@@ -3,7 +3,6 @@ import { useNavigate, Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { mockProducts } from "@/data/mockProducts";
 
 interface WishlistItem {
   id: string;
@@ -44,8 +43,19 @@ const Wishlist = () => {
 
       if (error) throw error;
 
+      const productIds = data?.map(item => item.product_id) || [];
+      const { data: productsData, error: productsError } = await supabase
+        .from('products')
+        .select('*')
+        .in('id', productIds);
+
+      if (productsError) {
+        console.error('Error loading products:', productsError);
+        return;
+      }
+
       const formattedItems = data?.map((item: any) => {
-        const product = mockProducts.find(p => p.id === item.product_id);
+        const product = productsData?.find(p => p.id === item.product_id);
         return product ? {
           id: item.id,
           product_id: product.id,

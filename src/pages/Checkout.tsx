@@ -4,7 +4,6 @@ import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { mockProducts } from "@/data/mockProducts";
 
 const checkoutSchema = z.object({
   phone: z.string().min(10, { message: "Введите корректный номер телефона" }),
@@ -55,8 +54,19 @@ const Checkout = () => {
 
       if (cartError) throw cartError;
 
+      const productIds = cartData?.map(item => item.product_id) || [];
+      const { data: productsData, error: productsError } = await supabase
+        .from('products')
+        .select('*')
+        .in('id', productIds);
+
+      if (productsError) {
+        console.error('Error loading products:', productsError);
+        return;
+      }
+
       const formattedItems = cartData?.map((item: any) => {
-        const product = mockProducts.find(p => p.id === item.product_id);
+        const product = productsData?.find(p => p.id === item.product_id);
         return product ? {
           id: item.id,
           product_id: item.product_id,
