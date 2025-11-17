@@ -25,13 +25,19 @@ const ProductDetail = () => {
   const [addingToCart, setAddingToCart] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [checkingFavorite, setCheckingFavorite] = useState(false);
+  const [dataSource, setDataSource] = useState<'sqlite' | 'supabase' | null>(null);
 
   useEffect(() => {
     if (id) {
       loadProduct();
-      checkFavoriteStatus();
     }
   }, [id]);
+
+  useEffect(() => {
+    if (id && dataSource) {
+      checkFavoriteStatus();
+    }
+  }, [id, dataSource]);
 
   useEffect(() => {
     const refresh = () => {
@@ -55,6 +61,7 @@ const ProductDetail = () => {
     try {
       const data = await productsApi.getById(id);
       setProduct(data);
+      setDataSource('sqlite');
     } catch (error) {
       console.log('📦 SQLite недоступен, загружаю товар из Supabase...');
       try {
