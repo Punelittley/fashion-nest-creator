@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { z } from "zod";
-import { supabase } from "@/integrations/supabase/client";
+import { cartApi, ordersApi, profileApi } from "@/lib/api";
 
 const checkoutSchema = z.object({
   phone: z.string().min(10, { message: "Введите корректный номер телефона" }),
@@ -33,8 +33,8 @@ const Checkout = () => {
   }, [navigate]);
 
   const checkAuthAndLoadData = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
       navigate("/auth");
     } else {
       loadData();
@@ -43,51 +43,13 @@ const Checkout = () => {
 
   const loadData = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      const [cartItems, profileData] = await Promise.all([
+        cartApi.get(),
+        profileApi.get()
+      ]);
 
-      // Load cart items with product data from DB
-      const { data: cartData, error: cartError } = await supabase
-        .from('cart_items')
-        .select('id, quantity, product_id')
-        .eq('user_id', session.user.id);
-
-      if (cartError) throw cartError;
-
-      const productIds = cartData?.map(item => item.product_id) || [];
-      const { data: productsData, error: productsError } = await supabase
-        .from('products')
-        .select('*')
-        .in('id', productIds);
-
-      if (productsError) {
-        console.error('Error loading products:', productsError);
-        return;
-      }
-
-      const formattedItems = cartData?.map((item: any) => {
-        const product = productsData?.find(p => p.id === item.product_id);
-        return product ? {
-          id: item.id,
-          product_id: item.product_id,
-          quantity: item.quantity,
-          name: product.name,
-          price: product.price,
-          image_url: product.image_url
-        } : null;
-      }).filter(Boolean) || [];
-
-      setCartItems(formattedItems as CartItem[]);
-
-      // Load profile data
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('phone, address')
-        .eq('id', session.user.id)
-        .single();
-
-      if (profileError) throw profileError;
-
+      setCartItems(cartItems || []);
+      
       if (profileData) {
         setFormData({
           phone: profileData.phone || "",
@@ -118,54 +80,35 @@ const Checkout = () => {
         return;
       }
 
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error("Необходима авторизация");
-        navigate("/auth");
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      const validation = checkoutSchema.safeParse(formData);
+      if (!validation.success) {
+        toast.error(validation.error.errors[0].message);
+        setLoading(false);
         return;
       }
 
-      const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      if (cartItems.length === 0) {
+        toast.error("Корзина пуста");
+        setLoading(false);
+        return;
+      }
 
-      // Create order
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          user_id: session.user.id,
-          shipping_address: formData.address,
-          phone: formData.phone,
-          total_amount: total,
-          status: 'pending'
-        })
-        .select()
-        .single();
-
-      if (orderError) throw orderError;
-
-      // Create order items
-      const orderItems = cartItems.map(item => ({
-        order_id: order.id,
-        product_id: item.product_id,
-        quantity: item.quantity,
-        price: item.price
-      }));
-
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems);
-
-      if (itemsError) throw itemsError;
-
-      // Clear cart
-      const { error: clearError } = await supabase
-        .from('cart_items')
-        .delete()
-        .eq('user_id', session.user.id);
-
-      if (clearError) throw clearError;
-
+      await ordersApi.create(formData.address, formData.phone);
+      
       toast.success("Заказ успешно оформлен!");
       navigate("/orders");
+    } catch (error: any) {
+      console.error('Error creating order:', error);
+      toast.error(error.message || "Ошибка при оформлении заказа");
+    } finally {
+      setLoading(false);
+    }
+  };
     } catch (error: any) {
       console.error('Error creating order:', error);
       toast.error(error.message || "Ошибка оформления заказа");

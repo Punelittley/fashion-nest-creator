@@ -4,6 +4,7 @@ import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ProductImageSlider } from "@/components/ProductImageSlider";
+import { productsApi, cartApi } from "@/lib/api";
 
 interface Product {
   id: string;
@@ -51,21 +52,16 @@ const ProductDetail = () => {
     
     setLoading(true);
     
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle();
-    
-    if (error || !data) {
+    try {
+      const data = await productsApi.getById(id);
+      setProduct(data);
+    } catch (error) {
+      console.error('Error loading product:', error);
       toast.error('Товар не найден');
       navigate("/catalog");
+    } finally {
       setLoading(false);
-      return;
     }
-    
-    setProduct(data);
-    setLoading(false);
   };
 
   const checkFavoriteStatus = async () => {
@@ -149,10 +145,9 @@ const ProductDetail = () => {
   };
 
   const handleAddToCart = async () => {
-    // Check Supabase auth
-    const { data: { session } } = await supabase.auth.getSession();
+    const token = localStorage.getItem('auth_token');
     
-    if (!session) {
+    if (!token) {
       toast.error("Войдите для добавления в корзину");
       navigate("/auth");
       return;
@@ -160,48 +155,16 @@ const ProductDetail = () => {
 
     if (!product) return;
 
-    console.log('Adding to cart:', { product_id: product.id, quantity });
-
-  setAddingToCart(true);
-  try {
-    // Проверяем, есть ли уже этот товар в корзине
-    const { data: existing, error: selErr } = await supabase
-      .from('cart_items')
-      .select('id, quantity')
-      .eq('user_id', session.user.id)
-      .eq('product_id', product.id)
-      .maybeSingle();
-
-    if (selErr) throw selErr;
-
-    if (existing) {
-      // Увеличиваем количество
-      const { error: updErr } = await supabase
-        .from('cart_items')
-        .update({ quantity: (existing.quantity || 0) + quantity })
-        .eq('id', existing.id);
-
-      if (updErr) throw updErr;
-    } else {
-      // Вставляем новую позицию
-      const { error: insErr } = await supabase
-        .from('cart_items')
-        .insert({
-          user_id: session.user.id,
-          product_id: product.id,
-          quantity: quantity
-        });
-
-      if (insErr) throw insErr;
+    setAddingToCart(true);
+    try {
+      await cartApi.add(product.id, quantity);
+      toast.success("Товар добавлен в корзину");
+    } catch (error: any) {
+      console.error('Error adding to cart:', error);
+      toast.error(error.message || "Ошибка добавления в корзину");
+    } finally {
+      setAddingToCart(false);
     }
-
-    toast.success("Товар добавлен в корзину");
-  } catch (error: any) {
-    console.error('Error adding to cart:', error);
-    toast.error(error.message || "Ошибка добавления в корзину");
-  } finally {
-    setAddingToCart(false);
-  }
   };
 
   if (!product) {

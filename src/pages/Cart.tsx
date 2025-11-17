@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { cartApi } from "@/lib/api";
 
 interface CartItem {
   id: string;
@@ -24,8 +24,8 @@ const Cart = () => {
   }, [navigate]);
 
   const checkAuthAndLoadCart = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
       navigate("/auth");
     } else {
       loadCart();
@@ -34,41 +34,8 @@ const Cart = () => {
 
   const loadCart = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const { data: cartData, error } = await supabase
-        .from('cart_items')
-        .select('id, quantity, product_id')
-        .eq('user_id', session.user.id);
-
-      if (error) throw error;
-
-      const productIds = cartData?.map(item => item.product_id) || [];
-      const { data: productsData, error: productsError } = await supabase
-        .from('products')
-        .select('*')
-        .in('id', productIds);
-
-      if (productsError) {
-        console.error('Error loading products:', productsError);
-        return;
-      }
-
-      const formattedItems = cartData?.map((item: any) => {
-        const product = productsData?.find(p => p.id === item.product_id);
-        return product ? {
-          id: item.id,
-          quantity: item.quantity,
-          product_id: item.product_id,
-          name: product.name,
-          price: product.price,
-          image_url: product.image_url,
-          stock: product.stock
-        } : null;
-      }).filter(Boolean) || [];
-
-      setCartItems(formattedItems as CartItem[]);
+      const items = await cartApi.get();
+      setCartItems(items || []);
     } catch (error) {
       console.error('Error loading cart:', error);
       toast.error("Ошибка загрузки корзины");
@@ -81,13 +48,7 @@ const Cart = () => {
     if (newQuantity < 1) return;
 
     try {
-      const { error } = await supabase
-        .from('cart_items')
-        .update({ quantity: newQuantity })
-        .eq('id', itemId);
-
-      if (error) throw error;
-
+      await cartApi.update(itemId, newQuantity);
       setCartItems(cartItems.map(item =>
         item.id === itemId ? { ...item, quantity: newQuantity } : item
       ));
@@ -99,13 +60,7 @@ const Cart = () => {
 
   const removeItem = async (itemId: string) => {
     try {
-      const { error } = await supabase
-        .from('cart_items')
-        .delete()
-        .eq('id', itemId);
-
-      if (error) throw error;
-
+      await cartApi.remove(itemId);
       setCartItems(cartItems.filter(item => item.id !== itemId));
       toast.success("Товар удален из корзины");
     } catch (error) {

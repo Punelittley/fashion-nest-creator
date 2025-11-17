@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import HeroSlider from "@/components/HeroSlider";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { productsApi } from "@/lib/api";
 
 interface Product {
   id: string;
@@ -19,18 +19,12 @@ const Index = () => {
   }, []);
 
   const loadFeaturedProducts = async () => {
-    const { data, error } = await supabase
-      .from('products')
-      .select('id, name, price, image_url')
-      .eq('is_active', true)
-      .limit(3);
-    
-    if (error) {
+    try {
+      const products = await productsApi.getAll();
+      setFeaturedProducts(products.slice(0, 3));
+    } catch (error) {
       console.error('Error loading featured products:', error);
-      return;
     }
-    
-    setFeaturedProducts(data || []);
   };
 
   return (

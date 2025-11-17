@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
+import { productsApi, categoriesApi } from "@/lib/api";
 
 interface Product {
   id: string;
@@ -33,28 +33,21 @@ const Catalog = () => {
   }, []);
 
   const loadProducts = async () => {
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .eq('is_active', true);
-    
-    if (error) {
-      console.error('Error loading products:', error);
-    } else {
+    try {
+      const data = await productsApi.getAll();
       setProducts(data || []);
+    } catch (error) {
+      console.error('Error loading products:', error);
     }
     setLoading(false);
   };
 
   const loadCategories = async () => {
-    const { data, error } = await supabase
-      .from('categories')
-      .select('*');
-    
-    if (error) {
-      console.error('Error loading categories:', error);
-    } else {
+    try {
+      const data = await categoriesApi.getAll();
       setCategories(data || []);
+    } catch (error) {
+      console.error('Error loading categories:', error);
     }
   };
 

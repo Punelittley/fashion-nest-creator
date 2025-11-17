@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { ordersApi } from "@/lib/api";
 
 interface OrderItem {
   quantity: number;
@@ -40,8 +41,8 @@ const Orders = () => {
   }, [navigate]);
 
   const checkAuthAndLoadOrders = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
       navigate("/auth");
     } else {
       loadOrders();
@@ -50,53 +51,28 @@ const Orders = () => {
 
   const loadOrders = async () => {
     try {
+      const data = await ordersApi.get();
+      
+      // Load favorite orders from Supabase
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (session) {
+        const { data: favoritesData } = await supabase
+          .from('favorite_orders')
+          .select('order_id')
+          .eq('user_id', session.user.id);
 
-      // Load orders
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          id,
-          total_amount,
-          status,
-          created_at,
-          shipping_address,
-          order_items (
-            quantity,
-            price,
-            products (
-              name,
-              image_url
-            )
-          )
-        `)
-        .eq('user_id', session.user.id)
-        .order('created_at', { ascending: false });
+        const favoriteIds = new Set(favoritesData?.map(f => f.order_id) || []);
+        setFavoriteOrderIds(favoriteIds);
 
-      if (error) throw error;
+        const formattedOrders = data?.map((order: any) => ({
+          ...order,
+          is_favorite: favoriteIds.has(order.id)
+        })) || [];
 
-      // Load favorite orders
-      const { data: favoritesData } = await supabase
-        .from('favorite_orders')
-        .select('order_id')
-        .eq('user_id', session.user.id);
-
-      const favoriteIds = new Set(favoritesData?.map(f => f.order_id) || []);
-      setFavoriteOrderIds(favoriteIds);
-
-      const formattedOrders = data?.map(order => ({
-        ...order,
-        order_items: order.order_items.map((item: any) => ({
-          quantity: item.quantity,
-          price: item.price,
-          name: item.products.name,
-          image_url: item.products.image_url
-        })),
-        is_favorite: favoriteIds.has(order.id)
-      })) || [];
-
-      setOrders(formattedOrders);
+        setOrders(formattedOrders);
+      } else {
+        setOrders(data || []);
+      }
     } catch (error) {
       console.error('Error loading orders:', error);
       toast.error("Ошибка загрузки заказов");
