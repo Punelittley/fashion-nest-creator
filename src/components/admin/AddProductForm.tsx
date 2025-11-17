@@ -110,23 +110,42 @@ const AddProductForm = () => {
         await productsApi.create(productData);
       } catch (error) {
         console.log('Express API недоступен, используем Supabase');
-        // Fallback на Supabase - корректируем category_id под UUID
+        // Fallback на Supabase - корректируем category_id под UUID/имя
         const isUUID = (v: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
+        const sqliteIdToName: Record<string, string> = {
+          'cat-001': 'Верхняя одежда',
+          'cat-002': 'Штаны и брюки',
+          'cat-003': 'Шарфы',
+          'cat-004': 'Обувь',
+        };
         let supabaseCategoryId: string | null = productData.category_id || null;
 
         if (productData.category_id) {
-          const selected = categories.find((c) => c.id === productData.category_id);
-          if (selected) {
-            if (isUUID(selected.id)) {
-              supabaseCategoryId = selected.id;
-            } else {
-              // Ищем категорию в Supabase по имени
-              const { data: supCat } = await supabase
-                .from('categories')
-                .select('id')
-                .eq('name', selected.name)
-                .maybeSingle();
-              supabaseCategoryId = supCat?.id || null;
+          if (isUUID(productData.category_id)) {
+            supabaseCategoryId = productData.category_id;
+          } else if (sqliteIdToName[productData.category_id]) {
+            // маппим по известному имени категории
+            const catName = sqliteIdToName[productData.category_id];
+            const { data: supCat } = await supabase
+              .from('categories')
+              .select('id')
+              .eq('name', catName)
+              .maybeSingle();
+            supabaseCategoryId = supCat?.id || null;
+          } else {
+            // пробуем найти выбранную категорию по state и маппить по имени
+            const selected = categories.find((c) => c.id === productData.category_id);
+            if (selected) {
+              if (isUUID(selected.id)) {
+                supabaseCategoryId = selected.id;
+              } else {
+                const { data: supCat } = await supabase
+                  .from('categories')
+                  .select('id')
+                  .eq('name', selected.name)
+                  .maybeSingle();
+                supabaseCategoryId = supCat?.id || null;
+              }
             }
           }
         }
