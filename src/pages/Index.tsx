@@ -3,7 +3,6 @@ import Layout from "@/components/Layout";
 import HeroSlider from "@/components/HeroSlider";
 import { useEffect, useState } from "react";
 import { productsApi } from "@/lib/api";
-import { supabase } from "@/integrations/supabase/client";
 
 interface Product {
   id: string;
@@ -24,19 +23,7 @@ const Index = () => {
       const products = await productsApi.getAll();
       setFeaturedProducts(products.slice(0, 3));
     } catch (error) {
-      console.log('📦 SQLite недоступен, загружаю товары из Supabase...');
-      try {
-        const { data, error: supabaseError } = await supabase
-          .from('products')
-          .select('id, name, price, image_url')
-          .eq('is_active', true)
-          .limit(3);
-        
-        if (supabaseError) throw supabaseError;
-        setFeaturedProducts(data || []);
-      } catch (supabaseErr) {
-        console.error('Error loading products:', supabaseErr);
-      }
+      console.error('Error loading products:', error);
     }
   };
 
