@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { cartApi } from "@/lib/api";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CartItem {
   id: string;
@@ -37,8 +38,46 @@ const Cart = () => {
       const items = await cartApi.get();
       setCartItems(items || []);
     } catch (error) {
-      console.error('Error loading cart:', error);
-      toast.error("Ошибка загрузки корзины");
+      console.log('📦 SQLite недоступен, загружаю корзину из Supabase...');
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          navigate("/auth");
+          return;
+        }
+
+        const { data: cartData, error: supabaseError } = await supabase
+          .from('cart_items')
+          .select(`
+            id,
+            product_id,
+            quantity,
+            products (
+              name,
+              price,
+              image_url,
+              stock
+            )
+          `)
+          .eq('user_id', user.id);
+
+        if (supabaseError) throw supabaseError;
+
+        const formattedItems = cartData?.map(item => ({
+          id: item.id,
+          product_id: item.product_id,
+          quantity: item.quantity,
+          name: (item.products as any)?.name || '',
+          price: (item.products as any)?.price || 0,
+          image_url: (item.products as any)?.image_url || '',
+          stock: (item.products as any)?.stock || 0
+        })) || [];
+
+        setCartItems(formattedItems);
+      } catch (supabaseErr) {
+        console.error('Error loading cart from Supabase:', supabaseErr);
+        toast.error("Ошибка загрузки корзины");
+      }
     } finally {
       setLoading(false);
     }
@@ -53,8 +92,22 @@ const Cart = () => {
         item.id === itemId ? { ...item, quantity: newQuantity } : item
       ));
     } catch (error) {
-      console.error('Error updating quantity:', error);
-      toast.error("Ошибка обновления количества");
+      console.log('📦 SQLite недоступен, обновляю через Supabase...');
+      try {
+        const { error: supabaseError } = await supabase
+          .from('cart_items')
+          .update({ quantity: newQuantity })
+          .eq('id', itemId);
+
+        if (supabaseError) throw supabaseError;
+
+        setCartItems(cartItems.map(item =>
+          item.id === itemId ? { ...item, quantity: newQuantity } : item
+        ));
+      } catch (supabaseErr) {
+        console.error('Error updating quantity:', supabaseErr);
+        toast.error("Ошибка обновления количества");
+      }
     }
   };
 
@@ -64,8 +117,21 @@ const Cart = () => {
       setCartItems(cartItems.filter(item => item.id !== itemId));
       toast.success("Товар удален из корзины");
     } catch (error) {
-      console.error('Error removing item:', error);
-      toast.error("Ошибка удаления товара");
+      console.log('📦 SQLite недоступен, удаляю через Supabase...');
+      try {
+        const { error: supabaseError } = await supabase
+          .from('cart_items')
+          .delete()
+          .eq('id', itemId);
+
+        if (supabaseError) throw supabaseError;
+
+        setCartItems(cartItems.filter(item => item.id !== itemId));
+        toast.success("Товар удален из корзины");
+      } catch (supabaseErr) {
+        console.error('Error removing item:', supabaseErr);
+        toast.error("Ошибка удаления товара");
+      }
     }
   };
 
