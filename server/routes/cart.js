@@ -29,7 +29,7 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { product_id, quantity } = req.body;
-    const userId = 'local-user-001';
+    const userId = 'admin-001';
 
     if (!product_id || !quantity || quantity < 1) {
       return res.status(400).json({ error: 'Некорректные данные' });
@@ -37,7 +37,8 @@ router.post('/', async (req, res) => {
 
     const product = await dbGet('SELECT * FROM products WHERE id = ? AND is_active = 1', [product_id]);
     if (!product) {
-      return res.status(404).json({ error: 'Товар не найден' });
+      console.error(`Товар не найден: ${product_id}`);
+      return res.status(404).json({ error: 'Товар не найден в базе данных' });
     }
 
     if (product.stock < quantity) {
@@ -80,7 +81,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { quantity } = req.body;
-    const userId = 'local-user-001';
+    const userId = 'admin-001';
 
     if (!quantity || quantity < 1) {
       return res.status(400).json({ error: 'Некорректное количество' });
@@ -101,7 +102,7 @@ router.put('/:id', async (req, res) => {
 // Удалить товар из корзины (для локальной разработки без auth)
 router.delete('/:id', async (req, res) => {
   try {
-    const userId = 'local-user-001';
+    const userId = 'admin-001';
     await dbRun(
       'DELETE FROM cart_items WHERE id = ? AND user_id = ?',
       [req.params.id, userId]
@@ -117,7 +118,7 @@ router.delete('/:id', async (req, res) => {
 // Очистить корзину (для локальной разработки без auth)
 router.delete('/', async (req, res) => {
   try {
-    const userId = 'local-user-001';
+    const userId = 'admin-001';
     await dbRun('DELETE FROM cart_items WHERE user_id = ?', [userId]);
     res.json({ message: 'Корзина очищена' });
   } catch (error) {
