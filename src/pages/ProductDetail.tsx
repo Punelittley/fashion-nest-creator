@@ -56,9 +56,26 @@ const ProductDetail = () => {
       const data = await productsApi.getById(id);
       setProduct(data);
     } catch (error) {
-      console.error('Error loading product from SQLite:', error);
-      toast.error('Товар не найден');
-      navigate("/catalog");
+      console.log('📦 SQLite недоступен, загружаю товар из Supabase...');
+      try {
+        const { data, error: supabaseError } = await supabase
+          .from('products')
+          .select('*')
+          .eq('id', id)
+          .maybeSingle();
+        
+        if (supabaseError || !data) {
+          toast.error('Товар не найден');
+          navigate("/catalog");
+          return;
+        }
+        
+        setProduct(data);
+      } catch (supabaseErr) {
+        console.error('Error loading product:', supabaseErr);
+        toast.error('Товар не найден');
+        navigate("/catalog");
+      }
     } finally {
       setLoading(false);
     }
