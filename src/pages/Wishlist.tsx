@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { favoritesApi, cartApi } from "@/lib/api";
 
 interface WishlistItem {
   id: string;
@@ -17,6 +18,7 @@ const Wishlist = () => {
   const navigate = useNavigate();
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [wishSource, setWishSource] = useState<'sqlite' | 'supabase' | null>(null);
 
   useEffect(() => {
     checkAuthAndLoadWishlist();
@@ -33,6 +35,20 @@ const Wishlist = () => {
 
   const loadWishlist = async () => {
     try {
+      // Сначала пробуем локальный SQLite backend
+      const sqliteData = await favoritesApi.getAll();
+      const formattedItems = (sqliteData || []).map((fav: any) => ({
+        id: fav.id,
+        product_id: fav.product_id,
+        name: fav.name,
+        price: fav.price,
+        image_url: fav.image_url,
+        stock: fav.stock
+      })) as WishlistItem[];
+      setWishlistItems(formattedItems);
+      setWishSource('sqlite');
+    } catch (e) {
+      // Фоллбек на облако
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
@@ -40,7 +56,6 @@ const Wishlist = () => {
         .from('favorite_products')
         .select('id, product_id')
         .eq('user_id', session.user.id);
-
       if (error) throw error;
 
       const productIds = data?.map(item => item.product_id) || [];
@@ -48,13 +63,9 @@ const Wishlist = () => {
         .from('products')
         .select('*')
         .in('id', productIds);
+      if (productsError) throw productsError;
 
-      if (productsError) {
-        console.error('Error loading products:', productsError);
-        return;
-      }
-
-      const formattedItems = data?.map((item: any) => {
+      const formatted = (data || []).map((item: any) => {
         const product = productsData?.find(p => p.id === item.product_id);
         return product ? {
           id: item.id,
@@ -64,12 +75,10 @@ const Wishlist = () => {
           image_url: product.image_url,
           stock: product.stock
         } : null;
-      }).filter(Boolean) || [];
+      }).filter(Boolean) as WishlistItem[];
 
-      setWishlistItems(formattedItems as WishlistItem[]);
-    } catch (error) {
-      console.error('Error loading wishlist:', error);
-      toast.error("Ошибка загрузки избранного");
+      setWishlistItems(formatted);
+      setWishSource('supabase');
     } finally {
       setLoading(false);
     }
@@ -77,6 +86,13 @@ const Wishlist = () => {
 
   const removeFromWishlist = async (favoriteId: string) => {
     try {
+      if (wishSource === 'sqlite') {
+        await favoritesApi.remove(favoriteId);
+        setWishlistItems(prev => prev.filter(item => item.id !== favoriteId));
+        toast.success("Товар удален из избранного");
+        return;
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
@@ -98,6 +114,12 @@ const Wishlist = () => {
 
   const addToCart = async (item: WishlistItem) => {
     try {
+      if (wishSource === 'sqlite') {
+        await cartApi.add(item.product_id, 1);
+        toast.success("Товар добавлен в корзину");
+        return;
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         toast.error("Войдите для добавления в корзину");
