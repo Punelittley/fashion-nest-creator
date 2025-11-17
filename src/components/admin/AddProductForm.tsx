@@ -110,11 +110,24 @@ const AddProductForm = () => {
         await productsApi.create(productData);
       } catch (error) {
         console.log('Express API недоступен, используем Supabase');
-        // Fallback на Supabase
+        // Fallback на Supabase - нужно найти category_id в Supabase по имени
+        let supabaseCategoryId = productData.category_id;
+        
+        if (productData.category_id) {
+          // Ищем категорию по ID среди загруженных
+          const category = categories.find(cat => cat.id === productData.category_id);
+          if (category) {
+            supabaseCategoryId = category.id; // уже UUID из Supabase
+          }
+        }
+
         const { error: supabaseError } = await supabase.functions.invoke('admin-products', {
           body: {
             action: 'create',
-            payload: productData,
+            payload: {
+              ...productData,
+              category_id: supabaseCategoryId,
+            },
           },
         });
 
