@@ -78,6 +78,7 @@ const ProductDetail = () => {
         }
         
         setProduct(data);
+        setDataSource('supabase');
       } catch (supabaseErr) {
         console.error('Error loading product:', supabaseErr);
         toast.error('Товар не найден');
@@ -89,92 +90,80 @@ const ProductDetail = () => {
   };
 
   const checkFavoriteStatus = async () => {
+    if (!id || !dataSource) return;
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session || !id) return;
-
-      try {
-        // Пробуем через Express API (SQLite)
+      if (dataSource === 'sqlite') {
         const result = await favoritesApi.check(id);
         setIsFavorite(result.isFavorite);
-      } catch (error) {
-        console.log('Express API недоступен, используем Supabase');
-        // Fallback на Supabase
-        const { data } = await supabase
-          .from('favorite_products')
-          .select('id')
-          .eq('user_id', session.user.id)
-          .eq('product_id', id)
-          .maybeSingle();
-
-        setIsFavorite(!!data);
+        return;
       }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data } = await supabase
+        .from('favorite_products')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .eq('product_id', id)
+        .maybeSingle();
+
+      setIsFavorite(!!data);
     } catch (error) {
       console.error('Error checking favorite status:', error);
     }
   };
 
   const toggleFavorite = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      toast.error("Войдите для добавления в избранное");
-      navigate("/auth");
-      return;
-    }
-
-    if (!product) return;
-
-    console.log('Toggling favorite:', { product_id: product.id, isFavorite });
+    if (!product || !dataSource) return;
 
     setCheckingFavorite(true);
     try {
       if (isFavorite) {
-        // Remove from favorites
-        try {
-          // Пробуем через Express API (SQLite)
+        if (dataSource === 'sqlite') {
           await favoritesApi.removeByProductId(product.id);
-        } catch (error) {
-          console.log('Express API недоступен, используем Supabase');
-          // Fallback на Supabase
+          setIsFavorite(false);
+          toast.success("Удалено из избранного");
+        } else {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) {
+            toast.error("Войдите для добавления в избранное");
+            navigate("/auth");
+            return;
+          }
           const { error: supabaseError } = await supabase
             .from('favorite_products')
             .delete()
             .eq('user_id', session.user.id)
             .eq('product_id', product.id);
-
-          if (supabaseError) {
-            console.error('Favorite delete error:', supabaseError);
-            throw supabaseError;
-          }
+          if (supabaseError) throw supabaseError;
+          setIsFavorite(false);
+          toast.success("Удалено из избранного");
         }
-
-        setIsFavorite(false);
-        toast.success("Удалено из избранного");
       } else {
-        // Add to favorites
-        try {
-          // Пробуем через Express API (SQLite)
+        if (dataSource === 'sqlite') {
           await favoritesApi.add(product.id);
           setIsFavorite(true);
           toast.success("Добавлено в избранное");
-        } catch (error) {
-          console.log('Express API недоступен, используем Supabase');
-          // Fallback на Supabase
+        } else {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) {
+            toast.error("Войдите для добавления в избранное");
+            navigate("/auth");
+            return;
+          }
           const { error: supabaseError } = await supabase
             .from('favorite_products')
             .insert({
               user_id: session.user.id,
               product_id: product.id
             });
-
           if (supabaseError) {
             // @ts-ignore
-            if (supabaseError.code === '23505') {
+            if ((supabaseError as any).code === '23505') {
               setIsFavorite(true);
               toast.success("Уже в избранном");
             } else {
-              console.error('Favorite insert error:', supabaseError);
               throw supabaseError;
             }
           } else {
@@ -192,64 +181,51 @@ const ProductDetail = () => {
   };
 
   const handleAddToCart = async () => {
-    const token = localStorage.getItem('auth_token');
-    
-    if (!token) {
-      toast.error("Войдите для добавления в корзину");
-      navigate("/auth");
-      return;
-    }
-
-    if (!product) return;
+    if (!product || !dataSource) return;
 
     setAddingToCart(true);
     try {
-      await cartApi.add(product.id, quantity);
-      toast.success("Товар добавлен в корзину");
-    } catch (error: any) {
-      console.log('📦 SQLite недоступен, добавляю через Supabase...');
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          toast.error("Войдите для добавления в корзину");
-          navigate("/auth");
-          return;
-        }
-
-        // Check if item already exists
-        const { data: existing } = await supabase
-          .from('cart_items')
-          .select('id, quantity')
-          .eq('user_id', user.id)
-          .eq('product_id', product.id)
-          .maybeSingle();
-
-        if (existing) {
-          // Update quantity
-          const { error: updateError } = await supabase
-            .from('cart_items')
-            .update({ quantity: existing.quantity + quantity })
-            .eq('id', existing.id);
-
-          if (updateError) throw updateError;
-        } else {
-          // Insert new item
-          const { error: insertError } = await supabase
-            .from('cart_items')
-            .insert({
-              user_id: user.id,
-              product_id: product.id,
-              quantity: quantity
-            });
-
-          if (insertError) throw insertError;
-        }
-
+      if (dataSource === 'sqlite') {
+        await cartApi.add(product.id, quantity);
         toast.success("Товар добавлен в корзину");
-      } catch (supabaseErr: any) {
-        console.error('Error adding to cart:', supabaseErr);
-        toast.error(supabaseErr.message || "Ошибка добавления в корзину");
+        return;
       }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Войдите для добавления в корзину");
+        navigate("/auth");
+        return;
+      }
+
+      const { data: existing } = await supabase
+        .from('cart_items')
+        .select('id, quantity')
+        .eq('user_id', user.id)
+        .eq('product_id', product.id)
+        .maybeSingle();
+
+      if (existing) {
+        const { error: updateError } = await supabase
+          .from('cart_items')
+          .update({ quantity: existing.quantity + quantity })
+          .eq('id', existing.id);
+        if (updateError) throw updateError;
+      } else {
+        const { error: insertError } = await supabase
+          .from('cart_items')
+          .insert({
+            user_id: user.id,
+            product_id: product.id,
+            quantity
+          });
+        if (insertError) throw insertError;
+      }
+
+      toast.success("Товар добавлен в корзину");
+    } catch (e: any) {
+      console.error('Error adding to cart:', e);
+      toast.error(e.message || "Ошибка добавления в корзину");
     } finally {
       setAddingToCart(false);
     }

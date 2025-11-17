@@ -9,7 +9,7 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     // Для локальной разработки используем фиксированный user_id
-    const userId = 'local-user-001';
+    const userId = 'admin-001';
     const items = await dbAll(
       `SELECT ci.*, p.name, p.price, p.image_url, p.stock
        FROM cart_items ci
