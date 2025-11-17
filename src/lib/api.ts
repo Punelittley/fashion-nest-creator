@@ -156,6 +156,7 @@ export const ordersApi = {
     }),
 };
 
+// Favorites API
 // Profile API
 export const profileApi = {
   get: () => apiFetch('/profile'),
@@ -164,5 +165,28 @@ export const profileApi = {
     apiFetch('/profile', {
       method: 'PUT',
       body: JSON.stringify(data),
+    }),
+};
+
+// Favorites API
+export const favoritesApi = {
+  getAll: () => apiFetch('/favorites'),
+  
+  check: (productId: string) => apiFetch(`/favorites/check/${productId}`),
+  
+  add: (product_id: string) =>
+    apiFetch('/favorites', {
+      method: 'POST',
+      body: JSON.stringify({ product_id }),
+    }),
+  
+  remove: (id: string) =>
+    apiFetch(`/favorites/${id}`, {
+      method: 'DELETE',
+    }),
+    
+  removeByProductId: (productId: string) =>
+    apiFetch(`/favorites/product/${productId}`, {
+      method: 'DELETE',
     }),
 };

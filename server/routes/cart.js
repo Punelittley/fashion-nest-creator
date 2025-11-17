@@ -5,15 +5,17 @@ import { randomUUID } from 'crypto';
 
 const router = express.Router();
 
-// Получить корзину пользователя
-router.get('/', authenticateToken, async (req, res) => {
+// Получить корзину (для локальной разработки без auth - используем hardcoded user)
+router.get('/', async (req, res) => {
   try {
+    // Для локальной разработки используем фиксированный user_id
+    const userId = 'local-user-001';
     const items = await dbAll(
       `SELECT ci.*, p.name, p.price, p.image_url, p.stock
        FROM cart_items ci
        JOIN products p ON ci.product_id = p.id
        WHERE ci.user_id = ?`,
-      [req.user.id]
+      [userId]
     );
 
     res.json(items);
@@ -23,16 +25,16 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
-// Добавить товар в корзину
-router.post('/', authenticateToken, async (req, res) => {
+// Добавить товар в корзину (для локальной разработки без auth)
+router.post('/', async (req, res) => {
   try {
     const { product_id, quantity } = req.body;
+    const userId = 'local-user-001';
 
     if (!product_id || !quantity || quantity < 1) {
       return res.status(400).json({ error: 'Некорректные данные' });
     }
 
-    // Проверка наличия товара
     const product = await dbGet('SELECT * FROM products WHERE id = ? AND is_active = 1', [product_id]);
     if (!product) {
       return res.status(404).json({ error: 'Товар не найден' });
@@ -42,23 +44,20 @@ router.post('/', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Недостаточно товара на складе' });
     }
 
-    // Проверка существования в корзине
     const existing = await dbGet(
       'SELECT * FROM cart_items WHERE user_id = ? AND product_id = ?',
-      [req.user.id, product_id]
+      [userId, product_id]
     );
 
     if (existing) {
-      // Обновить количество
       await dbRun(
         'UPDATE cart_items SET quantity = quantity + ? WHERE id = ?',
         [quantity, existing.id]
       );
     } else {
-      // Добавить новый товар
       await dbRun(
         'INSERT INTO cart_items (id, user_id, product_id, quantity) VALUES (?, ?, ?, ?)',
-        [randomUUID(), req.user.id, product_id, quantity]
+        [randomUUID(), userId, product_id, quantity]
       );
     }
 
@@ -67,7 +66,7 @@ router.post('/', authenticateToken, async (req, res) => {
        FROM cart_items ci
        JOIN products p ON ci.product_id = p.id
        WHERE ci.user_id = ?`,
-      [req.user.id]
+      [userId]
     );
 
     res.json(items);
@@ -77,10 +76,11 @@ router.post('/', authenticateToken, async (req, res) => {
   }
 });
 
-// Обновить количество товара в корзине
-router.put('/:id', authenticateToken, async (req, res) => {
+// Обновить количество (для локальной разработки без auth)
+router.put('/:id', async (req, res) => {
   try {
     const { quantity } = req.body;
+    const userId = 'local-user-001';
 
     if (!quantity || quantity < 1) {
       return res.status(400).json({ error: 'Некорректное количество' });
@@ -88,7 +88,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
 
     await dbRun(
       'UPDATE cart_items SET quantity = ? WHERE id = ? AND user_id = ?',
-      [quantity, req.params.id, req.user.id]
+      [quantity, req.params.id, userId]
     );
 
     res.json({ message: 'Количество обновлено' });
@@ -98,12 +98,13 @@ router.put('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Удалить товар из корзины
-router.delete('/:id', authenticateToken, async (req, res) => {
+// Удалить товар из корзины (для локальной разработки без auth)
+router.delete('/:id', async (req, res) => {
   try {
+    const userId = 'local-user-001';
     await dbRun(
       'DELETE FROM cart_items WHERE id = ? AND user_id = ?',
-      [req.params.id, req.user.id]
+      [req.params.id, userId]
     );
 
     res.json({ message: 'Товар удален из корзины' });
@@ -113,10 +114,11 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Очистить корзину
-router.delete('/', authenticateToken, async (req, res) => {
+// Очистить корзину (для локальной разработки без auth)
+router.delete('/', async (req, res) => {
   try {
-    await dbRun('DELETE FROM cart_items WHERE user_id = ?', [req.user.id]);
+    const userId = 'local-user-001';
+    await dbRun('DELETE FROM cart_items WHERE user_id = ?', [userId]);
     res.json({ message: 'Корзина очищена' });
   } catch (error) {
     console.error('Ошибка очистки корзины:', error);
