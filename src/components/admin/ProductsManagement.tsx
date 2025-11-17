@@ -148,12 +148,30 @@ const ProductsManagement = () => {
         await productsApi.update(editingProduct.id, updateData);
       } catch (error) {
         console.log('Express API недоступен, используем Supabase');
-        // Fallback на Supabase
+        // Fallback на Supabase: корректируем category_id под UUID
+        const isUUID = (v: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
+        let supabaseCategoryId: string | null = updateData.category_id || null;
+        if (updateData.category_id) {
+          const selected = categories.find((c) => c.id === updateData.category_id);
+          if (selected) {
+            if (isUUID(selected.id)) {
+              supabaseCategoryId = selected.id;
+            } else {
+              const { data: supCat } = await supabase
+                .from('categories')
+                .select('id')
+                .eq('name', selected.name)
+                .maybeSingle();
+              supabaseCategoryId = supCat?.id || null;
+            }
+          }
+        }
+
         const { error: supabaseError } = await supabase.functions.invoke('admin-products', {
           body: {
             action: 'update',
             id: editingProduct.id,
-            payload: updateData,
+            payload: { ...updateData, category_id: supabaseCategoryId },
           },
         });
 
