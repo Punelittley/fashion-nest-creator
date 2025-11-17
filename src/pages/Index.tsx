@@ -3,7 +3,6 @@ import Layout from "@/components/Layout";
 import HeroSlider from "@/components/HeroSlider";
 import { useEffect, useState } from "react";
 import { productsApi } from "@/lib/api";
-import { supabase } from "@/integrations/supabase/client";
 
 interface Product {
   id: string;
@@ -21,24 +20,10 @@ const Index = () => {
 
   const loadFeaturedProducts = async () => {
     try {
-      // Пробуем загрузить из локального SQLite API
       const products = await productsApi.getAll();
       setFeaturedProducts(products.slice(0, 3));
     } catch (error) {
-      console.error('Local API unavailable, falling back to Supabase:', error);
-      // Fallback на Supabase если локальный сервер недоступен
-      try {
-        const { data, error: supabaseError } = await supabase
-          .from('products')
-          .select('id, name, price, image_url')
-          .eq('is_active', true)
-          .limit(3);
-        
-        if (supabaseError) throw supabaseError;
-        setFeaturedProducts(data || []);
-      } catch (supabaseErr) {
-        console.error('Error loading from Supabase:', supabaseErr);
-      }
+      console.error('Error loading products from SQLite:', error);
     }
   };
 
