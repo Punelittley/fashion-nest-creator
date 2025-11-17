@@ -4,6 +4,7 @@ import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { ProductImageSlider } from "@/components/ProductImageSlider";
 import { productsApi, cartApi } from "@/lib/api";
+import { mockProducts } from "@/data/mockProducts";
 
 interface Product {
   id: string;
@@ -56,8 +57,22 @@ const ProductDetail = () => {
       setProduct(data);
     } catch (error) {
       console.error('Error loading product:', error);
-      toast.error('Товар не найден');
-      navigate("/catalog");
+      // Fallback to mock data in preview / when API is offline
+      const fallback = mockProducts.find(p => p.id === id && p.is_active);
+      if (fallback) {
+        setProduct({
+          id: fallback.id,
+          name: fallback.name,
+          description: fallback.description,
+          price: fallback.price,
+          image_url: fallback.image_url,
+          images: fallback.images || null,
+          stock: fallback.stock,
+        });
+      } else {
+        toast.error('Товар не найден');
+        navigate("/catalog");
+      }
     } finally {
       setLoading(false);
     }
