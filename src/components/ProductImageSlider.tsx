@@ -51,6 +51,7 @@ export const ProductImageSlider = ({ images, alt }: ProductImageSliderProps) => 
             height: "100%",
             objectFit: "cover"
           }}
+          onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/placeholder.svg"; }}
         />
       </div>
     );
@@ -81,6 +82,7 @@ export const ProductImageSlider = ({ images, alt }: ProductImageSliderProps) => 
                   height: "100%",
                   objectFit: "cover"
                 }}
+                onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/placeholder.svg"; }}
               />
             </div>
           ))}

@@ -3,6 +3,7 @@ import Layout from "@/components/Layout";
 import HeroSlider from "@/components/HeroSlider";
 import { useEffect, useState } from "react";
 import { productsApi } from "@/lib/api";
+import { mockProducts } from "@/data/mockProducts";
 
 interface Product {
   id: string;
@@ -24,6 +25,8 @@ const Index = () => {
       setFeaturedProducts(products.slice(0, 3));
     } catch (error) {
       console.error('Error loading products:', error);
+      const fallback = mockProducts.filter(p => p.is_active).slice(0, 3).map(p => ({ id: p.id, name: p.name, price: p.price, image_url: p.image_url }));
+      setFeaturedProducts(fallback);
     }
   };
 
@@ -77,7 +80,7 @@ const Index = () => {
                       width: "100%",
                       height: "100%",
                       objectFit: "cover"
-                    }} />
+                    }} onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/placeholder.svg"; }} />
                   )}
                 </div>
                 <h3 style={{
