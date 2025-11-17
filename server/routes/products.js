@@ -57,8 +57,8 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Создать товар (только админ)
-router.post('/', authenticateToken, requireAdmin, async (req, res) => {
+// Создать товар (для локальной разработки без auth)
+router.post('/', async (req, res) => {
   try {
     const { category_id, name, description, price, image_url, stock } = req.body;
 
@@ -81,8 +81,8 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
-// Обновить товар (только админ)
-router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
+// Обновить товар (для локальной разработки без auth)
+router.put('/:id', async (req, res) => {
   try {
     const { category_id, name, description, price, image_url, stock, is_active } = req.body;
 
@@ -102,8 +102,8 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
-// Удалить товар (только админ)
-router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
+// Удалить товар (для локальной разработки без auth)
+router.delete('/:id', async (req, res) => {
   try {
     await dbRun('DELETE FROM products WHERE id = ?', [req.params.id]);
     res.json({ message: 'Товар удален' });
