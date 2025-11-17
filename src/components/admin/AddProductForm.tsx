@@ -110,14 +110,24 @@ const AddProductForm = () => {
         await productsApi.create(productData);
       } catch (error) {
         console.log('Express API недоступен, используем Supabase');
-        // Fallback на Supabase - нужно найти category_id в Supabase по имени
-        let supabaseCategoryId = productData.category_id;
-        
+        // Fallback на Supabase - корректируем category_id под UUID
+        const isUUID = (v: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
+        let supabaseCategoryId: string | null = productData.category_id || null;
+
         if (productData.category_id) {
-          // Ищем категорию по ID среди загруженных
-          const category = categories.find(cat => cat.id === productData.category_id);
-          if (category) {
-            supabaseCategoryId = category.id; // уже UUID из Supabase
+          const selected = categories.find((c) => c.id === productData.category_id);
+          if (selected) {
+            if (isUUID(selected.id)) {
+              supabaseCategoryId = selected.id;
+            } else {
+              // Ищем категорию в Supabase по имени
+              const { data: supCat } = await supabase
+                .from('categories')
+                .select('id')
+                .eq('name', selected.name)
+                .maybeSingle();
+              supabaseCategoryId = supCat?.id || null;
+            }
           }
         }
 
