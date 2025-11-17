@@ -4,7 +4,6 @@ import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ProductImageSlider } from "@/components/ProductImageSlider";
-import { mockProducts } from "@/data/mockProducts";
 
 interface Product {
   id: string;
@@ -48,21 +47,25 @@ const ProductDetail = () => {
   }, [id]);
 
   const loadProduct = async () => {
-    try {
-      const foundProduct = mockProducts.find(p => p.id === id && p.is_active);
-
-      if (!foundProduct) {
-        throw new Error('Product not found');
-      }
-
-      setProduct(foundProduct);
-    } catch (error) {
-      console.error('Error loading product:', error);
-      toast.error("Товар не найден");
+    if (!id) return;
+    
+    setLoading(true);
+    
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+    
+    if (error || !data) {
+      toast.error('Товар не найден');
       navigate("/catalog");
-    } finally {
       setLoading(false);
+      return;
     }
+    
+    setProduct(data);
+    setLoading(false);
   };
 
   const checkFavoriteStatus = async () => {

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { mockProducts, mockCategories } from "@/data/mockProducts";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Product {
   id: string;
@@ -28,10 +28,35 @@ const Catalog = () => {
   const [sortBy, setSortBy] = useState("name");
 
   useEffect(() => {
-    setProducts(mockProducts);
-    setCategories(mockCategories);
-    setLoading(false);
+    loadProducts();
+    loadCategories();
   }, []);
+
+  const loadProducts = async () => {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('is_active', true);
+    
+    if (error) {
+      console.error('Error loading products:', error);
+    } else {
+      setProducts(data || []);
+    }
+    setLoading(false);
+  };
+
+  const loadCategories = async () => {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*');
+    
+    if (error) {
+      console.error('Error loading categories:', error);
+    } else {
+      setCategories(data || []);
+    }
+  };
 
   const filteredProducts = selectedCategory
     ? products.filter(p => p.category_id === selectedCategory)
