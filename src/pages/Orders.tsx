@@ -18,7 +18,6 @@ interface Order {
   created_at: string;
   shipping_address: string;
   order_items: OrderItem[];
-  is_favorite?: boolean;
 }
 
 const statusLabels: Record<string, string> = {
@@ -33,7 +32,6 @@ const Orders = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [favoriteOrderIds, setFavoriteOrderIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     checkAuthAndLoadOrders();
@@ -51,141 +49,12 @@ const Orders = () => {
   const loadOrders = async () => {
     try {
       const data = await ordersApi.get();
-      
-      // Load favorite orders from Supabase
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        const { data: favoritesData } = await supabase
-          .from('favorite_orders')
-          .select('order_id')
-          .eq('user_id', session.user.id);
-
-        const favoriteIds = new Set(favoritesData?.map(f => f.order_id) || []);
-        setFavoriteOrderIds(favoriteIds);
-
-        const formattedOrders = data?.map((order: any) => ({
-          ...order,
-          is_favorite: favoriteIds.has(order.id)
-        })) || [];
-
-        setOrders(formattedOrders);
-      } else {
-        setOrders(data || []);
-      }
+      setOrders(data || []);
     } catch (error) {
-      console.log('📦 SQLite недоступен, загружаю заказы из Supabase...');
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          navigate("/auth");
-          return;
-        }
-
-        // Load orders with items from Supabase
-        const { data: ordersData, error: ordersError } = await supabase
-          .from('orders')
-          .select(`
-            id,
-            total_amount,
-            status,
-            created_at,
-            shipping_address,
-            order_items (
-              quantity,
-              price,
-              products (
-                name,
-                image_url
-              )
-            )
-          `)
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (ordersError) throw ordersError;
-
-        // Load favorite orders
-        const { data: favoritesData } = await supabase
-          .from('favorite_orders')
-          .select('order_id')
-          .eq('user_id', user.id);
-
-        const favoriteIds = new Set(favoritesData?.map(f => f.order_id) || []);
-        setFavoriteOrderIds(favoriteIds);
-
-        // Format orders
-        const formattedOrders = ordersData?.map(order => ({
-          id: order.id,
-          total_amount: order.total_amount,
-          status: order.status,
-          created_at: order.created_at,
-          shipping_address: order.shipping_address,
-          is_favorite: favoriteIds.has(order.id),
-          order_items: order.order_items.map((item: any) => ({
-            quantity: item.quantity,
-            price: item.price,
-            name: item.products?.name || '',
-            image_url: item.products?.image_url || ''
-          }))
-        })) || [];
-
-        setOrders(formattedOrders);
-      } catch (supabaseErr) {
-        console.error('Error loading orders from Supabase:', supabaseErr);
-        toast.error("Ошибка загрузки заказов");
-      }
+      console.error('Error loading orders:', error);
+      toast.error("Ошибка загрузки заказов");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const toggleFavorite = async (orderId: string) => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const isFavorite = favoriteOrderIds.has(orderId);
-
-      if (isFavorite) {
-        // Remove from favorites
-        const { error } = await supabase
-          .from('favorite_orders')
-          .delete()
-          .eq('user_id', session.user.id)
-          .eq('order_id', orderId);
-
-        if (error) throw error;
-
-        setFavoriteOrderIds(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(orderId);
-          return newSet;
-        });
-        
-        setOrders(prev => prev.map(order => 
-          order.id === orderId ? { ...order, is_favorite: false } : order
-        ));
-
-        toast.success("Удалено из избранного");
-      } else {
-        // Add to favorites
-        const { error } = await supabase
-          .from('favorite_orders')
-          .insert({ user_id: session.user.id, order_id: orderId });
-
-        if (error) throw error;
-
-        setFavoriteOrderIds(prev => new Set([...prev, orderId]));
-        
-        setOrders(prev => prev.map(order => 
-          order.id === orderId ? { ...order, is_favorite: true } : order
-        ));
-
-        toast.success("Добавлено в избранное");
-      }
-    } catch (error) {
-      console.error('Error toggling favorite:', error);
-      toast.error("Ошибка при обновлении избранного");
     }
   };
 
@@ -211,11 +80,7 @@ const Orders = () => {
             padding: "4rem 2rem",
             backgroundColor: "hsl(var(--secondary))"
           }}>
-            <p style={{
-              fontSize: "1.125rem",
-              color: "hsl(var(--muted-foreground))",
-              marginBottom: "2rem"
-            }}>
+            <p style={{ fontSize: "1.125rem", color: "hsl(var(--muted-foreground))", marginBottom: "2rem" }}>
               У вас пока нет заказов
             </p>
             <button
@@ -227,143 +92,74 @@ const Orders = () => {
                 border: "none",
                 fontSize: "1rem",
                 fontWeight: "500",
-                cursor: "pointer",
-                transition: "var(--transition)"
+                cursor: "pointer"
               }}
             >
               Перейти в каталог
             </button>
           </div>
         ) : (
-          <div style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "2rem"
-          }}>
-            {orders.map(order => (
+          <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+            {orders.map((order) => (
               <div key={order.id} style={{
                 padding: "2rem",
-                backgroundColor: "hsl(var(--card))",
-                boxShadow: "var(--shadow-soft)",
-                position: "relative"
+                backgroundColor: "hsl(var(--secondary))",
+                border: "1px solid hsl(var(--border))"
               }}>
-                <button
-                  onClick={() => toggleFavorite(order.id)}
-                  style={{
-                    position: "absolute",
-                    top: "1.5rem",
-                    right: "1.5rem",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    fontSize: "1.5rem",
-                    padding: "0.5rem",
-                    color: order.is_favorite ? "hsl(var(--accent))" : "hsl(var(--muted-foreground))"
-                  }}
-                  title={order.is_favorite ? "Удалить из избранного" : "Добавить в избранное"}
-                >
-                  {order.is_favorite ? "♥" : "♡"}
-                </button>
-                
-                <div style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "start",
-                  marginBottom: "1.5rem",
-                  flexWrap: "wrap",
-                  gap: "1rem",
-                  paddingRight: "3rem"
-                }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "1.5rem" }}>
                   <div>
-                    <p style={{
-                      fontSize: "0.9rem",
-                      color: "hsl(var(--muted-foreground))",
-                      marginBottom: "0.25rem"
-                    }}>
-                      Заказ от {new Date(order.created_at).toLocaleDateString('ru-RU')}
-                    </p>
-                    <p style={{
-                      fontSize: "1.5rem",
-                      fontWeight: "600",
-                      color: "hsl(var(--accent))"
-                    }}>
-                      {order.total_amount.toLocaleString('ru-RU')} ₽
-                    </p>
+                    <div style={{ fontSize: "0.875rem", color: "hsl(var(--muted-foreground))", marginBottom: "0.25rem" }}>
+                      Заказ #{order.id.slice(0, 8)}
+                    </div>
+                    <div style={{ fontSize: "0.875rem", color: "hsl(var(--muted-foreground))" }}>
+                      {new Date(order.created_at).toLocaleDateString('ru-RU')}
+                    </div>
                   </div>
-                  <span style={{
-                    padding: "0.5rem 1rem",
-                    backgroundColor: order.status === "delivered" ? "hsl(120 50% 90%)" : "hsl(var(--secondary))",
-                    color: order.status === "delivered" ? "hsl(120 50% 30%)" : "hsl(var(--foreground))",
-                    fontSize: "0.9rem",
-                    fontWeight: "500"
-                  }}>
-                    {statusLabels[order.status] || order.status}
-                  </span>
-                </div>
-
-                <div style={{
-                  padding: "1rem",
-                  backgroundColor: "hsl(var(--secondary))",
-                  marginBottom: "1.5rem",
-                  fontSize: "0.95rem",
-                  color: "hsl(var(--muted-foreground))"
-                }}>
-                  <strong>Адрес доставки:</strong> {order.shipping_address}
-                </div>
-
-                <div style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "1rem"
-                }}>
-                  {order.order_items.map((item, index) => (
-                    <div key={index} style={{
-                      display: "grid",
-                      gridTemplateColumns: "80px 1fr auto",
-                      gap: "1rem",
-                      alignItems: "center"
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{
+                      display: "inline-block",
+                      padding: "0.375rem 0.75rem",
+                      backgroundColor: "hsl(var(--primary) / 0.1)",
+                      color: "hsl(var(--primary))",
+                      fontSize: "0.875rem",
+                      fontWeight: "500",
+                      marginBottom: "0.5rem"
                     }}>
-                      <div style={{
-                        aspectRatio: "3/4",
-                        backgroundColor: "hsl(var(--muted))",
-                        overflow: "hidden"
-                      }}>
+                      {statusLabels[order.status] || order.status}
+                    </div>
+                    <div style={{ fontSize: "1.25rem", fontWeight: "500" }}>
+                      {order.total_amount.toLocaleString()} ₽
+                    </div>
+                  </div>
+                </div>
+
+                {order.order_items && order.order_items.length > 0 && (
+                  <div style={{ marginBottom: "1rem", paddingTop: "1rem", borderTop: "1px solid hsl(var(--border))" }}>
+                    {order.order_items.map((item, idx) => (
+                      <div key={idx} style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "0.75rem" }}>
                         {item.image_url && (
                           <img
                             src={item.image_url}
                             alt={item.name}
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              objectFit: "cover"
-                            }}
+                            style={{ width: "60px", height: "60px", objectFit: "cover" }}
                           />
                         )}
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: "500", marginBottom: "0.25rem" }}>{item.name}</div>
+                          <div style={{ fontSize: "0.875rem", color: "hsl(var(--muted-foreground))" }}>
+                            {item.quantity} шт. × {item.price.toLocaleString()} ₽
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <p style={{
-                          fontWeight: "500",
-                          color: "hsl(var(--foreground))",
-                          marginBottom: "0.25rem"
-                        }}>
-                          {item.name}
-                        </p>
-                        <p style={{
-                          fontSize: "0.9rem",
-                          color: "hsl(var(--muted-foreground))"
-                        }}>
-                          Количество: {item.quantity}
-                        </p>
-                      </div>
-                      <p style={{
-                        fontWeight: "600",
-                        color: "hsl(var(--foreground))"
-                      }}>
-                        {(item.price * item.quantity).toLocaleString('ru-RU')} ₽
-                      </p>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
+
+                {order.shipping_address && (
+                  <div style={{ fontSize: "0.875rem", color: "hsl(var(--muted-foreground))", paddingTop: "1rem", borderTop: "1px solid hsl(var(--border))" }}>
+                    <strong>Адрес доставки:</strong> {order.shipping_address}
+                  </div>
+                )}
               </div>
             ))}
           </div>
