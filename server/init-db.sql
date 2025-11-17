@@ -121,7 +121,7 @@ CREATE INDEX IF NOT EXISTS idx_user_roles_user ON user_roles(user_id);
 
 -- Админ пользователь (пароль: admin123)
 INSERT OR IGNORE INTO profiles (id, email, password_hash, full_name) 
-VALUES ('admin-001', 'admin@fashion.ru', '$2b$10$YourHashedPasswordHere', 'Администратор');
+VALUES ('admin-001', 'admin@fashion.ru', '$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', 'Администратор');
 
 INSERT OR IGNORE INTO user_roles (id, user_id, role) 
 VALUES ('role-admin-001', 'admin-001', 'admin');
