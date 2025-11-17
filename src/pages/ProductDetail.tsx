@@ -53,12 +53,31 @@ const ProductDetail = () => {
     setLoading(true);
     
     try {
+      // Пробуем загрузить из локального SQLite API
       const data = await productsApi.getById(id);
       setProduct(data);
     } catch (error) {
-      console.error('Error loading product:', error);
-      toast.error('Товар не найден');
-      navigate("/catalog");
+      console.error('Local API unavailable, falling back to Supabase:', error);
+      // Fallback на Supabase если локальный сервер недоступен
+      try {
+        const { data, error: supabaseError } = await supabase
+          .from('products')
+          .select('*')
+          .eq('id', id)
+          .maybeSingle();
+        
+        if (supabaseError || !data) {
+          toast.error('Товар не найден');
+          navigate("/catalog");
+          return;
+        }
+        
+        setProduct(data);
+      } catch (supabaseErr) {
+        console.error('Error loading from Supabase:', supabaseErr);
+        toast.error('Товар не найден');
+        navigate("/catalog");
+      }
     } finally {
       setLoading(false);
     }
