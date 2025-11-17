@@ -4,7 +4,6 @@ import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { z } from "zod";
 import { cartApi, ordersApi, profileApi } from "@/lib/api";
-import { supabase } from "@/integrations/supabase/client";
 
 const checkoutSchema = z.object({
   phone: z.string().min(10, { message: "Введите корректный номер телефона" }),

@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { ProductImageSlider } from "@/components/ProductImageSlider";
 import { productsApi, cartApi } from "@/lib/api";
 
@@ -56,26 +55,9 @@ const ProductDetail = () => {
       const data = await productsApi.getById(id);
       setProduct(data);
     } catch (error) {
-      console.log('📦 SQLite недоступен, загружаю товар из Supabase...');
-      try {
-        const { data, error: supabaseError } = await supabase
-          .from('products')
-          .select('*')
-          .eq('id', id)
-          .maybeSingle();
-        
-        if (supabaseError || !data) {
-          toast.error('Товар не найден');
-          navigate("/catalog");
-          return;
-        }
-        
-        setProduct(data);
-      } catch (supabaseErr) {
-        console.error('Error loading product:', supabaseErr);
-        toast.error('Товар не найден');
-        navigate("/catalog");
-      }
+      console.error('Error loading product:', error);
+      toast.error('Товар не найден');
+      navigate("/catalog");
     } finally {
       setLoading(false);
     }
@@ -177,49 +159,8 @@ const ProductDetail = () => {
       await cartApi.add(product.id, quantity);
       toast.success("Товар добавлен в корзину");
     } catch (error: any) {
-      console.log('📦 SQLite недоступен, добавляю через Supabase...');
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          toast.error("Войдите для добавления в корзину");
-          navigate("/auth");
-          return;
-        }
-
-        // Check if item already exists
-        const { data: existing } = await supabase
-          .from('cart_items')
-          .select('id, quantity')
-          .eq('user_id', user.id)
-          .eq('product_id', product.id)
-          .maybeSingle();
-
-        if (existing) {
-          // Update quantity
-          const { error: updateError } = await supabase
-            .from('cart_items')
-            .update({ quantity: existing.quantity + quantity })
-            .eq('id', existing.id);
-
-          if (updateError) throw updateError;
-        } else {
-          // Insert new item
-          const { error: insertError } = await supabase
-            .from('cart_items')
-            .insert({
-              user_id: user.id,
-              product_id: product.id,
-              quantity: quantity
-            });
-
-          if (insertError) throw insertError;
-        }
-
-        toast.success("Товар добавлен в корзину");
-      } catch (supabaseErr: any) {
-        console.error('Error adding to cart:', supabaseErr);
-        toast.error(supabaseErr.message || "Ошибка добавления в корзину");
-      }
+      console.error('Error adding to cart:', error);
+      toast.error(error.message || "Ошибка добавления в корзину");
     } finally {
       setAddingToCart(false);
     }
