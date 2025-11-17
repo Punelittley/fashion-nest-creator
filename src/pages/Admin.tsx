@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import UsersList from "@/components/admin/UsersList";
 import AddProductForm from "@/components/admin/AddProductForm";
 import ProductsManagement from "@/components/admin/ProductsManagement";
@@ -18,40 +19,21 @@ const Admin = () => {
 
   const checkAdmin = async () => {
     try {
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        toast.error("Требуется авторизация");
-        navigate("/auth");
-        return;
-      }
-
-      const response = await fetch('http://localhost:3001/api/auth/me', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (!response.ok) {
-        toast.error("Требуется авторизация");
-        navigate("/auth");
-        return;
-      }
-
-      const user = await response.json();
+      const { data: { user } } = await supabase.auth.getUser();
       
-      const rolesResponse = await fetch(
-        `http://localhost:3001/api/users/${user.id}/roles`,
-        { headers: { 'Authorization': `Bearer ${token}` } }
-      );
-
-      if (!rolesResponse.ok) {
-        toast.error("Доступ запрещен");
-        navigate("/");
+      if (!user) {
+        toast.error("Требуется авторизация");
+        navigate("/auth");
         return;
       }
 
-      const roles = await rolesResponse.json();
-      const hasAdmin = roles.some((r: any) => r.role === 'admin');
+      const { data: roles, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin');
 
-      if (!hasAdmin) {
+      if (error || !roles || roles.length === 0) {
         toast.error("Доступ запрещен");
         navigate("/");
         return;

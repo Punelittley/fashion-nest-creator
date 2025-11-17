@@ -4,6 +4,7 @@ import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { z } from "zod";
 import { authApi, setToken } from "@/lib/api";
+import { supabase } from "@/integrations/supabase/client";
 
 const signUpSchema = z.object({
   email: z.string().email({ message: "Некорректный email адрес" }),
@@ -33,12 +34,23 @@ const Auth = () => {
   });
 
   useEffect(() => {
+    let isMounted = true;
+
+    // 1) Если есть активная облачная сессия — уводим на главную
+    supabase.auth.getSession().then(({ data }) => {
+      if (!isMounted) return;
+      if (data.session) navigate("/");
+    });
+
+    // 2) Если в localStorage лежит токен локального сервера — проверяем его через /auth/me
     const token = localStorage.getItem('auth_token');
-    if (token) {
+    if (token && token !== 'supabase') {
       authApi.me()
-        .then(() => navigate("/"))
-        .catch(() => localStorage.removeItem('auth_token'));
+        .then(() => { if (isMounted) navigate("/"); })
+        .catch(() => {/* игнор, остаёмся на странице авторизации */});
     }
+
+    return () => { isMounted = false; };
   }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -57,23 +69,70 @@ const Auth = () => {
 
     try {
       if (isSignUp) {
-        const response = await authApi.signup(
-          formData.email,
-          formData.password,
-          `${formData.lastName} ${formData.firstName} ${formData.middleName}`.trim()
-        );
-        setToken(response.token);
-        toast.success("Регистрация успешна! Добро пожаловать!");
-        navigate("/");
+        // 1) Пытаемся через локальный Express (если доступен)
+        try {
+          const response = await authApi.signup(
+            formData.email,
+            formData.password,
+            `${formData.lastName} ${formData.firstName} ${formData.middleName}`.trim()
+          );
+          setToken(response.token);
+          toast.success("Регистрация успешна! Добро пожаловать!");
+          navigate("/");
+          return;
+        } catch (err) {
+          // 2) Фолбэк на облачную авторизацию (Lovable Cloud)
+          const redirectUrl = `${window.location.origin}/`;
+          const { data, error } = await supabase.auth.signUp({
+            email: formData.email,
+            password: formData.password,
+            options: {
+              emailRedirectTo: redirectUrl,
+              data: { 
+                first_name: formData.firstName,
+                last_name: formData.lastName,
+                middle_name: formData.middleName || undefined,
+                birth_date: formData.birthDate
+              },
+            },
+          });
+          if (error) throw error;
+          // Если автоподтверждение включено, будет сессия; если нет — письмо отправлено
+          if (data.session) {
+            setToken('supabase');
+            toast.success("Регистрация успешна!");
+            navigate("/");
+          } else {
+            toast.success("Письмо для подтверждения отправлено. Проверьте почту.");
+          }
+        }
       } else {
-        const response = await authApi.signin(formData.email, formData.password);
-        setToken(response.token);
-        toast.success("Вход выполнен успешно!");
-        navigate("/");
+        // Вход: сначала пробуем локальный Express
+        try {
+          const response = await authApi.signin(
+            formData.email,
+            formData.password
+          );
+          setToken(response.token);
+          toast.success("Вход выполнен успешно!");
+          navigate("/");
+          return;
+        } catch (err) {
+          // Фолбэк на облачный вход
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email: formData.email,
+            password: formData.password,
+          });
+          if (error) throw error;
+          if (data.session) {
+            setToken('supabase');
+            toast.success("Вход выполнен успешно!");
+            navigate("/");
+          }
+        }
       }
     } catch (error: any) {
-      console.error('Auth error:', error);
-      toast.error(error.message || "Ошибка аутентификации");
+      toast.error(error.message || "Произошла ошибка. Попробуйте снова.");
     } finally {
       setLoading(false);
     }
