@@ -74,8 +74,67 @@ const Orders = () => {
         setOrders(data || []);
       }
     } catch (error) {
-      console.error('Error loading orders:', error);
-      toast.error("Ошибка загрузки заказов");
+      console.log('📦 SQLite недоступен, загружаю заказы из Supabase...');
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          navigate("/auth");
+          return;
+        }
+
+        // Load orders with items from Supabase
+        const { data: ordersData, error: ordersError } = await supabase
+          .from('orders')
+          .select(`
+            id,
+            total_amount,
+            status,
+            created_at,
+            shipping_address,
+            order_items (
+              quantity,
+              price,
+              products (
+                name,
+                image_url
+              )
+            )
+          `)
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (ordersError) throw ordersError;
+
+        // Load favorite orders
+        const { data: favoritesData } = await supabase
+          .from('favorite_orders')
+          .select('order_id')
+          .eq('user_id', user.id);
+
+        const favoriteIds = new Set(favoritesData?.map(f => f.order_id) || []);
+        setFavoriteOrderIds(favoriteIds);
+
+        // Format orders
+        const formattedOrders = ordersData?.map(order => ({
+          id: order.id,
+          total_amount: order.total_amount,
+          status: order.status,
+          created_at: order.created_at,
+          shipping_address: order.shipping_address,
+          is_favorite: favoriteIds.has(order.id),
+          order_items: order.order_items.map((item: any) => ({
+            quantity: item.quantity,
+            price: item.price,
+            name: item.products?.name || '',
+            image_url: item.products?.image_url || ''
+          }))
+        })) || [];
+
+        setOrders(formattedOrders);
+      } catch (supabaseErr) {
+        console.error('Error loading orders from Supabase:', supabaseErr);
+        toast.error("Ошибка загрузки заказов");
+      }
     } finally {
       setLoading(false);
     }
