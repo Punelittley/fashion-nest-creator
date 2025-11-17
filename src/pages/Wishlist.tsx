@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { authApi } from "@/lib/api";
 
 interface WishlistItem {
   id: string;
@@ -23,8 +23,8 @@ const Wishlist = () => {
   }, [navigate]);
 
   const checkAuthAndLoadWishlist = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
       navigate("/auth");
     } else {
       loadWishlist();
@@ -33,40 +33,30 @@ const Wishlist = () => {
 
   const loadWishlist = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const { data, error } = await supabase
-        .from('favorite_products')
-        .select('id, product_id')
-        .eq('user_id', session.user.id);
-
-      if (error) throw error;
-
-      const productIds = data?.map(item => item.product_id) || [];
-      const { data: productsData, error: productsError } = await supabase
-        .from('products')
-        .select('*')
-        .in('id', productIds);
-
-      if (productsError) {
-        console.error('Error loading products:', productsError);
+      const stored = localStorage.getItem('wishlist');
+      const productIds = stored ? JSON.parse(stored) : [];
+      
+      if (productIds.length === 0) {
+        setWishlistItems([]);
+        setLoading(false);
         return;
       }
 
-      const formattedItems = data?.map((item: any) => {
-        const product = productsData?.find(p => p.id === item.product_id);
-        return product ? {
-          id: item.id,
-          product_id: product.id,
-          name: product.name,
-          price: product.price,
-          image_url: product.image_url,
-          stock: product.stock
-        } : null;
-      }).filter(Boolean) || [];
+      const response = await fetch('http://localhost:3001/api/products');
+      const allProducts = await response.json();
+      
+      const items = allProducts
+        .filter((p: any) => productIds.includes(p.id))
+        .map((p: any) => ({
+          id: p.id,
+          product_id: p.id,
+          name: p.name,
+          price: p.price,
+          image_url: p.image_url,
+          stock: p.stock
+        }));
 
-      setWishlistItems(formattedItems as WishlistItem[]);
+      setWishlistItems(items);
     } catch (error) {
       console.error('Error loading wishlist:', error);
       toast.error("Ошибка загрузки избранного");
@@ -75,20 +65,14 @@ const Wishlist = () => {
     }
   };
 
-  const removeFromWishlist = async (favoriteId: string) => {
+  const removeFromWishlist = async (productId: string) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const { error } = await supabase
-        .from('favorite_products')
-        .delete()
-        .eq('id', favoriteId)
-        .eq('user_id', session.user.id);
-
-      if (error) throw error;
-
-      setWishlistItems(prev => prev.filter(item => item.id !== favoriteId));
+      const stored = localStorage.getItem('wishlist');
+      const productIds = stored ? JSON.parse(stored) : [];
+      const updated = productIds.filter((id: string) => id !== productId);
+      localStorage.setItem('wishlist', JSON.stringify(updated));
+      
+      setWishlistItems(prev => prev.filter(item => item.product_id !== productId));
       toast.success("Товар удален из избранного");
     } catch (error) {
       console.error('Error removing from wishlist:', error);
@@ -98,39 +82,26 @@ const Wishlist = () => {
 
   const addToCart = async (item: WishlistItem) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
         toast.error("Войдите для добавления в корзину");
         navigate("/auth");
         return;
       }
 
-      // Проверим наличие и увеличим количество, чтобы не ловить уникальный конфликт
-      const { data: existing, error: selErr } = await supabase
-        .from('cart_items')
-        .select('id, quantity')
-        .eq('user_id', session.user.id)
-        .eq('product_id', item.product_id)
-        .maybeSingle();
+      const response = await fetch('http://localhost:3001/api/cart', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          product_id: item.product_id,
+          quantity: 1
+        })
+      });
 
-      if (selErr) throw selErr;
-
-      if (existing) {
-        const { error: updErr } = await supabase
-          .from('cart_items')
-          .update({ quantity: (existing.quantity || 0) + 1 })
-          .eq('id', existing.id);
-        if (updErr) throw updErr;
-      } else {
-        const { error: insErr } = await supabase
-          .from('cart_items')
-          .insert({
-            user_id: session.user.id,
-            product_id: item.product_id,
-            quantity: 1
-          });
-        if (insErr) throw insErr;
-      }
+      if (!response.ok) throw new Error('Failed to add to cart');
 
       toast.success(`${item.name} добавлен в корзину`);
     } catch (error: any) {
@@ -314,7 +285,7 @@ const Wishlist = () => {
                     </button>
 
                       <button
-                        onClick={() => removeFromWishlist(item.id)}
+                        onClick={() => removeFromWishlist(item.product_id)}
                         style={{
                           padding: "0.75rem",
                           backgroundColor: "hsl(var(--secondary))",

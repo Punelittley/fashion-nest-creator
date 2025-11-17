@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { profileApi, ordersApi } from "@/lib/api";
-import { supabase } from "@/integrations/supabase/client";
 
 interface Profile {
   first_name: string;
