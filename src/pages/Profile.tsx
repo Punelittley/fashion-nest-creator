@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { profileApi, ordersApi } from "@/lib/api";
 
 interface Profile {
   first_name: string;
@@ -58,8 +58,8 @@ const Profile = () => {
   }, [navigate]);
 
   const checkAuthAndLoadData = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
       navigate("/auth");
     } else {
       loadProfile();
@@ -69,16 +69,7 @@ const Profile = () => {
 
   const loadProfile = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
-
-      if (error) throw error;
+      const data = await profileApi.get();
       if (data) {
         setProfile({
           first_name: data.first_name || "",
@@ -104,22 +95,14 @@ const Profile = () => {
 
   const loadOrderStats = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const { data: orders, error } = await supabase
-        .from('orders')
-        .select('status, total_amount')
-        .eq('user_id', session.user.id);
-
-      if (error) throw error;
+      const orders = await ordersApi.get();
 
       if (orders) {
         const stats = {
           total: orders.length,
-          pending: orders.filter(o => o.status === 'pending').length,
-          completed: orders.filter(o => o.status === 'completed').length,
-          totalSpent: orders.reduce((sum, o) => sum + Number(o.total_amount), 0)
+          pending: orders.filter((o: any) => o.status === 'pending').length,
+          completed: orders.filter((o: any) => o.status === 'completed').length,
+          totalSpent: orders.reduce((sum: number, o: any) => sum + Number(o.total_amount), 0)
         };
         setOrderStats(stats);
       }
@@ -132,28 +115,21 @@ const Profile = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      await profileApi.update({
+        first_name: profile.first_name,
+        last_name: profile.last_name,
+        middle_name: profile.middle_name || null,
+        full_name: `${profile.last_name} ${profile.first_name} ${profile.middle_name}`.trim(),
+        phone: profile.phone,
+        address: profile.address,
+        birth_date: profile.birth_date || null,
+        gender: profile.gender || null,
+        city: profile.city || null,
+        postal_code: profile.postal_code || null,
+        avatar_url: profile.avatar_url || null,
+        bio: profile.bio || null
+      });
 
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          first_name: profile.first_name,
-          last_name: profile.last_name,
-          middle_name: profile.middle_name || null,
-          full_name: `${profile.last_name} ${profile.first_name} ${profile.middle_name}`.trim(),
-          phone: profile.phone,
-          address: profile.address,
-          birth_date: profile.birth_date || null,
-          gender: profile.gender || null,
-          city: profile.city || null,
-          postal_code: profile.postal_code || null,
-          avatar_url: profile.avatar_url || null,
-          bio: profile.bio || null
-        })
-        .eq('id', session.user.id);
-
-      if (error) throw error;
       toast.success("Профиль обновлен");
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -164,7 +140,7 @@ const Profile = () => {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    localStorage.removeItem('auth_token');
     toast.success("Вы вышли из аккаунта");
     navigate("/auth");
   };
