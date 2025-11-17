@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Pencil, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { productsApi, categoriesApi } from "@/lib/api";
 import {
   Dialog,
   DialogContent,
@@ -57,16 +58,32 @@ const ProductsManagement = () => {
   }, []);
   const loadProducts = async () => {
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setProducts(data || []);
+      // Пробуем загрузить из Express API (SQLite) - все товары для админа
+      const apiUrl = localStorage.getItem('api_base_url') || import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+      const url = `${apiUrl.replace(/\/$/, '')}/products?includeInactive=true`;
+      
+      const response = await fetch(url);
+      if (response.ok) {
+        const allProducts = await response.json();
+        setProducts(allProducts);
+      } else {
+        throw new Error('API недоступен');
+      }
     } catch (error) {
-      console.error('Ошибка загрузки товаров:', error);
-      toast.error('Ошибка загрузки товаров');
+      console.log('Express API недоступен, используем Supabase');
+      // Fallback на Supabase
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setProducts(data || []);
+      } catch (supabaseError) {
+        console.error('Ошибка загрузки товаров:', supabaseError);
+        toast.error('Ошибка загрузки товаров');
+      }
     } finally {
       setLoading(false);
     }
@@ -74,16 +91,24 @@ const ProductsManagement = () => {
 
   const loadCategories = async () => {
     try {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('name');
-
-      if (error) throw error;
-      setCategories(data || []);
+      // Пробуем загрузить из Express API (SQLite)
+      const data = await categoriesApi.getAll();
+      setCategories(data);
     } catch (error) {
-      console.error('Ошибка загрузки категорий:', error);
-      toast.error('Ошибка загрузки категорий');
+      console.log('Express API недоступен, используем Supabase');
+      // Fallback на Supabase
+      try {
+        const { data, error } = await supabase
+          .from('categories')
+          .select('*')
+          .order('name');
+
+        if (error) throw error;
+        setCategories(data || []);
+      } catch (supabaseError) {
+        console.error('Ошибка загрузки категорий:', supabaseError);
+        toast.error('Ошибка загрузки категорий');
+      }
     }
   };
 
@@ -108,27 +133,35 @@ const ProductsManagement = () => {
     try {
       setUploading(true);
 
-      const { data, error } = await supabase.functions.invoke('admin-products', {
-        body: {
-          action: 'update',
-          id: editingProduct.id,
-          payload: {
-            name: formData.name,
-            description: formData.description || null,
-            price: parseFloat(formData.price),
-            stock: parseInt(formData.stock),
-            category_id: formData.category_id || null,
-            image_url: formData.image_url || null,
-            is_active: formData.is_active,
-          },
-        },
-      });
+      const updateData = {
+        name: formData.name,
+        description: formData.description || null,
+        price: parseFloat(formData.price),
+        stock: parseInt(formData.stock),
+        category_id: formData.category_id || null,
+        image_url: formData.image_url || null,
+        is_active: formData.is_active,
+      };
 
-      if (error) throw error;
+      try {
+        // Пробуем обновить через Express API (SQLite)
+        await productsApi.update(editingProduct.id, updateData);
+      } catch (error) {
+        console.log('Express API недоступен, используем Supabase');
+        // Fallback на Supabase
+        const { error: supabaseError } = await supabase.functions.invoke('admin-products', {
+          body: {
+            action: 'update',
+            id: editingProduct.id,
+            payload: updateData,
+          },
+        });
+
+        if (supabaseError) throw supabaseError;
+      }
 
       toast.success('Товар успешно обновлен');
       setEditingProduct(null);
-      // оповестим каталог о необходимости обновить список
       // @ts-ignore
       window.dispatchEvent(new CustomEvent('products:refresh'));
       loadProducts();
@@ -144,15 +177,24 @@ const ProductsManagement = () => {
     if (!confirm('Вы уверены, что хотите удалить этот товар?')) return;
 
     try {
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', id);
+      try {
+        // Пробуем удалить через Express API (SQLite)
+        await productsApi.delete(id);
+      } catch (error) {
+        console.log('Express API недоступен, используем Supabase');
+        // Fallback на Supabase
+        const { error: supabaseError } = await supabase
+          .from('products')
+          .delete()
+          .eq('id', id);
 
-      if (error) throw error;
+        if (supabaseError) throw supabaseError;
+      }
 
       toast.success('Товар успешно удален');
       loadProducts();
+      // @ts-ignore
+      window.dispatchEvent(new CustomEvent('products:refresh'));
     } catch (error) {
       console.error('Ошибка удаления товара:', error);
       toast.error('Ошибка удаления товара');

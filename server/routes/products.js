@@ -5,17 +5,27 @@ import { randomUUID } from 'crypto';
 
 const router = express.Router();
 
-// Получить все активные товары
+// Получить все активные товары (или все для админа)
 router.get('/', async (req, res) => {
   try {
-    const { category } = req.query;
+    const { category, includeInactive } = req.query;
     
-    let sql = 'SELECT * FROM products WHERE is_active = 1';
+    let sql = 'SELECT * FROM products';
     const params = [];
+    const conditions = [];
+
+    // Если не запрошены неактивные, показываем только активные
+    if (includeInactive !== 'true') {
+      conditions.push('is_active = 1');
+    }
 
     if (category) {
-      sql += ' AND category_id = ?';
+      conditions.push('category_id = ?');
       params.push(category);
+    }
+
+    if (conditions.length > 0) {
+      sql += ' WHERE ' + conditions.join(' AND ');
     }
 
     sql += ' ORDER BY created_at DESC';
