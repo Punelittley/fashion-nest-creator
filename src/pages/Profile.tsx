@@ -88,43 +88,8 @@ const Profile = () => {
         });
       }
     } catch (error) {
-      console.log('📦 SQLite недоступен, загружаю профиль из Supabase...');
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          navigate("/auth");
-          return;
-        }
-
-        const { data, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .maybeSingle();
-
-        if (profileError) throw profileError;
-
-        if (data) {
-          setProfile({
-            first_name: data.first_name || "",
-            last_name: data.last_name || "",
-            middle_name: data.middle_name || "",
-            full_name: data.full_name || "",
-            email: data.email || "",
-            phone: data.phone || "",
-            address: data.address || "",
-            birth_date: data.birth_date || "",
-            gender: data.gender || "",
-            city: data.city || "",
-            postal_code: data.postal_code || "",
-            avatar_url: data.avatar_url || "",
-            bio: data.bio || ""
-          });
-        }
-      } catch (supabaseErr) {
-        console.error('Error loading profile from Supabase:', supabaseErr);
-        toast.error("Ошибка загрузки профиля");
-      }
+      console.error('Error loading profile:', error);
+      toast.error("Ошибка загрузки профиля");
     }
   };
 
@@ -142,30 +107,7 @@ const Profile = () => {
         setOrderStats(stats);
       }
     } catch (error) {
-      console.log('📦 SQLite недоступен, загружаю статистику из Supabase...');
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const { data: orders, error: ordersError } = await supabase
-          .from('orders')
-          .select('status, total_amount')
-          .eq('user_id', user.id);
-
-        if (ordersError) throw ordersError;
-
-        if (orders) {
-          const stats = {
-            total: orders.length,
-            pending: orders.filter(o => o.status === 'pending').length,
-            completed: orders.filter(o => o.status === 'delivered').length,
-            totalSpent: orders.reduce((sum, o) => sum + Number(o.total_amount), 0)
-          };
-          setOrderStats(stats);
-        }
-      } catch (supabaseErr) {
-        console.error('Error loading order stats from Supabase:', supabaseErr);
-      }
+      console.error('Error loading order stats:', error);
     }
   };
 
@@ -189,40 +131,9 @@ const Profile = () => {
       });
 
       toast.success("Профиль обновлен");
-    } catch (error) {
-      console.log('📦 SQLite недоступен, обновляю через Supabase...');
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          navigate("/auth");
-          return;
-        }
-
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({
-            first_name: profile.first_name,
-            last_name: profile.last_name,
-            middle_name: profile.middle_name || null,
-            full_name: `${profile.last_name} ${profile.first_name} ${profile.middle_name}`.trim(),
-            phone: profile.phone,
-            address: profile.address,
-            birth_date: profile.birth_date || null,
-            gender: profile.gender || null,
-            city: profile.city || null,
-            postal_code: profile.postal_code || null,
-            avatar_url: profile.avatar_url || null,
-            bio: profile.bio || null
-          })
-          .eq('id', user.id);
-
-        if (updateError) throw updateError;
-
-        toast.success("Профиль обновлен");
-      } catch (supabaseErr: any) {
-        console.error('Error updating profile:', supabaseErr);
-        toast.error(supabaseErr.message || "Ошибка обновления профиля");
-      }
+    } catch (error: any) {
+      console.error('Error updating profile:', error);
+      toast.error(error.message || "Ошибка обновления профиля");
     } finally {
       setLoading(false);
     }

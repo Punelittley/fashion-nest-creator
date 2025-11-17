@@ -64,27 +64,20 @@ const ProductDetail = () => {
   };
 
   const checkFavoriteStatus = async () => {
+    if (!id) return;
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session || !id) return;
-
-      const { data } = await supabase
-        .from('favorite_products')
-        .select('id')
-        .eq('user_id', session.user.id)
-        .eq('product_id', id)
-        .maybeSingle();
-
-      setIsFavorite(!!data);
+      const stored = localStorage.getItem('wishlist');
+      const productIds = stored ? JSON.parse(stored) : [];
+      setIsFavorite(productIds.includes(id));
     } catch (error) {
       console.error('Error checking favorite status:', error);
     }
   };
 
   const toggleFavorite = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const token = localStorage.getItem('auth_token');
     
-    if (!session) {
+    if (!token) {
       toast.error("Войдите для добавления в избранное");
       navigate("/auth");
       return;
@@ -92,52 +85,27 @@ const ProductDetail = () => {
 
     if (!product) return;
 
-    console.log('Toggling favorite:', { product_id: product.id, isFavorite });
-
     setCheckingFavorite(true);
     try {
+      const stored = localStorage.getItem('wishlist');
+      const productIds = stored ? JSON.parse(stored) : [];
+      
       if (isFavorite) {
-        // Remove from favorites
-        const { error } = await supabase
-          .from('favorite_products')
-          .delete()
-          .eq('user_id', session.user.id)
-          .eq('product_id', product.id);
-
-        if (error) {
-          console.error('Favorite delete error:', error);
-          throw error;
-        }
-
+        const updated = productIds.filter((pid: string) => pid !== product.id);
+        localStorage.setItem('wishlist', JSON.stringify(updated));
         setIsFavorite(false);
         toast.success("Удалено из избранного");
       } else {
-        // Add to favorites
-        const { error } = await supabase
-          .from('favorite_products')
-          .insert({
-            user_id: session.user.id,
-            product_id: product.id
-          });
-
-        if (error) {
-          // Если товар уже в избранном (уникальный конфликт), считаем как успех
-          // @ts-ignore
-          if (error.code === '23505') {
-            setIsFavorite(true);
-            toast.success("Уже в избранном");
-          } else {
-            console.error('Favorite insert error:', error);
-            throw error;
-          }
-        } else {
-          setIsFavorite(true);
-          toast.success("Добавлено в избранное");
+        if (!productIds.includes(product.id)) {
+          productIds.push(product.id);
+          localStorage.setItem('wishlist', JSON.stringify(productIds));
         }
+        setIsFavorite(true);
+        toast.success("Добавлено в избранное");
       }
     } catch (error: any) {
       console.error('Error toggling favorite:', error);
-      toast.error(error.message || "Ошибка при обновлении избранного");
+      toast.error(error.message || "Ошибка изменения избранного");
     } finally {
       setCheckingFavorite(false);
     }
@@ -145,7 +113,6 @@ const ProductDetail = () => {
 
   const handleAddToCart = async () => {
     const token = localStorage.getItem('auth_token');
-    
     if (!token) {
       toast.error("Войдите для добавления в корзину");
       navigate("/auth");
@@ -170,161 +137,125 @@ const ProductDetail = () => {
     return (
       <Layout>
         <div style={{ padding: "4rem 2rem", textAlign: "center" }}>
-          Загрузка...
+          {loading ? "Загрузка..." : "Товар не найден"}
         </div>
       </Layout>
     );
   }
 
+  const images = product.images || (product.image_url ? [product.image_url] : []);
+
   return (
     <Layout>
       <div style={{ padding: "4rem 2rem", maxWidth: "1200px", margin: "0 auto" }}>
+        <button
+          onClick={() => navigate("/catalog")}
+          style={{
+            marginBottom: "2rem",
+            padding: "0.75rem 1.5rem",
+            backgroundColor: "hsl(var(--secondary))",
+            color: "hsl(var(--secondary-foreground))",
+            border: "none",
+            fontSize: "1rem",
+            cursor: "pointer"
+          }}
+        >
+          ← Назад к каталогу
+        </button>
+
         <div style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))",
-          gap: "4rem",
-          alignItems: "start"
+          gridTemplateColumns: "1fr 1fr",
+          gap: "4rem"
         }}>
-          <ProductImageSlider 
-            images={product.images || (product.image_url ? [product.image_url] : [])}
-            alt={product.name}
-          />
+          <div>
+            <ProductImageSlider images={images} alt={product.name} />
+          </div>
 
           <div>
-            <h1 style={{
-              fontSize: "2.5rem",
-              fontWeight: "500",
-              marginBottom: "1rem",
-              color: "hsl(var(--foreground))"
-            }}>
-              {product.name}
-            </h1>
-
-            <p style={{
-              fontSize: "2rem",
-              color: "hsl(var(--accent))",
-              fontWeight: "600",
-              marginBottom: "2rem"
-            }}>
-              {product.price.toLocaleString('ru-RU')} ₽
-            </p>
-
-            <p style={{
-              lineHeight: "1.8",
-              color: "hsl(var(--muted-foreground))",
-              marginBottom: "2rem",
-              fontSize: "1.05rem"
-            }}>
-              {product.description || "Описание товара отсутствует"}
-            </p>
-
-            <div style={{
-              padding: "1.5rem",
-              backgroundColor: "hsl(var(--secondary))",
-              marginBottom: "2rem"
-            }}>
-              <p style={{ color: "hsl(var(--muted-foreground))" }}>
-                <strong>В наличии:</strong> {product.stock} шт.
-              </p>
-            </div>
-
-            <div style={{
-              display: "flex",
-              gap: "1rem",
-              alignItems: "center",
-              marginBottom: "2rem"
-            }}>
-              <label style={{
-                fontSize: "1rem",
-                fontWeight: "500",
-                color: "hsl(var(--foreground))"
-              }}>
-                Количество:
-              </label>
-              <input
-                type="number"
-                min="1"
-                max={product.stock}
-                value={quantity}
-                onChange={(e) => setQuantity(Math.max(1, Math.min(product.stock, parseInt(e.target.value) || 1)))}
-                style={{
-                  width: "80px",
-                  padding: "0.5rem",
-                  backgroundColor: "hsl(var(--background))",
-                  border: "1px solid hsl(var(--border))",
-                  color: "hsl(var(--foreground))",
-                  fontSize: "1rem"
-                }}
-              />
-            </div>
-
-            <div style={{
-              display: "flex",
-              gap: "1rem"
-            }}>
-              <button
-                onClick={handleAddToCart}
-                disabled={loading || product.stock === 0}
-                style={{
-                  flex: 1,
-                  padding: "1rem 2rem",
-                  backgroundColor: loading || product.stock === 0 ? "hsl(var(--muted))" : "hsl(var(--primary))",
-                  color: "hsl(var(--primary-foreground))",
-                  border: "none",
-                  fontSize: "1.05rem",
-                  fontWeight: "500",
-                  cursor: loading || product.stock === 0 ? "not-allowed" : "pointer",
-                  transition: "var(--transition)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "0.75rem"
-                }}
-                onMouseEnter={(e) => {
-                  if (!loading && product.stock > 0) {
-                    e.currentTarget.style.backgroundColor = "hsl(var(--accent))";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!loading && product.stock > 0) {
-                    e.currentTarget.style.backgroundColor = "hsl(var(--primary))";
-                  }
-                }}
-              >
-                {product.stock === 0 ? "Нет в наличии" : (loading ? "Добавление..." : "Добавить в корзину")}
-              </button>
-
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "1.5rem" }}>
+              <h1 style={{ fontSize: "2.5rem", fontWeight: "500", marginBottom: "0" }}>
+                {product.name}
+              </h1>
               <button
                 onClick={toggleFavorite}
                 disabled={checkingFavorite}
                 style={{
-                  padding: "1rem 1.5rem",
-                  backgroundColor: isFavorite ? "hsl(var(--accent))" : "hsl(var(--secondary))",
-                  color: isFavorite ? "hsl(var(--primary-foreground))" : "hsl(var(--foreground))",
+                  background: "none",
                   border: "1px solid hsl(var(--border))",
-                  fontSize: "1.05rem",
-                  fontWeight: "500",
-                  cursor: checkingFavorite ? "not-allowed" : "pointer",
-                  transition: "var(--transition)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center"
+                  padding: "0.75rem",
+                  cursor: "pointer"
                 }}
-                onMouseEnter={(e) => {
-                  if (!checkingFavorite) {
-                    e.currentTarget.style.backgroundColor = isFavorite ? "hsl(var(--primary))" : "hsl(var(--accent))";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!checkingFavorite) {
-                    e.currentTarget.style.backgroundColor = isFavorite ? "hsl(var(--accent))" : "hsl(var(--secondary))";
-                  }
-                }}
-                title={isFavorite ? "Удалить из избранного" : "Добавить в избранное"}
               >
-                {isFavorite ? "★" : "☆"}
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill={isFavorite ? "hsl(var(--primary))" : "none"}
+                  stroke="hsl(var(--foreground))"
+                  strokeWidth="2"
+                >
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                </svg>
               </button>
             </div>
+
+            <div style={{ fontSize: "2rem", fontWeight: "500", color: "hsl(var(--primary))", marginBottom: "2rem" }}>
+              {product.price.toLocaleString()} ₽
+            </div>
+
+            {product.description && (
+              <p style={{ fontSize: "1.125rem", lineHeight: "1.8", marginBottom: "2rem" }}>
+                {product.description}
+              </p>
+            )}
+
+            <div style={{ padding: "1.5rem", backgroundColor: "hsl(var(--secondary))", marginBottom: "2rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>В наличии:</span>
+                <span style={{ fontWeight: "500" }}>
+                  {product.stock > 0 ? `${product.stock} шт.` : "Нет в наличии"}
+                </span>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: "1rem", marginBottom: "2rem" }}>
+              <div style={{ display: "flex", border: "1px solid hsl(var(--border))" }}>
+                <button
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  style={{ padding: "0.75rem 1.25rem", background: "transparent", border: "none", cursor: "pointer" }}
+                >
+                  −
+                </button>
+                <span style={{ padding: "0 1.5rem", fontSize: "1.125rem", display: "flex", alignItems: "center" }}>
+                  {quantity}
+                </span>
+                <button
+                  onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                  disabled={quantity >= product.stock}
+                  style={{ padding: "0.75rem 1.25rem", background: "transparent", border: "none", cursor: "pointer" }}
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            <button
+              onClick={handleAddToCart}
+              disabled={product.stock === 0 || addingToCart}
+              style={{
+                width: "100%",
+                padding: "1.25rem",
+                backgroundColor: product.stock === 0 ? "hsl(var(--muted))" : "hsl(var(--primary))",
+                color: product.stock === 0 ? "hsl(var(--muted-foreground))" : "hsl(var(--primary-foreground))",
+                border: "none",
+                fontSize: "1.125rem",
+                fontWeight: "500",
+                cursor: product.stock === 0 ? "not-allowed" : "pointer"
+              }}
+            >
+              {addingToCart ? "Добавление..." : product.stock === 0 ? "Нет в наличии" : "Добавить в корзину"}
+            </button>
           </div>
         </div>
       </div>

@@ -57,61 +57,8 @@ const Checkout = () => {
         });
       }
     } catch (error) {
-      console.log('📦 SQLite недоступен, загружаю данные из Supabase...');
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          navigate("/auth");
-          return;
-        }
-
-        // Load cart from Supabase
-        const { data: cartData, error: cartError } = await supabase
-          .from('cart_items')
-          .select(`
-            id,
-            product_id,
-            quantity,
-            products (
-              name,
-              price,
-              image_url
-            )
-          `)
-          .eq('user_id', user.id);
-
-        if (cartError) throw cartError;
-
-        const formattedItems = cartData?.map(item => ({
-          id: item.id,
-          product_id: item.product_id,
-          quantity: item.quantity,
-          name: (item.products as any)?.name || '',
-          price: (item.products as any)?.price || 0,
-          image_url: (item.products as any)?.image_url || ''
-        })) || [];
-
-        setCartItems(formattedItems);
-
-        // Load profile from Supabase
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('phone, address')
-          .eq('id', user.id)
-          .maybeSingle();
-
-        if (profileError) throw profileError;
-
-        if (profileData) {
-          setFormData({
-            phone: profileData.phone || "",
-            address: profileData.address || ""
-          });
-        }
-      } catch (supabaseErr) {
-        console.error('Error loading data from Supabase:', supabaseErr);
-        toast.error("Ошибка загрузки данных");
-      }
+      console.error('Error loading data:', error);
+      toast.error("Ошибка загрузки данных");
     }
   };
 
@@ -133,63 +80,9 @@ const Checkout = () => {
         return;
       }
 
-      try {
-        await ordersApi.create(formData.address, formData.phone);
-        toast.success("Заказ успешно оформлен!");
-        navigate("/orders");
-      } catch (apiError) {
-        console.log('📦 SQLite недоступен, создаю заказ через Supabase...');
-        
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          toast.error("Необходима авторизация");
-          navigate("/auth");
-          return;
-        }
-
-        // Calculate total
-        const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-
-        // Create order
-        const { data: order, error: orderError } = await supabase
-          .from('orders')
-          .insert({
-            user_id: user.id,
-            total_amount: total,
-            shipping_address: formData.address,
-            phone: formData.phone,
-            status: 'pending'
-          })
-          .select()
-          .single();
-
-        if (orderError) throw orderError;
-
-        // Create order items
-        const orderItems = cartItems.map(item => ({
-          order_id: order.id,
-          product_id: item.product_id,
-          quantity: item.quantity,
-          price: item.price
-        }));
-
-        const { error: itemsError } = await supabase
-          .from('order_items')
-          .insert(orderItems);
-
-        if (itemsError) throw itemsError;
-
-        // Clear cart
-        const { error: clearError } = await supabase
-          .from('cart_items')
-          .delete()
-          .eq('user_id', user.id);
-
-        if (clearError) throw clearError;
-
-        toast.success("Заказ успешно оформлен!");
-        navigate("/orders");
-      }
+      await ordersApi.create(formData.address, formData.phone);
+      toast.success("Заказ успешно оформлен!");
+      navigate("/orders");
     } catch (error: any) {
       console.error('Error creating order:', error);
       toast.error(error.message || "Ошибка оформления заказа");
