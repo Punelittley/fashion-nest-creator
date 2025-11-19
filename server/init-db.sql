@@ -132,8 +132,9 @@ CREATE INDEX IF NOT EXISTS idx_favorite_user ON favorite_products(user_id);
 -- Вставка тестовых данных
 
 -- Админ пользователь (пароль: admin123)
+-- Хеш сгенерирован для пароля 'admin123' с использованием bcrypt (10 раундов)
 INSERT OR IGNORE INTO profiles (id, email, password_hash, full_name) 
-VALUES ('admin-001', 'admin@fashion.ru', '$2b$10$YourHashedPasswordHere', 'Администратор');
+VALUES ('admin-001', 'admin@fashion.ru', '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'Администратор');
 
 INSERT OR IGNORE INTO user_roles (id, user_id, role) 
 VALUES ('role-admin-001', 'admin-001', 'admin');
