@@ -73,10 +73,10 @@ const AddProductForm = ({ onProductAdded }: AddProductFormProps) => {
     }
 
     // Требуем либо загруженный файл, либо URL изображения
-    if ((!imageFiles || imageFiles.length === 0)) {
+    if ((!imageFiles || imageFiles.length === 0) && !imageUrl.trim()) {
       toast({
         title: "Ошибка",
-        description: "Загрузите хотя бы одно изображение",
+        description: "Загрузите изображение или укажите URL",
         variant: "destructive",
       });
       return;
@@ -86,16 +86,22 @@ const AddProductForm = ({ onProductAdded }: AddProductFormProps) => {
     try {
       let uploadedImages: string[] = [];
 
+      // Если указаны прямые URL, используем их (можно несколько через запятую)
+      if (imageUrl.trim()) {
+        const urls = imageUrl.split(',').map(u => u.trim()).filter(u => u);
+        uploadedImages = uploadedImages.concat(urls);
+      }
+
       // Загружаем файлы если они выбраны
       if (imageFiles && imageFiles.length > 0) {
         try {
           // Пытаемся загрузить через SQLite API
           const categoryName = categories.find(c => c.id === formData.category_id)?.name.toLowerCase() || 'other';
           const result = await uploadApi.uploadImages(imageFiles, categoryName);
-          uploadedImages = result.images;
+          uploadedImages = uploadedImages.concat(result.images);
           console.log('✅ Изображения загружены через SQLite');
         } catch (uploadError) {
-          console.log('📦 SQLite недоступен, загружаю в Supabase Storage...');
+          console.log('📦 SQLite недоступен, загружаю в Lovable Cloud Storage...');
           
           // Fallback на Lovable Cloud Storage
           try {
@@ -120,7 +126,8 @@ const AddProductForm = ({ onProductAdded }: AddProductFormProps) => {
               return publicUrl;
             });
 
-            uploadedImages = await Promise.all(uploadPromises);
+            const cloudImages = await Promise.all(uploadPromises);
+            uploadedImages = uploadedImages.concat(cloudImages);
             console.log('✅ Изображения загружены в Lovable Cloud Storage');
           } catch (supabaseUploadError) {
             console.error('Ошибка загрузки в хранилище:', supabaseUploadError);
@@ -194,6 +201,7 @@ const AddProductForm = ({ onProductAdded }: AddProductFormProps) => {
         category_id: "",
       });
       setImageFiles(null);
+      setImageUrl("");
       onProductAdded();
     } catch (error) {
       console.error('Error adding product:', error);
@@ -318,16 +326,16 @@ const AddProductForm = ({ onProductAdded }: AddProductFormProps) => {
         </div>
 
         <div>
-          <Label htmlFor="imageUrl">ИЛИ URL изображения</Label>
+          <Label htmlFor="imageUrl">ИЛИ URL изображений</Label>
           <Input
             id="imageUrl"
             type="text"
-            placeholder="https://..."
+            placeholder="https://...image1.jpg, https://...image2.jpg"
             value={imageUrl}
             onChange={(e) => setImageUrl(e.target.value)}
           />
           <span style={{ fontSize: "0.875rem", color: "hsl(var(--muted-foreground))" }}>
-            Можно указать прямую ссылку на изображение (например, из хостинга картинок).
+            Можно указать несколько ссылок через запятую. Например: /images/coats/ace-eater-1.png, /images/coats/ace-eater-2.png
           </span>
         </div>
 
