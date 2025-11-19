@@ -71,6 +71,15 @@ const AddProductForm = ({ onProductAdded }: AddProductFormProps) => {
       return;
     }
 
+    if (!imageFiles || imageFiles.length === 0) {
+      toast({
+        title: "Ошибка",
+        description: "Загрузите хотя бы одно изображение",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       let uploadedImages: string[] = [];
@@ -124,8 +133,19 @@ const AddProductForm = ({ onProductAdded }: AddProductFormProps) => {
         }
       }
 
-      const finalImages = uploadedImages;
+      const finalImages = uploadedImages.length > 0 ? uploadedImages : [];
       const finalImageUrl = finalImages[0] || '';
+
+      // Если нет изображений, не создаем товар
+      if (finalImages.length === 0) {
+        toast({
+          title: "Ошибка",
+          description: "Не удалось загрузить изображения",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
 
       const productData = {
         name: formData.name,
