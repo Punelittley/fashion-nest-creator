@@ -33,7 +33,8 @@ const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
     ...options.headers,
   };
 
-  if (token) {
+  // Отправлять токен только если это не 'supabase' маркер
+  if (token && token !== 'supabase') {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
