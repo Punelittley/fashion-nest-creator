@@ -5,10 +5,10 @@ import { randomUUID } from 'crypto';
 
 const router = express.Router();
 
-// Получить заказы пользователя (для локальной разработки без auth)
-router.get('/', async (req, res) => {
+// Получить заказы пользователя
+router.get('/', authenticateToken, async (req, res) => {
   try {
-    const userId = 'admin-001';
+    const userId = req.user.id;
     const orders = await dbAll(
       `SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC`,
       [userId]
@@ -32,11 +32,11 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Создать заказ (для локальной разработки без auth)
-router.post('/', async (req, res) => {
+// Создать заказ
+router.post('/', authenticateToken, async (req, res) => {
   try {
     const { shipping_address, phone } = req.body;
-    const userId = 'admin-001';
+    const userId = req.user.id;
 
     if (!shipping_address || !phone) {
       return res.status(400).json({ error: 'Адрес и телефон обязательны' });
