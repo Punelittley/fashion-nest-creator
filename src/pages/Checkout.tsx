@@ -34,6 +34,16 @@ const Checkout = () => {
   }, [navigate]);
 
   const loadData = async () => {
+    // Проверка авторизации
+    const authToken = localStorage.getItem('auth_token');
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!authToken && !session) {
+      toast.error("Войдите для оформления заказа");
+      navigate("/auth");
+      return;
+    }
+
     try {
       const [cartItems, profileData] = await Promise.all([
         cartApi.get(),

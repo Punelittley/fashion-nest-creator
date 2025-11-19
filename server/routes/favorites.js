@@ -1,19 +1,20 @@
 import express from 'express';
 import { dbRun, dbGet, dbAll } from '../database.js';
 import { randomUUID } from 'crypto';
+import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
-const LOCAL_USER_ID = 'admin-001';
 
 // Получить избранное
-router.get('/', async (req, res) => {
+router.get('/', authenticateToken, async (req, res) => {
   try {
+    const userId = req.user.id;
     const favorites = await dbAll(
       `SELECT fp.*, p.name, p.price, p.image_url, p.stock, p.description
        FROM favorite_products fp
        JOIN products p ON fp.product_id = p.id
        WHERE fp.user_id = ?`,
-      [LOCAL_USER_ID]
+      [userId]
     );
 
     res.json(favorites);
@@ -24,11 +25,12 @@ router.get('/', async (req, res) => {
 });
 
 // Проверить статус избранного для продукта
-router.get('/check/:productId', async (req, res) => {
+router.get('/check/:productId', authenticateToken, async (req, res) => {
   try {
+    const userId = req.user.id;
     const favorite = await dbGet(
       'SELECT id FROM favorite_products WHERE user_id = ? AND product_id = ?',
-      [LOCAL_USER_ID, req.params.productId]
+      [userId, req.params.productId]
     );
 
     res.json({ isFavorite: !!favorite, favoriteId: favorite?.id });
@@ -39,9 +41,10 @@ router.get('/check/:productId', async (req, res) => {
 });
 
 // Добавить в избранное
-router.post('/', async (req, res) => {
+router.post('/', authenticateToken, async (req, res) => {
   try {
     const { product_id } = req.body;
+    const userId = req.user.id;
 
     if (!product_id) {
       return res.status(400).json({ error: 'Не указан product_id' });
@@ -56,7 +59,7 @@ router.post('/', async (req, res) => {
     // Проверка уже в избранном
     const existing = await dbGet(
       'SELECT * FROM favorite_products WHERE user_id = ? AND product_id = ?',
-      [LOCAL_USER_ID, product_id]
+      [userId, product_id]
     );
 
     if (existing) {
@@ -66,7 +69,7 @@ router.post('/', async (req, res) => {
     const id = randomUUID();
     await dbRun(
       'INSERT INTO favorite_products (id, user_id, product_id) VALUES (?, ?, ?)',
-      [id, LOCAL_USER_ID, product_id]
+      [id, userId, product_id]
     );
 
     res.status(201).json({ id, message: 'Добавлено в избранное' });
@@ -77,11 +80,12 @@ router.post('/', async (req, res) => {
 });
 
 // Удалить из избранного
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authenticateToken, async (req, res) => {
   try {
+    const userId = req.user.id;
     await dbRun(
       'DELETE FROM favorite_products WHERE id = ? AND user_id = ?',
-      [req.params.id, LOCAL_USER_ID]
+      [req.params.id, userId]
     );
 
     res.json({ message: 'Удалено из избранного' });
@@ -92,11 +96,12 @@ router.delete('/:id', async (req, res) => {
 });
 
 // Удалить из избранного по product_id
-router.delete('/product/:productId', async (req, res) => {
+router.delete('/product/:productId', authenticateToken, async (req, res) => {
   try {
+    const userId = req.user.id;
     await dbRun(
       'DELETE FROM favorite_products WHERE product_id = ? AND user_id = ?',
-      [req.params.productId, LOCAL_USER_ID]
+      [req.params.productId, userId]
     );
 
     res.json({ message: 'Удалено из избранного' });

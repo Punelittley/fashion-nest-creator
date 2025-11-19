@@ -117,6 +117,23 @@ const ProductDetail = () => {
   const toggleFavorite = async () => {
     if (!product || !dataSource) return;
 
+    // Проверка авторизации
+    if (dataSource === 'sqlite') {
+      const authToken = localStorage.getItem('auth_token');
+      if (!authToken) {
+        toast.error("Войдите для добавления в избранное");
+        navigate("/auth");
+        return;
+      }
+    } else {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Войдите для добавления в избранное");
+        navigate("/auth");
+        return;
+      }
+    }
+
     setCheckingFavorite(true);
     try {
       if (isFavorite) {
@@ -182,6 +199,23 @@ const ProductDetail = () => {
 
   const handleAddToCart = async () => {
     if (!product || !dataSource) return;
+
+    // Проверка авторизации
+    if (dataSource === 'sqlite') {
+      const authToken = localStorage.getItem('auth_token');
+      if (!authToken) {
+        toast.error("Войдите для добавления в корзину");
+        navigate("/auth");
+        return;
+      }
+    } else {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Войдите для добавления в корзину");
+        navigate("/auth");
+        return;
+      }
+    }
 
     setAddingToCart(true);
     try {

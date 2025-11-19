@@ -41,6 +41,16 @@ const Orders = () => {
   }, [navigate]);
 
   const loadOrders = async () => {
+    // Проверка авторизации
+    const authToken = localStorage.getItem('auth_token');
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!authToken && !session) {
+      toast.error("Войдите для просмотра заказов");
+      navigate("/auth");
+      return;
+    }
+
     try {
       const data = await ordersApi.get();
       

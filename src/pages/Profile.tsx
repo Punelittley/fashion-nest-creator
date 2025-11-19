@@ -60,6 +60,16 @@ const Profile = () => {
   }, [navigate]);
 
   const loadProfile = async () => {
+    // Проверка авторизации
+    const authToken = localStorage.getItem('auth_token');
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!authToken && !session) {
+      toast.error("Войдите для доступа к профилю");
+      navigate("/auth");
+      return;
+    }
+
     try {
       const data = await profileApi.get();
       if (data) {
@@ -121,6 +131,14 @@ const Profile = () => {
   };
 
   const loadOrderStats = async () => {
+    // Проверка авторизации
+    const authToken = localStorage.getItem('auth_token');
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!authToken && !session) {
+      return;
+    }
+
     try {
       const orders = await ordersApi.get();
 
