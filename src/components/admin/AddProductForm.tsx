@@ -1,15 +1,23 @@
 import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { productsApi, categoriesApi, uploadApi } from "@/lib/api";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { PackagePlus, Upload } from "lucide-react";
-import { productsApi, categoriesApi } from "@/lib/api";
 
 interface Category {
   id: string;
   name: string;
 }
 
-const AddProductForm = () => {
+interface AddProductFormProps {
+  onProductAdded: () => void;
+}
+
+const AddProductForm = ({ onProductAdded }: AddProductFormProps) => {
+  const { toast } = useToast();
   const [categories, setCategories] = useState<Category[]>([]);
   const [formData, setFormData] = useState({
     name: "",
@@ -17,11 +25,9 @@ const AddProductForm = () => {
     price: "",
     stock: "",
     category_id: "",
-    image_url: ""
   });
   const [loading, setLoading] = useState(false);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
+  const [imageFiles, setImageFiles] = useState<FileList | null>(null);
 
   useEffect(() => {
     loadCategories();
@@ -29,69 +35,27 @@ const AddProductForm = () => {
 
   const loadCategories = async () => {
     try {
-      // Пробуем загрузить из Express API (SQLite)
       const data = await categoriesApi.getAll();
-      setCategories(data);
+      setCategories(data || []);
     } catch (error) {
-      console.log('Express API недоступен, используем Supabase');
-      // Fallback на Supabase
+      console.log('📦 SQLite недоступен, загружаю категории из Supabase...');
       try {
-        const { data, error } = await supabase
+        const { data, error: supabaseError } = await supabase
           .from('categories')
-          .select('id, name')
-          .order('name');
-
-        if (error) throw error;
+          .select('*');
+        
+        if (supabaseError) throw supabaseError;
         setCategories(data || []);
-      } catch (supabaseError) {
-        toast.error("Ошибка загрузки категорий");
-        console.error(supabaseError);
+      } catch (supabaseErr) {
+        console.error('Error loading categories:', supabaseErr);
       }
-    }
-  };
-
-  const handleImageUpload = async (file: File) => {
-    setUploading(true);
-    try {
-      // Проверяем, используем ли мы SQLite (локальный токен)
-      const token = localStorage.getItem('auth_token');
-      if (token && token !== 'supabase') {
-        // Для SQLite просто показываем сообщение, что нужно использовать локальные пути
-        toast.info("Для SQLite используйте локальные пути (например: /images/coats/coat1.jpg)");
-        setUploading(false);
-        return;
-      }
-
-      // Supabase Storage загрузка
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('product-images')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data } = supabase.storage
-        .from('product-images')
-        .getPublicUrl(filePath);
-
-      setFormData({ ...formData, image_url: data.publicUrl });
-      toast.success("Изображение загружено");
-    } catch (error) {
-      toast.error("Ошибка загрузки изображения");
-      console.error(error);
-    } finally {
-      setUploading(false);
     }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      handleImageUpload(file);
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      setImageFiles(files);
     }
   };
 
@@ -99,94 +63,92 @@ const AddProductForm = () => {
     e.preventDefault();
     
     if (!formData.name || !formData.price || !formData.stock) {
-      toast.error("Заполните все обязательные поля");
+      toast({
+        title: "Ошибка",
+        description: "Заполните все обязательные поля",
+        variant: "destructive",
+      });
       return;
     }
 
     setLoading(true);
     try {
+      let uploadedImages: string[] = [];
+
+      // Загружаем файлы если они выбраны
+      if (imageFiles && imageFiles.length > 0) {
+        try {
+          const categoryName = categories.find(c => c.id === formData.category_id)?.name.toLowerCase() || 'other';
+          const result = await uploadApi.uploadImages(imageFiles, categoryName);
+          uploadedImages = result.images;
+        } catch (uploadError) {
+          console.error('Ошибка загрузки:', uploadError);
+          toast({
+            title: "Ошибка",
+            description: "Не удалось загрузить изображения",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+      }
+
+      const finalImages = uploadedImages;
+      const finalImageUrl = finalImages[0] || '';
+
       const productData = {
         name: formData.name,
         description: formData.description || null,
         price: parseFloat(formData.price),
         stock: parseInt(formData.stock),
         category_id: formData.category_id || null,
-        image_url: formData.image_url || null,
+        image_url: finalImageUrl,
+        images: JSON.stringify(finalImages),
         is_active: true,
       };
 
       try {
-        // Пробуем создать через Express API (SQLite)
         await productsApi.create(productData);
-      } catch (error) {
-        console.log('Express API недоступен, используем Supabase');
-        // Fallback на Supabase - корректируем category_id под UUID/имя
-        const isUUID = (v: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
-        const sqliteIdToName: Record<string, string> = {
-          'cat-001': 'Верхняя одежда',
-          'cat-002': 'Штаны и брюки',
-          'cat-003': 'Шарфы',
-          'cat-004': 'Обувь',
-        };
-        let supabaseCategoryId: string | null = productData.category_id || null;
-
-        if (productData.category_id) {
-          if (isUUID(productData.category_id)) {
-            supabaseCategoryId = productData.category_id;
-          } else if (sqliteIdToName[productData.category_id]) {
-            // маппим по известному имени категории
-            const catName = sqliteIdToName[productData.category_id];
-            const { data: supCat } = await supabase
-              .from('categories')
-              .select('id')
-              .eq('name', catName)
-              .maybeSingle();
-            supabaseCategoryId = supCat?.id || null;
-          } else {
-            // пробуем найти выбранную категорию по state и маппить по имени
-            const selected = categories.find((c) => c.id === productData.category_id);
-            if (selected) {
-              if (isUUID(selected.id)) {
-                supabaseCategoryId = selected.id;
-              } else {
-                const { data: supCat } = await supabase
-                  .from('categories')
-                  .select('id')
-                  .eq('name', selected.name)
-                  .maybeSingle();
-                supabaseCategoryId = supCat?.id || null;
-              }
-            }
-          }
-        }
-
-        const { error: supabaseError } = await supabase.functions.invoke('admin-products', {
-          body: {
-            action: 'create',
-            payload: {
-              ...productData,
-              category_id: supabaseCategoryId,
-            },
-          },
+        toast({
+          title: "Успешно",
+          description: "Товар добавлен",
         });
+      } catch (error) {
+        console.log('📦 SQLite недоступен, сохраняю в Supabase...');
+        const supabaseData = {
+          ...productData,
+          images: finalImages,
+        };
+        const { images: _, ...dataWithoutImages } = supabaseData;
+
+        const { error: supabaseError } = await supabase
+          .from('products')
+          .insert([{ ...dataWithoutImages, images: finalImages }]);
 
         if (supabaseError) throw supabaseError;
+
+        toast({
+          title: "Успешно",
+          description: "Товар добавлен через Supabase",
+        });
       }
 
-      toast.success("Товар успешно добавлен");
       setFormData({
         name: "",
         description: "",
         price: "",
         stock: "",
         category_id: "",
-        image_url: ""
       });
-      setImageFile(null);
-      window.dispatchEvent(new CustomEvent('products:refresh'));
+      setImageFiles(null);
+      onProductAdded();
     } catch (error) {
-      toast.error(`Ошибка добавления товара: ${error instanceof Error ? error.message : ''}`);
-      console.error(error);
+      console.error('Error adding product:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось добавить товар",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -194,266 +156,124 @@ const AddProductForm = () => {
 
   return (
     <div style={{
-      backgroundColor: "hsl(var(--card))",
       padding: "2rem",
-      borderRadius: "8px",
-      boxShadow: "var(--shadow-soft)"
+      backgroundColor: "hsl(var(--card))",
+      borderRadius: "0.5rem",
+      border: "1px solid hsl(var(--border))"
     }}>
       <h2 style={{
         fontSize: "1.5rem",
         fontWeight: "600",
         marginBottom: "1.5rem",
-        color: "hsl(var(--foreground))",
-        display: "flex",
-        alignItems: "center",
-        gap: "0.5rem"
+        color: "hsl(var(--foreground))"
       }}>
-        <PackagePlus size={24} />
-        Добавить товар
+        Добавить новый товар
       </h2>
 
       <form onSubmit={handleSubmit} style={{
-        display: "grid",
+        display: "flex",
+        flexDirection: "column",
         gap: "1.5rem"
       }}>
-        <div>
-          <label style={{
-            display: "block",
-            fontSize: "0.875rem",
-            fontWeight: "500",
-            marginBottom: "0.5rem",
-            color: "hsl(var(--foreground))"
-          }}>
-            Название товара *
-          </label>
-          <input
-            type="text"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            required
-            style={{
-              width: "100%",
-              padding: "0.75rem",
-              border: "1px solid hsl(var(--border))",
-              borderRadius: "6px",
-              fontSize: "1rem",
-              backgroundColor: "hsl(var(--background))",
-              color: "hsl(var(--foreground))"
-            }}
-          />
-        </div>
-
-        <div>
-          <label style={{
-            display: "block",
-            fontSize: "0.875rem",
-            fontWeight: "500",
-            marginBottom: "0.5rem",
-            color: "hsl(var(--foreground))"
-          }}>
-            Описание
-          </label>
-          <textarea
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            rows={4}
-            style={{
-              width: "100%",
-              padding: "0.75rem",
-              border: "1px solid hsl(var(--border))",
-              borderRadius: "6px",
-              fontSize: "1rem",
-              backgroundColor: "hsl(var(--background))",
-              color: "hsl(var(--foreground))",
-              resize: "vertical"
-            }}
-          />
-        </div>
-
         <div style={{
           display: "grid",
-          gridTemplateColumns: "1fr 1fr",
+          gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
           gap: "1rem"
         }}>
           <div>
-            <label style={{
-              display: "block",
-              fontSize: "0.875rem",
-              fontWeight: "500",
-              marginBottom: "0.5rem",
-              color: "hsl(var(--foreground))"
-            }}>
-              Цена (₽) *
-            </label>
-            <input
+            <Label htmlFor="name">Название товара *</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="price">Цена (₽) *</Label>
+            <Input
+              id="price"
               type="number"
               step="0.01"
               min="0"
               value={formData.price}
               onChange={(e) => setFormData({ ...formData, price: e.target.value })}
               required
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                border: "1px solid hsl(var(--border))",
-                borderRadius: "6px",
-                fontSize: "1rem",
-                backgroundColor: "hsl(var(--background))",
-                color: "hsl(var(--foreground))"
-              }}
             />
           </div>
 
           <div>
-            <label style={{
-              display: "block",
-              fontSize: "0.875rem",
-              fontWeight: "500",
-              marginBottom: "0.5rem",
-              color: "hsl(var(--foreground))"
-            }}>
-              Количество *
-            </label>
-            <input
+            <Label htmlFor="stock">Количество на складе *</Label>
+            <Input
+              id="stock"
               type="number"
               min="0"
               value={formData.stock}
               onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
               required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="category">Категория</Label>
+            <select
+              id="category"
+              value={formData.category_id}
+              onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
               style={{
                 width: "100%",
-                padding: "0.75rem",
+                padding: "0.5rem",
+                borderRadius: "0.375rem",
                 border: "1px solid hsl(var(--border))",
-                borderRadius: "6px",
-                fontSize: "1rem",
                 backgroundColor: "hsl(var(--background))",
                 color: "hsl(var(--foreground))"
               }}
-            />
+            >
+              <option value="">Без категории</option>
+              {categories.map(cat => (
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
+              ))}
+            </select>
           </div>
         </div>
 
         <div>
-          <label style={{
-            display: "block",
-            fontSize: "0.875rem",
-            fontWeight: "500",
-            marginBottom: "0.5rem",
-            color: "hsl(var(--foreground))"
-          }}>
-            Категория
-          </label>
-          <select
-            value={formData.category_id}
-            onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-            style={{
-              width: "100%",
-              padding: "0.75rem",
-              border: "1px solid hsl(var(--border))",
-              borderRadius: "6px",
-              fontSize: "1rem",
-              backgroundColor: "hsl(var(--background))",
-              color: "hsl(var(--foreground))"
-            }}
-          >
-            <option value="">Выберите категорию</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label style={{
-            display: "block",
-            fontSize: "0.875rem",
-            fontWeight: "500",
-            marginBottom: "0.5rem",
-            color: "hsl(var(--foreground))"
-          }}>
-            <Upload size={16} style={{ display: "inline", marginRight: "0.5rem" }} />
-            Изображение товара
-          </label>
-          
-          <div style={{ marginBottom: "0.75rem" }}>
-            <input
-              type="text"
-              placeholder="Введите путь к изображению (например: /images/coats/coat1.jpg)"
-              value={formData.image_url}
-              onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                border: "1px solid hsl(var(--border))",
-                borderRadius: "6px",
-                fontSize: "1rem",
-                backgroundColor: "hsl(var(--background))",
-                color: "hsl(var(--foreground))"
-              }}
-            />
-          </div>
-
-          <div style={{
-            fontSize: "0.875rem",
-            color: "hsl(var(--muted-foreground))",
-            marginBottom: "0.5rem"
-          }}>
-            или загрузите файл (только для Supabase):
-          </div>
-          
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            disabled={uploading}
-            style={{
-              width: "100%",
-              padding: "0.75rem",
-              border: "1px solid hsl(var(--border))",
-              borderRadius: "6px",
-              fontSize: "1rem",
-              backgroundColor: "hsl(var(--background))",
-              color: "hsl(var(--foreground))"
-            }}
+          <Label htmlFor="description">Описание</Label>
+          <Textarea
+            id="description"
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            rows={4}
           />
-          {uploading && (
-            <p style={{ marginTop: "0.5rem", fontSize: "0.875rem", color: "hsl(var(--muted-foreground))" }}>
-              Загрузка изображения...
-            </p>
-          )}
-          {formData.image_url && (
-            <img 
-              src={formData.image_url} 
-              alt="Preview" 
-              style={{ 
-                marginTop: "0.5rem", 
-                maxWidth: "200px", 
-                borderRadius: "6px",
-                border: "1px solid hsl(var(--border))"
-              }} 
-            />
-          )}
         </div>
 
-        <button
-          type="submit"
+        <div>
+          <Label htmlFor="image">Изображения товара (до 5 файлов)</Label>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+            <Input
+              id="image"
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleFileChange}
+            />
+            <span style={{ fontSize: "0.875rem", color: "hsl(var(--muted-foreground))" }}>
+              Загрузите до 5 изображений. Первое изображение будет основным.
+            </span>
+          </div>
+        </div>
+
+        <Button 
+          type="submit" 
           disabled={loading}
           style={{
-            padding: "1rem",
-            backgroundColor: loading ? "hsl(var(--muted))" : "hsl(var(--primary))",
-            color: "hsl(var(--primary-foreground))",
-            border: "none",
-            borderRadius: "6px",
-            fontSize: "1rem",
-            fontWeight: "600",
-            cursor: loading ? "not-allowed" : "pointer",
-            transition: "var(--transition)"
+            width: "100%",
+            padding: "0.75rem"
           }}
         >
           {loading ? "Добавление..." : "Добавить товар"}
-        </button>
+        </Button>
       </form>
     </div>
   );

@@ -178,6 +178,27 @@ export const usersApi = {
   getAll: () => apiFetch('/users'),
 };
 
+export const uploadApi = {
+  uploadImages: async (files: FileList, category: string) => {
+    const formData = new FormData();
+    Array.from(files).forEach(file => {
+      formData.append('images', file);
+    });
+    formData.append('category', category);
+
+    const response = await fetch(`${API_URL}/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error('Ошибка загрузки файлов');
+    }
+
+    return response.json();
+  }
+};
+
 // Favorites API
 export const favoritesApi = {
   getAll: () => apiFetch('/favorites'),

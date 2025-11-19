@@ -57,10 +57,10 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Создать товар (для локальной разработки без auth)
+  // Создать товар (для локальной разработки без auth)
 router.post('/', async (req, res) => {
   try {
-    const { category_id, name, description, price, image_url, stock } = req.body;
+    const { category_id, name, description, price, image_url, images, stock } = req.body;
 
     if (!name || !price) {
       return res.status(400).json({ error: 'Название и цена обязательны' });
@@ -68,9 +68,9 @@ router.post('/', async (req, res) => {
 
     const id = randomUUID();
     await dbRun(
-      `INSERT INTO products (id, category_id, name, description, price, image_url, stock)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [id, category_id, name, description, price, image_url, stock || 0]
+      `INSERT INTO products (id, category_id, name, description, price, image_url, images, stock)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, category_id, name, description, price, image_url, images, stock || 0]
     );
 
     const product = await dbGet('SELECT * FROM products WHERE id = ?', [id]);
@@ -81,17 +81,17 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Обновить товар (для локальной разработки без auth)
+  // Обновить товар (для локальной разработки без auth)
 router.put('/:id', async (req, res) => {
   try {
-    const { category_id, name, description, price, image_url, stock, is_active } = req.body;
+    const { category_id, name, description, price, image_url, images, stock, is_active } = req.body;
 
     await dbRun(
       `UPDATE products 
        SET category_id = ?, name = ?, description = ?, price = ?, 
-           image_url = ?, stock = ?, is_active = ?
+           image_url = ?, images = ?, stock = ?, is_active = ?
        WHERE id = ?`,
-      [category_id, name, description, price, image_url, stock, is_active ? 1 : 0, req.params.id]
+      [category_id, name, description, price, image_url, images, stock, is_active ? 1 : 0, req.params.id]
     );
 
     const product = await dbGet('SELECT * FROM products WHERE id = ?', [req.params.id]);
