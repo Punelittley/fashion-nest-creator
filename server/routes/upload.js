@@ -1,7 +1,13 @@
-const express = require('express');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+import express from 'express';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 const router = express.Router();
 
 // Настройка хранилища для multer
@@ -60,4 +66,4 @@ router.post('/', upload.array('images', 5), (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
