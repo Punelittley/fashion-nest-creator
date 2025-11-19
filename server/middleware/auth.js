@@ -7,7 +7,8 @@ export const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
-  if (!token) {
+  // Специальный случай: маркер "supabase" считаем отсутствием токена
+  if (!token || token === 'supabase') {
     return res.status(401).json({ error: 'Требуется авторизация' });
   }
 
