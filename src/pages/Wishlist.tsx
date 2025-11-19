@@ -25,8 +25,18 @@ const Wishlist = () => {
   }, [navigate]);
 
   const checkAuthAndLoadWishlist = async () => {
+    // Проверяем сначала локальный токен
+    const authToken = localStorage.getItem('auth_token');
+    if (authToken && authToken !== 'supabase') {
+      // Есть валидный SQLite токен
+      loadWishlist();
+      return;
+    }
+    
+    // Если нет локального токена, проверяем Supabase
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
+      toast.error("Войдите для просмотра избранного");
       navigate("/auth");
     } else {
       loadWishlist();

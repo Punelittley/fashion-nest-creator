@@ -62,6 +62,7 @@ const ProductDetail = () => {
       const data = await productsApi.getById(id);
       setProduct(data);
       setDataSource('sqlite');
+      console.log('✅ Товар загружен из SQLite, dataSource=sqlite');
     } catch (error) {
       console.log('📦 SQLite недоступен, загружаю товар из Supabase...');
       try {
@@ -79,6 +80,7 @@ const ProductDetail = () => {
         
         setProduct(data);
         setDataSource('supabase');
+        console.log('✅ Товар загружен из Supabase, dataSource=supabase');
       } catch (supabaseErr) {
         console.error('Error loading product:', supabaseErr);
         toast.error('Товар не найден');
@@ -120,6 +122,8 @@ const ProductDetail = () => {
     // Проверка авторизации
     if (dataSource === 'sqlite') {
       const authToken = localStorage.getItem('auth_token');
+      console.log('🔍 Проверка токена для избранного:', authToken ? `${authToken.substring(0, 20)}...` : 'отсутствует');
+      console.log('🔍 dataSource:', dataSource);
       if (!authToken || authToken === 'supabase') {
         toast.error("Войдите для добавления в избранное");
         navigate("/auth");
@@ -203,6 +207,8 @@ const ProductDetail = () => {
     // Проверка авторизации
     if (dataSource === 'sqlite') {
       const authToken = localStorage.getItem('auth_token');
+      console.log('🔍 Проверка токена для корзины:', authToken ? `${authToken.substring(0, 20)}...` : 'отсутствует');
+      console.log('🔍 dataSource:', dataSource);
       if (!authToken || authToken === 'supabase') {
         toast.error("Войдите для добавления в корзину");
         navigate("/auth");
