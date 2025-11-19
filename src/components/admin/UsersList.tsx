@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { User } from "lucide-react";
+import { usersApi } from "@/lib/api";
 
 interface UserProfile {
   id: string;
@@ -21,16 +22,24 @@ const UsersList = () => {
 
   const loadUsers = async () => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, email, full_name, phone, created_at')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setUsers(data || []);
+      // Сначала пробуем SQLite
+      const data = await usersApi.getAll();
+      setUsers(data);
     } catch (error) {
-      toast.error("Ошибка загрузки пользователей");
-      console.error(error);
+      console.log('SQLite API недоступен, используем Supabase');
+      // Fallback на Supabase
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, email, full_name, phone, created_at')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setUsers(data || []);
+      } catch (supabaseError) {
+        toast.error("Ошибка загрузки пользователей");
+        console.error(supabaseError);
+      }
     } finally {
       setLoading(false);
     }

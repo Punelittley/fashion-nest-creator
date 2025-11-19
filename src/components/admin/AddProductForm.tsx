@@ -53,6 +53,16 @@ const AddProductForm = () => {
   const handleImageUpload = async (file: File) => {
     setUploading(true);
     try {
+      // Проверяем, используем ли мы SQLite (локальный токен)
+      const token = localStorage.getItem('auth_token');
+      if (token && token !== 'supabase') {
+        // Для SQLite просто показываем сообщение, что нужно использовать локальные пути
+        toast.info("Для SQLite используйте локальные пути (например: /images/coats/coat1.jpg)");
+        setUploading(false);
+        return;
+      }
+
+      // Supabase Storage загрузка
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `${fileName}`;
@@ -366,6 +376,33 @@ const AddProductForm = () => {
             <Upload size={16} style={{ display: "inline", marginRight: "0.5rem" }} />
             Изображение товара
           </label>
+          
+          <div style={{ marginBottom: "0.75rem" }}>
+            <input
+              type="text"
+              placeholder="Введите путь к изображению (например: /images/coats/coat1.jpg)"
+              value={formData.image_url}
+              onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+              style={{
+                width: "100%",
+                padding: "0.75rem",
+                border: "1px solid hsl(var(--border))",
+                borderRadius: "6px",
+                fontSize: "1rem",
+                backgroundColor: "hsl(var(--background))",
+                color: "hsl(var(--foreground))"
+              }}
+            />
+          </div>
+
+          <div style={{
+            fontSize: "0.875rem",
+            color: "hsl(var(--muted-foreground))",
+            marginBottom: "0.5rem"
+          }}>
+            или загрузите файл (только для Supabase):
+          </div>
+          
           <input
             type="file"
             accept="image/*"
