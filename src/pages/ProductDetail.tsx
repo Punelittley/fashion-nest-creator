@@ -120,7 +120,7 @@ const ProductDetail = () => {
     // Проверка авторизации
     if (dataSource === 'sqlite') {
       const authToken = localStorage.getItem('auth_token');
-      if (!authToken) {
+      if (!authToken || authToken === 'supabase') {
         toast.error("Войдите для добавления в избранное");
         navigate("/auth");
         return;
@@ -203,7 +203,7 @@ const ProductDetail = () => {
     // Проверка авторизации
     if (dataSource === 'sqlite') {
       const authToken = localStorage.getItem('auth_token');
-      if (!authToken) {
+      if (!authToken || authToken === 'supabase') {
         toast.error("Войдите для добавления в корзину");
         navigate("/auth");
         return;
