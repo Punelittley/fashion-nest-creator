@@ -281,6 +281,11 @@ const ProductDetail = () => {
     );
   }
 
+  // Парсим изображения из JSON-строки (SQLite) или используем массив (Supabase)
+  const images = product.images 
+    ? (typeof product.images === 'string' ? JSON.parse(product.images) : product.images)
+    : (product.image_url ? [product.image_url] : []);
+
   return (
     <Layout>
       <div style={{ padding: "4rem 2rem", maxWidth: "1200px", margin: "0 auto" }}>
@@ -291,7 +296,7 @@ const ProductDetail = () => {
           alignItems: "start"
         }}>
           <ProductImageSlider 
-            images={product.images || (product.image_url ? [product.image_url] : [])}
+            images={images}
             alt={product.name}
           />
 

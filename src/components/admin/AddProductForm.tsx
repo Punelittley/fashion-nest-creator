@@ -78,18 +78,49 @@ const AddProductForm = ({ onProductAdded }: AddProductFormProps) => {
       // Загружаем файлы если они выбраны
       if (imageFiles && imageFiles.length > 0) {
         try {
+          // Пытаемся загрузить через SQLite API
           const categoryName = categories.find(c => c.id === formData.category_id)?.name.toLowerCase() || 'other';
           const result = await uploadApi.uploadImages(imageFiles, categoryName);
           uploadedImages = result.images;
+          console.log('✅ Изображения загружены через SQLite');
         } catch (uploadError) {
-          console.error('Ошибка загрузки:', uploadError);
-          toast({
-            title: "Ошибка",
-            description: "Не удалось загрузить изображения",
-            variant: "destructive",
-          });
-          setLoading(false);
-          return;
+          console.log('📦 SQLite недоступен, загружаю в Supabase Storage...');
+          
+          // Fallback на Supabase Storage
+          try {
+            const uploadPromises = Array.from(imageFiles).map(async (file) => {
+              const fileExt = file.name.split('.').pop();
+              const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+              const filePath = `${fileName}`;
+
+              const { error: uploadError } = await supabase.storage
+                .from('product-images')
+                .upload(filePath, file, {
+                  cacheControl: '3600',
+                  upsert: false
+                });
+
+              if (uploadError) throw uploadError;
+
+              const { data: { publicUrl } } = supabase.storage
+                .from('product-images')
+                .getPublicUrl(filePath);
+
+              return publicUrl;
+            });
+
+            uploadedImages = await Promise.all(uploadPromises);
+            console.log('✅ Изображения загружены в Supabase Storage');
+          } catch (supabaseUploadError) {
+            console.error('Ошибка загрузки в Supabase:', supabaseUploadError);
+            toast({
+              title: "Ошибка",
+              description: "Не удалось загрузить изображения",
+              variant: "destructive",
+            });
+            setLoading(false);
+            return;
+          }
         }
       }
 
