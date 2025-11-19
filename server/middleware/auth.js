@@ -5,17 +5,23 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 // Middleware для проверки JWT токена
 export const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
+  console.log('🔐 Auth header:', authHeader);
+  
   const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+  console.log('🎟️ Token:', token ? `${token.substring(0, 20)}...` : 'отсутствует');
 
   // Специальный случай: маркер "supabase" считаем отсутствием токена
   if (!token || token === 'supabase') {
+    console.log('❌ Токен отсутствует или это маркер supabase');
     return res.status(401).json({ error: 'Требуется авторизация' });
   }
 
   jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) {
+      console.log('❌ Ошибка верификации токена:', err.message);
       return res.status(403).json({ error: 'Недействительный токен' });
     }
+    console.log('✅ Токен валидный, пользователь:', user.id);
     req.user = user;
     next();
   });
