@@ -12,6 +12,7 @@ import ordersRoutes from './routes/orders.js';
 import profileRoutes from './routes/profile.js';
 import favoritesRoutes from './routes/favorites.js';
 import roleRoutes from './routes/role.js';
+import usersRoutes from './routes/users.js';
 
 // Загрузка переменных окружения
 dotenv.config();
@@ -44,6 +45,7 @@ app.use('/api/orders', ordersRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/favorites', favoritesRoutes);
 app.use('/api/role', roleRoutes);
+app.use('/api/users', usersRoutes);
 
 // Проверка здоровья сервера
 app.get('/health', (req, res) => {

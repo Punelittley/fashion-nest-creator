@@ -173,6 +173,11 @@ export const roleApi = {
   checkAdmin: () => apiFetch('/role/check-admin'),
 };
 
+// Users API
+export const usersApi = {
+  getAll: () => apiFetch('/users'),
+};
+
 // Favorites API
 export const favoritesApi = {
   getAll: () => apiFetch('/favorites'),
