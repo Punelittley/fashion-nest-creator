@@ -19,11 +19,26 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:3000',
+  'http://localhost:8080',
+].filter(Boolean);
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:8080',
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true); // запросы из Postman / curl и т.п.
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    console.log('❌ CORS блокирует origin:', origin);
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
   exposedHeaders: ['Authorization'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
