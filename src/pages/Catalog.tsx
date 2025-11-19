@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { productsApi, categoriesApi } from "@/lib/api";
 import { supabase } from "@/integrations/supabase/client";
-import { ProductImageSlider } from "@/components/ProductImageSlider";
 
 interface Product {
   id: string;
@@ -202,6 +201,8 @@ const Catalog = () => {
               const images = product.images 
                 ? (typeof product.images === 'string' ? JSON.parse(product.images) : product.images)
                 : (product.image_url ? [product.image_url] : []);
+              
+              const mainImage = images[0] || '/placeholder.svg';
 
               return (
                 <Link
@@ -213,10 +214,22 @@ const Catalog = () => {
                     display: "block"
                   }}
                 >
-                  <ProductImageSlider 
-                    images={images}
-                    alt={product.name}
-                  />
+                  <div style={{
+                    width: "100%",
+                    aspectRatio: "3/4",
+                    overflow: "hidden",
+                    backgroundColor: "hsl(var(--secondary))"
+                  }}>
+                    <img
+                      src={mainImage}
+                      alt={product.name}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover"
+                      }}
+                    />
+                  </div>
                   <h3 style={{
                     fontSize: "1.125rem",
                     fontWeight: "500",
