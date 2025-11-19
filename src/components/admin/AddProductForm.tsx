@@ -28,6 +28,7 @@ const AddProductForm = ({ onProductAdded }: AddProductFormProps) => {
   });
   const [loading, setLoading] = useState(false);
   const [imageFiles, setImageFiles] = useState<FileList | null>(null);
+  const [imageUrl, setImageUrl] = useState("");
 
   useEffect(() => {
     loadCategories();
@@ -71,7 +72,8 @@ const AddProductForm = ({ onProductAdded }: AddProductFormProps) => {
       return;
     }
 
-    if (!imageFiles || imageFiles.length === 0) {
+    // Требуем либо загруженный файл, либо URL изображения
+    if ((!imageFiles || imageFiles.length === 0)) {
       toast({
         title: "Ошибка",
         description: "Загрузите хотя бы одно изображение",
@@ -95,7 +97,7 @@ const AddProductForm = ({ onProductAdded }: AddProductFormProps) => {
         } catch (uploadError) {
           console.log('📦 SQLite недоступен, загружаю в Supabase Storage...');
           
-          // Fallback на Supabase Storage
+          // Fallback на Lovable Cloud Storage
           try {
             const uploadPromises = Array.from(imageFiles).map(async (file) => {
               const fileExt = file.name.split('.').pop();
@@ -119,9 +121,9 @@ const AddProductForm = ({ onProductAdded }: AddProductFormProps) => {
             });
 
             uploadedImages = await Promise.all(uploadPromises);
-            console.log('✅ Изображения загружены в Supabase Storage');
+            console.log('✅ Изображения загружены в Lovable Cloud Storage');
           } catch (supabaseUploadError) {
-            console.error('Ошибка загрузки в Supabase:', supabaseUploadError);
+            console.error('Ошибка загрузки в хранилище:', supabaseUploadError);
             toast({
               title: "Ошибка",
               description: "Не удалось загрузить изображения",
@@ -165,7 +167,7 @@ const AddProductForm = ({ onProductAdded }: AddProductFormProps) => {
           description: "Товар добавлен",
         });
       } catch (error) {
-        console.log('📦 SQLite недоступен, сохраняю в Supabase...');
+        console.log('📦 SQLite недоступен, сохраняю в Lovable Cloud...');
         const supabaseData = {
           ...productData,
           images: finalImages,
@@ -180,7 +182,7 @@ const AddProductForm = ({ onProductAdded }: AddProductFormProps) => {
 
         toast({
           title: "Успешно",
-          description: "Товар добавлен через Supabase",
+          description: "Товар добавлен через Lovable Cloud",
         });
       }
 
@@ -313,6 +315,20 @@ const AddProductForm = ({ onProductAdded }: AddProductFormProps) => {
               Загрузите до 5 изображений. Первое изображение будет основным.
             </span>
           </div>
+        </div>
+
+        <div>
+          <Label htmlFor="imageUrl">ИЛИ URL изображения</Label>
+          <Input
+            id="imageUrl"
+            type="text"
+            placeholder="https://..."
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+          />
+          <span style={{ fontSize: "0.875rem", color: "hsl(var(--muted-foreground))" }}>
+            Можно указать прямую ссылку на изображение (например, из хостинга картинок).
+          </span>
         </div>
 
         <Button 
