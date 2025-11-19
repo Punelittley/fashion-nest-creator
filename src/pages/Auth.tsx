@@ -108,17 +108,22 @@ const Auth = () => {
         }
       } else {
         // Вход: сначала пробуем локальный Express
+        console.log('🔐 Попытка входа через SQLite для:', formData.email);
         try {
           const response = await authApi.signin(
             formData.email,
             formData.password
           );
+          console.log('✅ Вход через SQLite успешен, токен получен');
           setToken(response.token);
+          console.log('✅ Токен сохранён в localStorage:', response.token.substring(0, 30) + '...');
           toast.success("Вход выполнен успешно!");
           navigate("/");
           return;
         } catch (err) {
+          console.error('❌ Ошибка входа через SQLite:', err);
           // Фолбэк на облачный вход
+          console.log('📦 Переключаюсь на Supabase для входа...');
           const { data, error } = await supabase.auth.signInWithPassword({
             email: formData.email,
             password: formData.password,
@@ -126,6 +131,7 @@ const Auth = () => {
           if (error) throw error;
           if (data.session) {
             setToken('supabase');
+            console.log('✅ Вход через Supabase успешен');
             toast.success("Вход выполнен успешно!");
             navigate("/");
           }
