@@ -118,7 +118,7 @@ const Admin = () => {
           </TabsContent>
           
           <TabsContent value="add-product">
-            <AddProductForm />
+            <AddProductForm onProductAdded={() => {}} />
           </TabsContent>
           
           <TabsContent value="manage-products">

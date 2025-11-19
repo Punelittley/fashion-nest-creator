@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { productsApi, categoriesApi } from "@/lib/api";
 import { supabase } from "@/integrations/supabase/client";
+import { ProductImageSlider } from "@/components/ProductImageSlider";
 
 interface Product {
   id: string;
@@ -197,51 +198,44 @@ const Catalog = () => {
             gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
             gap: "2rem"
           }}>
-            {sortedProducts.map(product => (
-              <Link
-                key={product.id}
-                to={`/product/${product.id}`}
-                style={{
-                  textDecoration: "none",
-                  color: "inherit",
-                  display: "block"
-                }}
-              >
-                <div style={{
-                  aspectRatio: "3/4",
-                  backgroundColor: "hsl(var(--muted))",
-                  overflow: "hidden",
-                  marginBottom: "1rem"
-                }}>
-                  {product.image_url && (
-                    <img
-                      src={product.image_url}
-                      alt={product.name}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover"
-                      }}
-                    />
-                  )}
-                </div>
-                <h3 style={{
-                  fontSize: "1.125rem",
-                  fontWeight: "500",
-                  marginBottom: "0.5rem",
-                  color: "hsl(var(--foreground))"
-                }}>
-                  {product.name}
-                </h3>
-                <p style={{
-                  fontSize: "1rem",
-                  color: "hsl(var(--accent))",
-                  fontWeight: "600"
-                }}>
-                  {product.price.toLocaleString('ru-RU')} ₽
-                </p>
-              </Link>
-            ))}
+            {sortedProducts.map(product => {
+              const images = product.images 
+                ? (typeof product.images === 'string' ? JSON.parse(product.images) : product.images)
+                : (product.image_url ? [product.image_url] : []);
+
+              return (
+                <Link
+                  key={product.id}
+                  to={`/product/${product.id}`}
+                  style={{
+                    textDecoration: "none",
+                    color: "inherit",
+                    display: "block"
+                  }}
+                >
+                  <ProductImageSlider 
+                    images={images}
+                    alt={product.name}
+                  />
+                  <h3 style={{
+                    fontSize: "1.125rem",
+                    fontWeight: "500",
+                    marginTop: "1rem",
+                    marginBottom: "0.5rem",
+                    color: "hsl(var(--foreground))"
+                  }}>
+                    {product.name}
+                  </h3>
+                  <p style={{
+                    fontSize: "1rem",
+                    color: "hsl(var(--accent))",
+                    fontWeight: "600"
+                  }}>
+                    {product.price.toLocaleString('ru-RU')} ₽
+                  </p>
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>

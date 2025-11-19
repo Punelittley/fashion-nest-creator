@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS products (
   description TEXT,
   price REAL NOT NULL CHECK(price >= 0),
   image_url TEXT,
+  images TEXT, -- JSON массив с URL изображений
   stock INTEGER NOT NULL DEFAULT 0 CHECK(stock >= 0),
   is_active INTEGER NOT NULL DEFAULT 1,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
