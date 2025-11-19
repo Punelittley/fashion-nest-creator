@@ -66,11 +66,14 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Название и цена обязательны' });
     }
 
+    // Сериализуем массив images в JSON для SQLite
+    const imagesJson = Array.isArray(images) ? JSON.stringify(images) : images;
+
     const id = randomUUID();
     await dbRun(
       `INSERT INTO products (id, category_id, name, description, price, image_url, images, stock)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, category_id, name, description, price, image_url, images, stock || 0]
+      [id, category_id, name, description, price, image_url, imagesJson, stock || 0]
     );
 
     const product = await dbGet('SELECT * FROM products WHERE id = ?', [id]);
@@ -86,12 +89,15 @@ router.put('/:id', async (req, res) => {
   try {
     const { category_id, name, description, price, image_url, images, stock, is_active } = req.body;
 
+    // Сериализуем массив images в JSON для SQLite
+    const imagesJson = Array.isArray(images) ? JSON.stringify(images) : images;
+
     await dbRun(
       `UPDATE products 
        SET category_id = ?, name = ?, description = ?, price = ?, 
            image_url = ?, images = ?, stock = ?, is_active = ?
        WHERE id = ?`,
-      [category_id, name, description, price, image_url, images, stock, is_active ? 1 : 0, req.params.id]
+      [category_id, name, description, price, image_url, imagesJson, stock, is_active ? 1 : 0, req.params.id]
     );
 
     const product = await dbGet('SELECT * FROM products WHERE id = ?', [req.params.id]);
