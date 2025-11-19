@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { ShoppingCart, User, LogOut, Menu, X, LayoutDashboard, Heart } from "lucide-react";
 import { useState, useEffect } from "react";
-import { authApi, cartApi } from "@/lib/api";
+import { authApi, cartApi, roleApi } from "@/lib/api";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.svg";
 
@@ -52,7 +52,8 @@ const Header = () => {
         await authApi.me();
         setIsAuthenticated(true);
         loadCartCount();
-        setIsAdmin(false);
+        // Проверяем роль админа через SQLite API
+        checkAdminRoleSQLite();
       } catch {
         // Токен недействителен или сервер недоступен — считаем, что не авторизованы
         setIsAuthenticated(false);
@@ -70,6 +71,15 @@ const Header = () => {
         .maybeSingle();
 
       setIsAdmin(!!data && !error);
+    } catch {
+      setIsAdmin(false);
+    }
+  };
+
+  const checkAdminRoleSQLite = async () => {
+    try {
+      const response = await roleApi.checkAdmin();
+      setIsAdmin(response.isAdmin);
     } catch {
       setIsAdmin(false);
     }

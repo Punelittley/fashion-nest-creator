@@ -7,6 +7,7 @@ import UsersList from "@/components/admin/UsersList";
 import AddProductForm from "@/components/admin/AddProductForm";
 import ProductsManagement from "@/components/admin/ProductsManagement";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { roleApi } from "@/lib/api";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -19,6 +20,21 @@ const Admin = () => {
 
   const checkAdmin = async () => {
     try {
+      // Сначала проверяем локальный токен SQLite
+      const token = localStorage.getItem('auth_token');
+      if (token && token !== 'supabase') {
+        const response = await roleApi.checkAdmin();
+        if (!response.isAdmin) {
+          toast.error("Доступ запрещен");
+          navigate("/");
+          return;
+        }
+        setIsAdmin(true);
+        setLoading(false);
+        return;
+      }
+
+      // Fallback на Supabase
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {

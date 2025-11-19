@@ -168,6 +168,11 @@ export const profileApi = {
     }),
 };
 
+// Role API
+export const roleApi = {
+  checkAdmin: () => apiFetch('/role/check-admin'),
+};
+
 // Favorites API
 export const favoritesApi = {
   getAll: () => apiFetch('/favorites'),
