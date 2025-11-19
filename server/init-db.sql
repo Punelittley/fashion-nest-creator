@@ -155,10 +155,10 @@ INSERT OR IGNORE INTO products (id, category_id, name, description, price, image
 ('prod-003', 'cat-001', 'Кашемировое пальто', 'Роскошное пальто из итальянского кашемира', 45000.00, '/images/coats/coat3.jpg', 4, 1);
 
 -- Штаны и брюки (Pants)
-INSERT OR IGNORE INTO products (id, category_id, name, description, price, image_url, stock, is_active) VALUES 
-('prod-004', 'cat-002', 'Классические брюки со стрелками', 'Строгие брюки прямого кроя с идеальной посадкой', 12000.00, '/images/pants/pants1.jpg', 15, 1),
-('prod-005', 'cat-002', 'Брюки-палаццо', 'Широкие брюки в минималистичном стиле', 14000.00, '/images/pants/pants2.jpg', 10, 1),
-('prod-006', 'cat-002', 'Укороченные брюки', 'Современные укороченные брюки с высокой талией', 11000.00, '/images/pants/pants3.jpg', 12, 1);
+INSERT OR IGNORE INTO products (id, category_id, name, description, price, image_url, images, stock, is_active) VALUES 
+('prod-004', 'cat-002', 'Классические брюки со стрелками', 'Строгие брюки прямого кроя с идеальной посадкой', 12000.00, '/images/pants/pants1.jpg', NULL, 15, 1),
+('prod-005', 'cat-002', 'Ace Eater', 'Стильное минималистичное пальто с элегантным кроем', 35000.00, '/images/coats/ace-eater-1.png', '["/images/coats/ace-eater-1.png", "/images/coats/ace-eater-2.png"]', 10, 1),
+('prod-006', 'cat-002', 'Укороченные брюки', 'Современные укороченные брюки с высокой талией', 11000.00, '/images/pants/pants3.jpg', NULL, 12, 1);
 
 -- Шарфы (Scarves)
 INSERT OR IGNORE INTO products (id, category_id, name, description, price, image_url, stock, is_active) VALUES 
