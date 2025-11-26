@@ -87,26 +87,96 @@ serve(async (req) => {
       } else if (data === 'play_glass_bridge') {
         const { data: playerData } = await supabaseClient
           .from('squid_players')
-          .select('id')
+          .select('id, balance')
           .eq('telegram_id', from.id)
           .single();
+
+        const betAmount = 200;
+        if ((playerData?.balance || 0) < betAmount) {
+          await answerCallbackQuery(callbackId, 'Недостаточно монет! Нужно 200 монет для игры.');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        // Deduct bet amount
+        await supabaseClient.from('squid_players')
+          .update({ balance: (playerData?.balance || 0) - betAmount })
+          .eq('telegram_id', from.id);
 
         // Start new glass bridge game (60% chance to survive each step)
         const glassPattern = Array.from({ length: 18 }, () => Math.random() < 0.6 ? 'L' : 'R');
         await supabaseClient.from('squid_game_sessions').insert({
           player1_id: playerData?.id,
           game_type: 'glass_bridge',
-          bet_amount: 0,
+          bet_amount: betAmount,
           status: 'active',
-          game_data: { pattern: glassPattern, step: 0, lives: 1 }
+          game_data: { pattern: glassPattern, step: 0, lives: 1, accumulatedReward: 0 }
         });
 
-        await sendMessage(chatId, '🌉 <b>Стеклянный мост</b>\n\nПеред тобой 18 пар стёкол. Одно из них безопасное, другое разобьётся!\n\nВыбирай: Левое (L) или Правое (R)?', {
+        await sendMessage(chatId, '🌉 <b>Стеклянный мост</b>\n\n💰 Ставка: 200 монет\n\nПеред тобой 18 пар стёкол. Одно из них безопасное, другое разобьётся!\n\nВыбирай: Левое (L) или Правое (R)?', {
           inline_keyboard: [
             [{ text: '⬅️ Левое (L)', callback_data: 'glass_L' }, { text: 'Правое (R) ➡️', callback_data: 'glass_R' }],
-            [{ text: '🚫 Выйти из игры', callback_data: 'main_menu' }]
+            [{ text: '💰 Забрать деньги', callback_data: 'glass_cashout' }]
           ]
         });
+      } else if (data === 'glass_cashout') {
+        const { data: playerData } = await supabaseClient
+          .from('squid_players')
+          .select('id')
+          .eq('telegram_id', from.id)
+          .single();
+
+        const { data: session } = await supabaseClient
+          .from('squid_game_sessions')
+          .select('*')
+          .eq('player1_id', playerData?.id)
+          .eq('game_type', 'glass_bridge')
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (!session) {
+          await sendMessage(chatId, '❌ Игра не найдена.');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const gameData = session.game_data as any;
+        const accumulatedReward = gameData.accumulatedReward || 0;
+
+        await supabaseClient.from('squid_game_sessions')
+          .update({ status: 'finished', finished_at: new Date().toISOString() })
+          .eq('id', session.id);
+
+        if (accumulatedReward > 0) {
+          const { data: currentPlayer } = await supabaseClient
+            .from('squid_players')
+            .select('balance')
+            .eq('id', playerData?.id)
+            .single();
+
+          await supabaseClient.from('squid_players')
+            .update({ balance: (currentPlayer?.balance || 0) + accumulatedReward })
+            .eq('id', playerData?.id);
+
+          await supabaseClient.from('squid_casino_history').insert({
+            player_id: playerData?.id,
+            game_type: 'glass_bridge',
+            bet_amount: session.bet_amount,
+            win_amount: accumulatedReward,
+            result: { completed: false, step: gameData.step, cashout: true }
+          });
+
+          await sendMessage(chatId, `💰 <b>Выигрыш забран!</b>\n\nТы прошёл ${gameData.step}/18 стёкол\nПолучено: ${accumulatedReward} монет`, {
+            inline_keyboard: [
+              [{ text: '🎮 Играть ещё', callback_data: 'play_glass_bridge' }],
+              [{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]
+            ]
+          });
+        } else {
+          await sendMessage(chatId, '❌ У тебя пока нет выигрыша. Пройди хотя бы одну плиту!', {
+            inline_keyboard: [[{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]]
+          });
+        }
       } else if (data.startsWith('glass_')) {
         const choice = data.replace('glass_', '');
         
@@ -136,10 +206,14 @@ serve(async (req) => {
 
         if (choice === correctChoice) {
           gameData.step += 1;
+          
+          // Calculate progressive reward: 400 + (step - 1) * 300
+          const stepReward = 400 + ((gameData.step - 1) * 300);
+          gameData.accumulatedReward = (gameData.accumulatedReward || 0) + stepReward;
 
           if (gameData.step >= 18) {
-            // Won the game
-            const reward = 500;
+            // Won the game - automatically cashout
+            const totalReward = gameData.accumulatedReward;
             const { data: currentPlayer } = await supabaseClient
               .from('squid_players')
               .select('balance, total_wins')
@@ -148,7 +222,7 @@ serve(async (req) => {
 
             await supabaseClient.from('squid_players')
               .update({ 
-                balance: (currentPlayer?.balance || 0) + reward,
+                balance: (currentPlayer?.balance || 0) + totalReward,
                 total_wins: (currentPlayer?.total_wins || 0) + 1
               })
               .eq('id', playerData?.id);
@@ -160,12 +234,12 @@ serve(async (req) => {
             await supabaseClient.from('squid_casino_history').insert({
               player_id: playerData?.id,
               game_type: 'glass_bridge',
-              bet_amount: 0,
-              win_amount: reward,
-              result: { completed: true }
+              bet_amount: session.bet_amount,
+              win_amount: totalReward,
+              result: { completed: true, steps: 18 }
             });
 
-            await sendMessage(chatId, `🎉 <b>ПОБЕДА!</b>\n\nТы прошёл все 18 стёкол!\n💰 Награда: ${reward} монет`, {
+            await sendMessage(chatId, `🎉 <b>НЕВЕРОЯТНО!</b>\n\nТы прошёл все 18 стёкол!\n💰 Общий выигрыш: ${totalReward} монет`, {
               inline_keyboard: [[{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]]
             });
           } else {
@@ -173,32 +247,18 @@ serve(async (req) => {
               .update({ game_data: gameData })
               .eq('id', session.id);
 
-            await sendMessage(chatId, `✅ Правильно! Шаг ${gameData.step}/18\n\nСледующее стекло?`, {
+            await sendMessage(chatId, `✅ Правильно! Шаг ${gameData.step}/18\n💵 +${stepReward} монет\n💰 Накоплено: ${gameData.accumulatedReward} монет\n\nСледующее стекло?`, {
               inline_keyboard: [
                 [{ text: '⬅️ Левое (L)', callback_data: 'glass_L' }, { text: 'Правое (R) ➡️', callback_data: 'glass_R' }],
-                [{ text: '🚫 Выйти', callback_data: 'main_menu' }]
+                [{ text: '💰 Забрать деньги', callback_data: 'glass_cashout' }]
               ]
             });
           }
         } else {
-          // Lost - but give reward if passed at least 1 step
+          // Lost - lose everything
           await supabaseClient.from('squid_game_sessions')
             .update({ status: 'finished', finished_at: new Date().toISOString() })
             .eq('id', session.id);
-
-          const stepReward = gameData.step >= 1 ? 1000 : 0;
-
-          if (stepReward > 0) {
-            const { data: currentPlayer } = await supabaseClient
-              .from('squid_players')
-              .select('balance')
-              .eq('id', playerData?.id)
-              .single();
-
-            await supabaseClient.from('squid_players')
-              .update({ balance: (currentPlayer?.balance || 0) + stepReward })
-              .eq('id', playerData?.id);
-          }
 
           await supabaseClient.from('squid_players')
             .update({ total_losses: (await supabaseClient.from('squid_players').select('total_losses').eq('id', playerData?.id).single()).data?.total_losses + 1 || 1 })
@@ -207,13 +267,14 @@ serve(async (req) => {
           await supabaseClient.from('squid_casino_history').insert({
             player_id: playerData?.id,
             game_type: 'glass_bridge',
-            bet_amount: 0,
-            win_amount: stepReward,
+            bet_amount: session.bet_amount,
+            win_amount: 0,
             result: { completed: false, step: gameData.step }
           });
 
-          const rewardText = stepReward > 0 ? `\n💰 Награда за ${gameData.step} ${gameData.step === 1 ? 'плиту' : 'плиты'}: ${stepReward} монет` : '';
-          await sendMessage(chatId, `💥 Стекло разбилось!\n\nТы прошёл ${gameData.step}/18 стёкол.${rewardText}`, {
+          const lostReward = gameData.accumulatedReward || 0;
+          const lostText = lostReward > 0 ? `\n💸 Потеряно: ${lostReward} монет` : '';
+          await sendMessage(chatId, `💥 Стекло разбилось!\n\nТы прошёл ${gameData.step}/18 стёкол${lostText}`, {
             inline_keyboard: [
               [{ text: '🎮 Играть ещё', callback_data: 'play_glass_bridge' }],
               [{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]
