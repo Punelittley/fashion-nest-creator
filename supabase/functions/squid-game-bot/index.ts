@@ -27,11 +27,32 @@ async function sendMessage(chatId: number, text: string, replyMarkup?: any) {
   const body: any = { chat_id: chatId, text, parse_mode: 'HTML' };
   if (replyMarkup) body.reply_markup = replyMarkup;
   
-  await fetch(`${TELEGRAM_API}/sendMessage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+  try {
+    const response = await fetch(`${TELEGRAM_API}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    
+    const result = await response.json();
+    
+    // Handle rate limit errors
+    if (!result.ok && result.error_code === 429) {
+      const retryAfter = result.parameters?.retry_after || 1;
+      console.log(`Rate limited, waiting ${retryAfter} seconds...`);
+      await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+      // Retry the request
+      return await fetch(`${TELEGRAM_API}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Error sending message:', error);
+  }
 }
 
 async function answerCallbackQuery(callbackQueryId: string, text?: string) {
