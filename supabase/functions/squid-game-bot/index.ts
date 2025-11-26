@@ -495,8 +495,8 @@ serve(async (req) => {
           .single();
 
         const commands = isAdmin 
-          ? '\n\n<b>📋 Команды:</b>\n/daily - ежедневный бонус\n/promo [код] - активировать промокод\n\n<b>👑 Админ команды:</b>\n/admin_balance [ID] [сумма] - изменить баланс\n/admin_promo [код] [сумма] [лимит] - создать промокод'
-          : '\n\n<b>📋 Команды:</b>\n/daily - ежедневный бонус\n/promo [код] - активировать промокод';
+          ? '\n\n<b>📋 Команды:</b>\n/help - список всех команд\n/daily - ежедневный бонус\n/promo [код] - активировать промокод\n/pay [ID] [сумма] - перевести монеты\n\n<b>👑 Админ команды:</b>\n/admin_balance [ID] [сумма] - изменить баланс\n/admin_promo [код] [сумма] [лимит] - создать промокод'
+          : '\n\n<b>📋 Команды:</b>\n/help - список всех команд\n/daily - ежедневный бонус\n/promo [код] - активировать промокод\n/pay [ID] [сумма] - перевести монеты';
 
         await sendMessage(chat.id, 
           `🦑 <b>Добро пожаловать в Squid Game Bot!</b>\n\n💰 Твой баланс: ${player?.balance || 0} монет\n🆔 Твой ID: ${player?.telegram_id}${commands}\n\nВыбери игру:`,
@@ -609,6 +609,133 @@ serve(async (req) => {
           .insert({ player_id: player.id, promo_code_id: promo.id });
 
         await sendMessage(chat.id, `✅ <b>Промокод активирован!</b>\n\n💰 +${promo.reward_amount} монет\n💵 Новый баланс: ${(player.balance || 0) + promo.reward_amount} монет`);
+      } else if (text === '/help') {
+        const { data: isAdmin } = await supabaseClient
+          .from('squid_admins')
+          .select('telegram_id')
+          .eq('telegram_id', from.id)
+          .single();
+
+        const helpText = `
+<b>📋 Все команды бота:</b>
+
+<b>🎮 Игры:</b>
+/dalgona - Игра "Дальгона" (вырезание фигур)
+  • Звезда: 70% шанс, 400 монет, ставка 100
+  • Зонт: 40% шанс, 1000 монет, ставка 300
+  • Треугольник: 75% шанс, 300 монет, ставка 120
+  • Мона Лиза: 3% шанс, 5000 монет, ставка 500
+
+/glass - Игра "Стеклянный мост"
+  • 60% шанс пройти плиту
+  • Ставка: 200 монет
+  • Награда растет с каждой плитой
+
+/challenge [ID] [ставка] - Вызвать игрока на PvP
+
+<b>💰 Экономика:</b>
+/daily - Ежедневный бонус 1200 монет (раз в 24 часа)
+/promo [код] - Ввести промокод
+/pay [ID] [сумма] - Перевести монеты игроку
+
+<b>ℹ️ Информация:</b>
+/start - Главное меню и ваш Telegram ID
+${isAdmin ? '\n<b>👑 Админ команды:</b>\n/admin_balance [user_id] [сумма] - Изменить баланс пользователя\n/admin_promo [код] [сумма] [лимит] - Создать промокод' : ''}
+`;
+        await sendMessage(chat.id, helpText);
+      } else if (text.startsWith('/pay ')) {
+        const parts = text.split(' ');
+        
+        if (parts.length !== 3) {
+          await sendMessage(chat.id, '❌ Неверный формат команды!\n\nИспользуйте: /pay [ID получателя] [сумма]\nПример: /pay 123456789 500');
+          return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
+        }
+
+        const recipientId = parseInt(parts[1]);
+        const amount = parseInt(parts[2]);
+
+        // Validate inputs
+        if (isNaN(recipientId) || isNaN(amount)) {
+          await sendMessage(chat.id, '❌ ID и сумма должны быть числами!');
+          return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
+        }
+
+        if (amount <= 0) {
+          await sendMessage(chat.id, '❌ Сумма должна быть больше 0!');
+          return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
+        }
+
+        if (amount > 1000000) {
+          await sendMessage(chat.id, '❌ Максимальная сумма перевода: 1,000,000 монет!');
+          return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
+        }
+
+        if (recipientId === from.id) {
+          await sendMessage(chat.id, '❌ Вы не можете перевести монеты самому себе!');
+          return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
+        }
+
+        // Get sender
+        const { data: sender } = await supabaseClient
+          .from('squid_players')
+          .select('*')
+          .eq('telegram_id', from.id)
+          .maybeSingle();
+
+        if (!sender) {
+          await sendMessage(chat.id, '❌ Ошибка: ваш профиль не найден. Используйте /start');
+          return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
+        }
+
+        if (sender.balance < amount) {
+          await sendMessage(chat.id, `❌ Недостаточно монет!\nВаш баланс: ${sender.balance} монет\nТребуется: ${amount} монет`);
+          return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
+        }
+
+        // Get recipient
+        const { data: recipient } = await supabaseClient
+          .from('squid_players')
+          .select('*')
+          .eq('telegram_id', recipientId)
+          .maybeSingle();
+
+        if (!recipient) {
+          await sendMessage(chat.id, '❌ Получатель не найден!\nУбедитесь, что игрок использовал /start в боте.');
+          return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
+        }
+
+        // Perform transfer
+        const { error: senderError } = await supabaseClient
+          .from('squid_players')
+          .update({ balance: sender.balance - amount })
+          .eq('telegram_id', from.id);
+
+        if (senderError) {
+          console.error('Error updating sender balance:', senderError);
+          await sendMessage(chat.id, '❌ Ошибка при переводе. Попробуйте позже.');
+          return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
+        }
+
+        const { error: recipientError } = await supabaseClient
+          .from('squid_players')
+          .update({ balance: recipient.balance + amount })
+          .eq('telegram_id', recipientId);
+
+        if (recipientError) {
+          console.error('Error updating recipient balance:', recipientError);
+          // Rollback sender balance
+          await supabaseClient
+            .from('squid_players')
+            .update({ balance: sender.balance })
+            .eq('telegram_id', from.id);
+          await sendMessage(chat.id, '❌ Ошибка при переводе. Попробуйте позже.');
+          return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
+        }
+
+        // Notify both parties
+        await sendMessage(chat.id, `✅ Успешно переведено ${amount} монет игроку ${recipient.first_name || recipient.username || recipientId}\n\nВаш новый баланс: ${sender.balance - amount} монет`);
+        
+        await sendMessage(recipientId, `💰 Вы получили ${amount} монет от игрока ${sender.first_name || sender.username || from.id}!\n\nВаш новый баланс: ${recipient.balance + amount} монет`);
       } else if (text.startsWith('/admin_balance ')) {
         // Check if user is admin
         const { data: isAdmin } = await supabaseClient
