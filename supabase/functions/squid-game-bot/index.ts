@@ -86,6 +86,15 @@ serve(async (req) => {
         return new Response('OK', { headers: corsHeaders });
       }
 
+      // Check if callback data contains user_id verification
+      if (data.includes('_u')) {
+        const userId = parseInt(data.split('_u')[1].split('_')[0]);
+        if (userId !== from.id) {
+          await answerCallbackQuery(callbackId, '❌ Это не твоя кнопка!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+      }
+
       // Ensure player exists
       await supabaseClient.from('squid_players').upsert({
         telegram_id: from.id,
@@ -461,6 +470,315 @@ serve(async (req) => {
           `👤 <b>Твой профиль</b>\n\n💰 Баланс: ${player?.balance || 0} монет\n🏆 Побед: ${player?.total_wins || 0}\n💀 Поражений: ${player?.total_losses || 0}`,
           { inline_keyboard: [[{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]] }
         );
+      } else if (data === 'play_casino') {
+        await sendMessage(chatId, '🎰 <b>Казино</b>\n\nВыбери игру:', {
+          inline_keyboard: [
+            [{ text: '🎡 Рулетка', callback_data: `casino_roulette_u${from.id}` }],
+            [{ text: '🎰 Слоты', callback_data: `casino_slots_u${from.id}` }],
+            [{ text: '📈 Краш', callback_data: `casino_crash_u${from.id}` }],
+            [{ text: '⬅️ Назад', callback_data: 'main_menu' }]
+          ]
+        });
+      } else if (data.startsWith('casino_roulette_u')) {
+        await sendMessage(chatId, '🎡 <b>Рулетка</b>\n\nВыбери ставку (100-10000 монет) и цвет:', {
+          inline_keyboard: [
+            [{ text: '🔴 Красное (x2)', callback_data: `roulette_bet_red_u${from.id}` }],
+            [{ text: '⚫ Черное (x2)', callback_data: `roulette_bet_black_u${from.id}` }],
+            [{ text: '🟢 Зеленое (x14)', callback_data: `roulette_bet_green_u${from.id}` }],
+            [{ text: '⬅️ Назад', callback_data: 'play_casino' }]
+          ]
+        });
+      } else if (data.startsWith('roulette_bet_')) {
+        const color = data.includes('red') ? 'red' : data.includes('black') ? 'black' : 'green';
+        
+        await sendMessage(chatId, `Выбран цвет: ${color === 'red' ? '🔴 Красное' : color === 'black' ? '⚫ Черное' : '🟢 Зеленое'}\n\nВыбери размер ставки:`, {
+          inline_keyboard: [
+            [{ text: '100 монет', callback_data: `roulette_play_${color}_100_u${from.id}` }],
+            [{ text: '500 монет', callback_data: `roulette_play_${color}_500_u${from.id}` }],
+            [{ text: '1000 монет', callback_data: `roulette_play_${color}_1000_u${from.id}` }],
+            [{ text: '5000 монет', callback_data: `roulette_play_${color}_5000_u${from.id}` }],
+            [{ text: '10000 монет', callback_data: `roulette_play_${color}_10000_u${from.id}` }],
+            [{ text: '⬅️ Назад', callback_data: `casino_roulette_u${from.id}` }]
+          ]
+        });
+      } else if (data.startsWith('roulette_play_')) {
+        const parts = data.split('_');
+        const color = parts[2];
+        const betAmount = parseInt(parts[3]);
+
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('id, balance')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!player || player.balance < betAmount) {
+          await answerCallbackQuery(callbackId, 'Недостаточно монет!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        // Deduct bet
+        await supabaseClient.from('squid_players')
+          .update({ balance: player.balance - betAmount })
+          .eq('id', player.id);
+
+        // Spin roulette (18 red, 18 black, 1 green)
+        const result = Math.random();
+        let resultColor: string;
+        let winMultiplier = 0;
+
+        if (result < 18/37) {
+          resultColor = 'red';
+        } else if (result < 36/37) {
+          resultColor = 'black';
+        } else {
+          resultColor = 'green';
+        }
+
+        if (resultColor === color) {
+          winMultiplier = color === 'green' ? 14 : 2;
+        }
+
+        const winAmount = betAmount * winMultiplier;
+        const profit = winAmount - betAmount;
+
+        if (winAmount > 0) {
+          await supabaseClient.from('squid_players')
+            .update({ balance: player.balance - betAmount + winAmount })
+            .eq('id', player.id);
+        }
+
+        await supabaseClient.from('squid_casino_history').insert({
+          player_id: player.id,
+          game_type: 'roulette',
+          bet_amount: betAmount,
+          win_amount: winAmount,
+          result: { color: resultColor, bet: color }
+        });
+
+        const resultEmoji = resultColor === 'red' ? '🔴' : resultColor === 'black' ? '⚫' : '🟢';
+        const resultText = winAmount > 0 
+          ? `🎉 <b>ВЫИГРЫШ!</b>\n\nРезультат: ${resultEmoji} ${resultColor}\n💰 Выигрыш: ${profit} монет\n💵 Новый баланс: ${player.balance - betAmount + winAmount} монет`
+          : `😔 Проигрыш\n\nРезультат: ${resultEmoji} ${resultColor}\n💸 Потеря: ${betAmount} монет\n💵 Новый баланс: ${player.balance - betAmount} монет`;
+
+        await sendMessage(chatId, resultText, {
+          inline_keyboard: [
+            [{ text: '🎡 Играть еще', callback_data: `casino_roulette_u${from.id}` }],
+            [{ text: '⬅️ Казино', callback_data: 'play_casino' }]
+          ]
+        });
+      } else if (data.startsWith('casino_slots_u')) {
+        await sendMessage(chatId, '🎰 <b>Слоты</b>\n\nВыбери размер ставки:', {
+          inline_keyboard: [
+            [{ text: '100 монет', callback_data: `slots_play_100_u${from.id}` }],
+            [{ text: '500 монет', callback_data: `slots_play_500_u${from.id}` }],
+            [{ text: '1000 монет', callback_data: `slots_play_1000_u${from.id}` }],
+            [{ text: '5000 монет', callback_data: `slots_play_5000_u${from.id}` }],
+            [{ text: '⬅️ Назад', callback_data: 'play_casino' }]
+          ]
+        });
+      } else if (data.startsWith('slots_play_')) {
+        const betAmount = parseInt(data.split('_')[2]);
+
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('id, balance')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!player || player.balance < betAmount) {
+          await answerCallbackQuery(callbackId, 'Недостаточно монет!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        // Deduct bet
+        await supabaseClient.from('squid_players')
+          .update({ balance: player.balance - betAmount })
+          .eq('id', player.id);
+
+        // Slot symbols and their weights
+        const symbols = ['🍒', '🍋', '🍊', '🍇', '🔔', '💎', '7️⃣'];
+        const weights = [30, 25, 20, 15, 7, 2, 1]; // Higher = more common
+        
+        const spinReel = () => {
+          const total = weights.reduce((a, b) => a + b, 0);
+          const random = Math.random() * total;
+          let sum = 0;
+          for (let i = 0; i < symbols.length; i++) {
+            sum += weights[i];
+            if (random < sum) return symbols[i];
+          }
+          return symbols[0];
+        };
+
+        const reel1 = spinReel();
+        const reel2 = spinReel();
+        const reel3 = spinReel();
+
+        // Calculate win
+        let winMultiplier = 0;
+        if (reel1 === reel2 && reel2 === reel3) {
+          // Three of a kind
+          const symbolIndex = symbols.indexOf(reel1);
+          winMultiplier = [3, 5, 8, 12, 25, 50, 100][symbolIndex];
+        } else if (reel1 === reel2 || reel2 === reel3) {
+          // Two of a kind
+          winMultiplier = 1.5;
+        }
+
+        const winAmount = Math.floor(betAmount * winMultiplier);
+        const profit = winAmount - betAmount;
+
+        if (winAmount > 0) {
+          await supabaseClient.from('squid_players')
+            .update({ balance: player.balance - betAmount + winAmount })
+            .eq('id', player.id);
+        }
+
+        await supabaseClient.from('squid_casino_history').insert({
+          player_id: player.id,
+          game_type: 'slots',
+          bet_amount: betAmount,
+          win_amount: winAmount,
+          result: { reels: [reel1, reel2, reel3] }
+        });
+
+        const resultText = winAmount > 0
+          ? `🎰 ${reel1} ${reel2} ${reel3}\n\n🎉 <b>ВЫИГРЫШ!</b>\n💰 Выигрыш: ${profit} монет (x${winMultiplier})\n💵 Новый баланс: ${player.balance - betAmount + winAmount} монет`
+          : `🎰 ${reel1} ${reel2} ${reel3}\n\n😔 Проигрыш\n💸 Потеря: ${betAmount} монет\n💵 Новый баланс: ${player.balance - betAmount} монет`;
+
+        await sendMessage(chatId, resultText, {
+          inline_keyboard: [
+            [{ text: '🎰 Играть еще', callback_data: `casino_slots_u${from.id}` }],
+            [{ text: '⬅️ Казино', callback_data: 'play_casino' }]
+          ]
+        });
+      } else if (data.startsWith('casino_crash_u')) {
+        await sendMessage(chatId, '📈 <b>Краш</b>\n\nВыбери размер ставки:', {
+          inline_keyboard: [
+            [{ text: '100 монет', callback_data: `crash_start_100_u${from.id}` }],
+            [{ text: '500 монет', callback_data: `crash_start_500_u${from.id}` }],
+            [{ text: '1000 монет', callback_data: `crash_start_1000_u${from.id}` }],
+            [{ text: '5000 монет', callback_data: `crash_start_5000_u${from.id}` }],
+            [{ text: '⬅️ Назад', callback_data: 'play_casino' }]
+          ]
+        });
+      } else if (data.startsWith('crash_start_')) {
+        const betAmount = parseInt(data.split('_')[2]);
+
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('id, balance')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!player || player.balance < betAmount) {
+          await answerCallbackQuery(callbackId, 'Недостаточно монет!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        // Deduct bet
+        await supabaseClient.from('squid_players')
+          .update({ balance: player.balance - betAmount })
+          .eq('id', player.id);
+
+        // Generate crash point (weighted towards lower multipliers)
+        const random = Math.random();
+        let crashPoint: number;
+        if (random < 0.5) crashPoint = 1 + Math.random() * 0.5; // 50% chance: 1.0-1.5x
+        else if (random < 0.8) crashPoint = 1.5 + Math.random() * 1.5; // 30% chance: 1.5-3.0x
+        else if (random < 0.95) crashPoint = 3 + Math.random() * 7; // 15% chance: 3.0-10.0x
+        else crashPoint = 10 + Math.random() * 90; // 5% chance: 10.0-100.0x
+
+        // Create game session
+        await supabaseClient.from('squid_game_sessions').insert({
+          player1_id: player.id,
+          game_type: 'crash',
+          bet_amount: betAmount,
+          status: 'active',
+          game_data: { crashPoint: crashPoint.toFixed(2), currentMultiplier: 1.00 }
+        });
+
+        await sendMessage(chatId, `📈 <b>Игра началась!</b>\n\nСтавка: ${betAmount} монет\nТекущий множитель: 1.00x\n\nНажми "Забрать", когда захочешь выйти!`, {
+          inline_keyboard: [
+            [{ text: '💰 Забрать (x1.50)', callback_data: `crash_cashout_1.50_u${from.id}` }],
+            [{ text: '💰 Забрать (x2.00)', callback_data: `crash_cashout_2.00_u${from.id}` }],
+            [{ text: '💰 Забрать (x3.00)', callback_data: `crash_cashout_3.00_u${from.id}` }],
+            [{ text: '💰 Забрать (x5.00)', callback_data: `crash_cashout_5.00_u${from.id}` }],
+            [{ text: '💰 Забрать (x10.00)', callback_data: `crash_cashout_10.00_u${from.id}` }]
+          ]
+        });
+      } else if (data.startsWith('crash_cashout_')) {
+        const cashoutMultiplier = parseFloat(data.split('_')[2]);
+
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('id, balance')
+          .eq('telegram_id', from.id)
+          .single();
+
+        const { data: session } = await supabaseClient
+          .from('squid_game_sessions')
+          .select('*')
+          .eq('player1_id', player?.id)
+          .eq('game_type', 'crash')
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (!session) {
+          await answerCallbackQuery(callbackId, 'Игра не найдена!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const gameData = session.game_data as any;
+        const crashPoint = parseFloat(gameData.crashPoint);
+
+        await supabaseClient.from('squid_game_sessions')
+          .update({ status: 'finished', finished_at: new Date().toISOString() })
+          .eq('id', session.id);
+
+        if (cashoutMultiplier <= crashPoint) {
+          // Win!
+          const winAmount = Math.floor(session.bet_amount * cashoutMultiplier);
+          const profit = winAmount - session.bet_amount;
+
+          await supabaseClient.from('squid_players')
+            .update({ balance: (player?.balance || 0) + winAmount })
+            .eq('id', player?.id);
+
+          await supabaseClient.from('squid_casino_history').insert({
+            player_id: player?.id,
+            game_type: 'crash',
+            bet_amount: session.bet_amount,
+            win_amount: winAmount,
+            result: { crashPoint, cashoutAt: cashoutMultiplier, won: true }
+          });
+
+          await sendMessage(chatId, `🎉 <b>УСПЕХ!</b>\n\n📈 Вышел на x${cashoutMultiplier.toFixed(2)}\n💥 Крашпоинт был x${crashPoint.toFixed(2)}\n\n💰 Выигрыш: ${profit} монет\n💵 Новый баланс: ${(player?.balance || 0) + winAmount} монет`, {
+            inline_keyboard: [
+              [{ text: '📈 Играть еще', callback_data: `casino_crash_u${from.id}` }],
+              [{ text: '⬅️ Казино', callback_data: 'play_casino' }]
+            ]
+          });
+        } else {
+          // Lost - crashed before cashout
+          await supabaseClient.from('squid_casino_history').insert({
+            player_id: player?.id,
+            game_type: 'crash',
+            bet_amount: session.bet_amount,
+            win_amount: 0,
+            result: { crashPoint, cashoutAt: cashoutMultiplier, won: false }
+          });
+
+          await sendMessage(chatId, `💥 <b>КРАШ!</b>\n\n📈 Краш на x${crashPoint.toFixed(2)}\n❌ Не успел забрать на x${cashoutMultiplier.toFixed(2)}\n\n💸 Потеря: ${session.bet_amount} монет\n💵 Новый баланс: ${player?.balance || 0} монет`, {
+            inline_keyboard: [
+              [{ text: '📈 Играть еще', callback_data: `casino_crash_u${from.id}` }],
+              [{ text: '⬅️ Казино', callback_data: 'play_casino' }]
+            ]
+          });
+        }
       }
 
       return new Response('OK', { headers: corsHeaders });
@@ -505,6 +823,7 @@ serve(async (req) => {
               [{ text: '🍬 Dalgona Challenge', callback_data: 'play_dalgona' }],
               [{ text: '🌉 Стеклянный мост', callback_data: 'play_glass_bridge' }],
               [{ text: '🦑 Игра в Кальмара (PvP)', callback_data: 'play_squid_pvp' }],
+              [{ text: '🎰 Казино', callback_data: 'play_casino' }],
               [{ text: '👤 Мой профиль', callback_data: 'profile' }]
             ]
           }
@@ -632,6 +951,11 @@ serve(async (req) => {
   • Награда растет с каждой плитой
 
 /challenge [ID] [ставка] - Вызвать игрока на PvP
+
+<b>🎰 Казино:</b>
+🎡 Рулетка - красное/черное (x2), зеленое (x14)
+🎰 Слоты - совпадения символов (до x100)
+📈 Краш - выйди до краша (до x100)
 
 <b>💰 Экономика:</b>
 /daily - Ежедневный бонус 1200 монет (раз в 24 часа)
