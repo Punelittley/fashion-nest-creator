@@ -342,6 +342,141 @@ export type Database = {
         }
         Relationships: []
       }
+      squid_casino_history: {
+        Row: {
+          bet_amount: number
+          created_at: string | null
+          game_type: string
+          id: string
+          player_id: string | null
+          result: Json | null
+          win_amount: number | null
+        }
+        Insert: {
+          bet_amount: number
+          created_at?: string | null
+          game_type: string
+          id?: string
+          player_id?: string | null
+          result?: Json | null
+          win_amount?: number | null
+        }
+        Update: {
+          bet_amount?: number
+          created_at?: string | null
+          game_type?: string
+          id?: string
+          player_id?: string | null
+          result?: Json | null
+          win_amount?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "squid_casino_history_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "squid_players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      squid_game_sessions: {
+        Row: {
+          bet_amount: number
+          created_at: string | null
+          finished_at: string | null
+          game_data: Json | null
+          game_type: string
+          id: string
+          player1_id: string | null
+          player2_id: string | null
+          status: string | null
+          winner_id: string | null
+        }
+        Insert: {
+          bet_amount: number
+          created_at?: string | null
+          finished_at?: string | null
+          game_data?: Json | null
+          game_type: string
+          id?: string
+          player1_id?: string | null
+          player2_id?: string | null
+          status?: string | null
+          winner_id?: string | null
+        }
+        Update: {
+          bet_amount?: number
+          created_at?: string | null
+          finished_at?: string | null
+          game_data?: Json | null
+          game_type?: string
+          id?: string
+          player1_id?: string | null
+          player2_id?: string | null
+          status?: string | null
+          winner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "squid_game_sessions_player1_id_fkey"
+            columns: ["player1_id"]
+            isOneToOne: false
+            referencedRelation: "squid_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "squid_game_sessions_player2_id_fkey"
+            columns: ["player2_id"]
+            isOneToOne: false
+            referencedRelation: "squid_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "squid_game_sessions_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "squid_players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      squid_players: {
+        Row: {
+          balance: number | null
+          created_at: string | null
+          first_name: string | null
+          id: string
+          telegram_id: number
+          total_losses: number | null
+          total_wins: number | null
+          updated_at: string | null
+          username: string | null
+        }
+        Insert: {
+          balance?: number | null
+          created_at?: string | null
+          first_name?: string | null
+          id?: string
+          telegram_id: number
+          total_losses?: number | null
+          total_wins?: number | null
+          updated_at?: string | null
+          username?: string | null
+        }
+        Update: {
+          balance?: number | null
+          created_at?: string | null
+          first_name?: string | null
+          id?: string
+          telegram_id?: number
+          total_losses?: number | null
+          total_wins?: number | null
+          updated_at?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
       support_chats: {
         Row: {
           created_at: string
