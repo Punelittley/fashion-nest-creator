@@ -806,18 +806,8 @@ serve(async (req) => {
           .eq('telegram_id', from.id)
           .single();
 
-        const { data: isAdmin } = await supabaseClient
-          .from('squid_admins')
-          .select('telegram_id')
-          .eq('telegram_id', from.id)
-          .single();
-
-        const commands = isAdmin 
-          ? '\n\n<b>📋 Команды:</b>\n/help - список всех команд\n/daily - ежедневный бонус\n/promo [код] - активировать промокод\n/pay [ID] [сумма] - перевести монеты\n\n<b>👑 Админ команды:</b>\n/admin_balance [ID] [сумма] - изменить баланс\n/admin_promo [код] [сумма] [лимит] - создать промокод'
-          : '\n\n<b>📋 Команды:</b>\n/help - список всех команд\n/daily - ежедневный бонус\n/promo [код] - активировать промокод\n/pay [ID] [сумма] - перевести монеты';
-
         await sendMessage(chat.id, 
-          `🦑 <b>Добро пожаловать в Squid Game Bot!</b>\n\n💰 Твой баланс: ${player?.balance || 0} монет\n🆔 Твой ID: ${player?.telegram_id}${commands}\n\nВыбери игру:`,
+          `🦑 <b>Добро пожаловать в Squid Game Bot!</b>\n\n💰 Твой баланс: ${player?.balance || 0} монет\n🆔 Твой ID: ${player?.telegram_id}\n\n<b>📋 Команды:</b>\n/help - список всех команд\n/daily - ежедневный бонус\n/promo [код] - активировать промокод\n/pay [ID] [сумма] - перевести монеты\n\nВыбери игру:`,
           {
             inline_keyboard: [
               [{ text: '🍬 Dalgona Challenge', callback_data: 'play_dalgona' }],
@@ -929,12 +919,6 @@ serve(async (req) => {
 
         await sendMessage(chat.id, `✅ <b>Промокод активирован!</b>\n\n💰 +${promo.reward_amount} монет\n💵 Новый баланс: ${(player.balance || 0) + promo.reward_amount} монет`);
       } else if (text === '/help') {
-        const { data: isAdmin } = await supabaseClient
-          .from('squid_admins')
-          .select('telegram_id')
-          .eq('telegram_id', from.id)
-          .single();
-
         const helpText = `
 <b>📋 Все команды бота:</b>
 
@@ -964,7 +948,6 @@ serve(async (req) => {
 
 <b>ℹ️ Информация:</b>
 /start - Главное меню и ваш Telegram ID
-${isAdmin ? '\n<b>👑 Админ команды:</b>\n/admin_balance [user_id] [сумма] - Изменить баланс пользователя\n/admin_promo [код] [сумма] [лимит] - Создать промокод' : ''}
 `;
         await sendMessage(chat.id, helpText);
       } else if (text.startsWith('/pay ')) {
