@@ -139,10 +139,16 @@ serve(async (req) => {
           if (gameData.step >= 18) {
             // Won the game
             const reward = 500;
+            const { data: currentPlayer } = await supabaseClient
+              .from('squid_players')
+              .select('balance, total_wins')
+              .eq('id', playerData?.id)
+              .single();
+
             await supabaseClient.from('squid_players')
               .update({ 
-                balance: supabaseClient.rpc('increment_balance', { amount: reward }),
-                total_wins: supabaseClient.rpc('increment', { value: 1 })
+                balance: (currentPlayer?.balance || 0) + reward,
+                total_wins: (currentPlayer?.total_wins || 0) + 1
               })
               .eq('id', playerData?.id);
 
@@ -180,7 +186,7 @@ serve(async (req) => {
             .eq('id', session.id);
 
           await supabaseClient.from('squid_players')
-            .update({ total_losses: supabaseClient.rpc('increment', { value: 1 }) })
+            .update({ total_losses: (await supabaseClient.from('squid_players').select('total_losses').eq('id', playerData?.id).single()).data?.total_losses + 1 || 1 })
             .eq('id', playerData?.id);
 
           await supabaseClient.from('squid_casino_history').insert({
@@ -243,8 +249,14 @@ serve(async (req) => {
         const reward = success ? 100 : 0;
 
         if (success) {
+          const { data: currentPlayer } = await supabaseClient
+            .from('squid_players')
+            .select('balance')
+            .eq('telegram_id', from.id)
+            .single();
+
           await supabaseClient.from('squid_players')
-            .update({ balance: supabaseClient.rpc('increment_balance', { amount: reward }) })
+            .update({ balance: (currentPlayer?.balance || 0) + reward })
             .eq('telegram_id', from.id);
 
           await supabaseClient.from('squid_casino_history').insert({
@@ -449,17 +461,29 @@ serve(async (req) => {
               .update({ status: 'finished', winner_id: finalWinner, finished_at: new Date().toISOString() })
               .eq('id', session.id);
 
+            const { data: winnerData } = await supabaseClient
+              .from('squid_players')
+              .select('balance, total_wins')
+              .eq('id', finalWinner)
+              .single();
+
+            const { data: loserData } = await supabaseClient
+              .from('squid_players')
+              .select('balance, total_losses')
+              .eq('id', loserId)
+              .single();
+
             await supabaseClient.from('squid_players')
               .update({ 
-                balance: supabaseClient.rpc('increment_balance', { amount: session.bet_amount * 2 }),
-                total_wins: supabaseClient.rpc('increment', { value: 1 })
+                balance: (winnerData?.balance || 0) + (session.bet_amount * 2),
+                total_wins: (winnerData?.total_wins || 0) + 1
               })
               .eq('id', finalWinner);
 
             await supabaseClient.from('squid_players')
               .update({ 
-                balance: supabaseClient.rpc('increment_balance', { amount: -session.bet_amount }),
-                total_losses: supabaseClient.rpc('increment', { value: 1 })
+                balance: (loserData?.balance || 0) - session.bet_amount,
+                total_losses: (loserData?.total_losses || 0) + 1
               })
               .eq('id', loserId);
 
