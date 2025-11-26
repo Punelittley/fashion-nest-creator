@@ -342,6 +342,24 @@ export type Database = {
         }
         Relationships: []
       }
+      squid_admins: {
+        Row: {
+          created_at: string | null
+          id: string
+          telegram_id: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          telegram_id: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          telegram_id?: number
+        }
+        Relationships: []
+      }
       squid_casino_history: {
         Row: {
           bet_amount: number
@@ -447,6 +465,7 @@ export type Database = {
           created_at: string | null
           first_name: string | null
           id: string
+          last_daily_claim: string | null
           telegram_id: number
           total_losses: number | null
           total_wins: number | null
@@ -458,6 +477,7 @@ export type Database = {
           created_at?: string | null
           first_name?: string | null
           id?: string
+          last_daily_claim?: string | null
           telegram_id: number
           total_losses?: number | null
           total_wins?: number | null
@@ -469,6 +489,7 @@ export type Database = {
           created_at?: string | null
           first_name?: string | null
           id?: string
+          last_daily_claim?: string | null
           telegram_id?: number
           total_losses?: number | null
           total_wins?: number | null
@@ -476,6 +497,72 @@ export type Database = {
           username?: string | null
         }
         Relationships: []
+      }
+      squid_promo_codes: {
+        Row: {
+          code: string
+          created_at: string | null
+          current_uses: number | null
+          expires_at: string | null
+          id: string
+          max_uses: number | null
+          reward_amount: number
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          current_uses?: number | null
+          expires_at?: string | null
+          id?: string
+          max_uses?: number | null
+          reward_amount: number
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          current_uses?: number | null
+          expires_at?: string | null
+          id?: string
+          max_uses?: number | null
+          reward_amount?: number
+        }
+        Relationships: []
+      }
+      squid_promo_redemptions: {
+        Row: {
+          id: string
+          player_id: string | null
+          promo_code_id: string | null
+          redeemed_at: string | null
+        }
+        Insert: {
+          id?: string
+          player_id?: string | null
+          promo_code_id?: string | null
+          redeemed_at?: string | null
+        }
+        Update: {
+          id?: string
+          player_id?: string | null
+          promo_code_id?: string | null
+          redeemed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "squid_promo_redemptions_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "squid_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "squid_promo_redemptions_promo_code_id_fkey"
+            columns: ["promo_code_id"]
+            isOneToOne: false
+            referencedRelation: "squid_promo_codes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       support_chats: {
         Row: {

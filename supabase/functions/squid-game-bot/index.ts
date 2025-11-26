@@ -463,12 +463,22 @@ serve(async (req) => {
       if (text === '/start') {
         const { data: player } = await supabaseClient
           .from('squid_players')
-          .select('balance')
+          .select('balance, telegram_id')
           .eq('telegram_id', from.id)
           .single();
 
+        const { data: isAdmin } = await supabaseClient
+          .from('squid_admins')
+          .select('telegram_id')
+          .eq('telegram_id', from.id)
+          .single();
+
+        const commands = isAdmin 
+          ? '\n\n<b>📋 Команды:</b>\n/daily - ежедневный бонус\n/promo [код] - активировать промокод\n\n<b>👑 Админ команды:</b>\n/admin_balance [ID] [сумма] - изменить баланс\n/admin_promo [код] [сумма] [лимит] - создать промокод'
+          : '\n\n<b>📋 Команды:</b>\n/daily - ежедневный бонус\n/promo [код] - активировать промокод';
+
         await sendMessage(chat.id, 
-          `🦑 <b>Добро пожаловать в Squid Game Bot!</b>\n\n💰 Твой баланс: ${player?.balance || 0} монет\n\nВыбери игру:`,
+          `🦑 <b>Добро пожаловать в Squid Game Bot!</b>\n\n💰 Твой баланс: ${player?.balance || 0} монет\n🆔 Твой ID: ${player?.telegram_id}${commands}\n\nВыбери игру:`,
           {
             inline_keyboard: [
               [{ text: '🍬 Dalgona Challenge', callback_data: 'play_dalgona' }],
@@ -478,6 +488,180 @@ serve(async (req) => {
             ]
           }
         );
+      } else if (text === '/daily') {
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('id, last_daily_claim, balance')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!player) {
+          await sendMessage(chat.id, '❌ Игрок не найден.');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const now = new Date();
+        const lastClaim = player.last_daily_claim ? new Date(player.last_daily_claim) : null;
+        
+        // Check if 24 hours have passed
+        if (lastClaim && (now.getTime() - lastClaim.getTime()) < 24 * 60 * 60 * 1000) {
+          const hoursLeft = Math.ceil((24 * 60 * 60 * 1000 - (now.getTime() - lastClaim.getTime())) / (60 * 60 * 1000));
+          await sendMessage(chat.id, `⏰ Ежедневный бонус уже получен!\n\nПриходи через ${hoursLeft} ${hoursLeft === 1 ? 'час' : hoursLeft < 5 ? 'часа' : 'часов'}.`);
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const dailyReward = 1200;
+        await supabaseClient.from('squid_players')
+          .update({ 
+            balance: (player.balance || 0) + dailyReward,
+            last_daily_claim: now.toISOString()
+          })
+          .eq('id', player.id);
+
+        await sendMessage(chat.id, `🎁 <b>Ежедневный бонус получен!</b>\n\n💰 +${dailyReward} монет\n💵 Новый баланс: ${(player.balance || 0) + dailyReward} монет`);
+      } else if (text.startsWith('/promo ')) {
+        const promoCode = text.replace('/promo ', '').trim().toUpperCase();
+        
+        if (!promoCode) {
+          await sendMessage(chat.id, '❌ Использование: /promo [код]\nПример: /promo BONUS2025');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('id, balance')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!player) {
+          await sendMessage(chat.id, '❌ Игрок не найден.');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        // Check if promo code exists and is valid
+        const { data: promo } = await supabaseClient
+          .from('squid_promo_codes')
+          .select('*')
+          .eq('code', promoCode)
+          .single();
+
+        if (!promo) {
+          await sendMessage(chat.id, '❌ Промокод не найден.');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        // Check if expired
+        if (promo.expires_at && new Date(promo.expires_at) < new Date()) {
+          await sendMessage(chat.id, '❌ Промокод истёк.');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        // Check if max uses reached
+        if (promo.max_uses && promo.current_uses >= promo.max_uses) {
+          await sendMessage(chat.id, '❌ Промокод исчерпан.');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        // Check if player already used this promo
+        const { data: existingRedemption } = await supabaseClient
+          .from('squid_promo_redemptions')
+          .select('id')
+          .eq('player_id', player.id)
+          .eq('promo_code_id', promo.id)
+          .single();
+
+        if (existingRedemption) {
+          await sendMessage(chat.id, '❌ Ты уже использовал этот промокод.');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        // Redeem promo code
+        await supabaseClient.from('squid_players')
+          .update({ balance: (player.balance || 0) + promo.reward_amount })
+          .eq('id', player.id);
+
+        await supabaseClient.from('squid_promo_codes')
+          .update({ current_uses: promo.current_uses + 1 })
+          .eq('id', promo.id);
+
+        await supabaseClient.from('squid_promo_redemptions')
+          .insert({ player_id: player.id, promo_code_id: promo.id });
+
+        await sendMessage(chat.id, `✅ <b>Промокод активирован!</b>\n\n💰 +${promo.reward_amount} монет\n💵 Новый баланс: ${(player.balance || 0) + promo.reward_amount} монет`);
+      } else if (text.startsWith('/admin_balance ')) {
+        // Check if user is admin
+        const { data: isAdmin } = await supabaseClient
+          .from('squid_admins')
+          .select('telegram_id')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!isAdmin) {
+          await sendMessage(chat.id, '❌ У тебя нет прав администратора.');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const parts = text.split(' ');
+        if (parts.length < 3) {
+          await sendMessage(chat.id, '❌ Использование: /admin_balance [Telegram_ID] [сумма]\nПример: /admin_balance 123456789 5000');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const targetId = parseInt(parts[1]);
+        const newBalance = parseInt(parts[2]);
+
+        const { data: targetPlayer } = await supabaseClient
+          .from('squid_players')
+          .select('id, first_name')
+          .eq('telegram_id', targetId)
+          .single();
+
+        if (!targetPlayer) {
+          await sendMessage(chat.id, '❌ Игрок не найден.');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        await supabaseClient.from('squid_players')
+          .update({ balance: newBalance })
+          .eq('id', targetPlayer.id);
+
+        await sendMessage(chat.id, `✅ Баланс игрока ${targetPlayer.first_name} (ID: ${targetId}) установлен на ${newBalance} монет.`);
+      } else if (text.startsWith('/admin_promo ')) {
+        // Check if user is admin
+        const { data: isAdmin } = await supabaseClient
+          .from('squid_admins')
+          .select('telegram_id')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!isAdmin) {
+          await sendMessage(chat.id, '❌ У тебя нет прав администратора.');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const parts = text.split(' ');
+        if (parts.length < 4) {
+          await sendMessage(chat.id, '❌ Использование: /admin_promo [код] [сумма] [лимит]\nПример: /admin_promo BONUS2025 1000 100');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const code = parts[1].toUpperCase();
+        const amount = parseInt(parts[2]);
+        const maxUses = parseInt(parts[3]);
+
+        const { error } = await supabaseClient.from('squid_promo_codes')
+          .insert({
+            code: code,
+            reward_amount: amount,
+            max_uses: maxUses
+          });
+
+        if (error) {
+          await sendMessage(chat.id, '❌ Ошибка создания промокода. Возможно, код уже существует.');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        await sendMessage(chat.id, `✅ <b>Промокод создан!</b>\n\n📝 Код: ${code}\n💰 Награда: ${amount} монет\n👥 Лимит использований: ${maxUses}`);
       } else if (text.startsWith('/challenge ')) {
         const parts = text.split(' ');
         if (parts.length < 3) {
