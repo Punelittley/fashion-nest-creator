@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.admin-products]
 verify_jwt = true
+
+[functions.squid-game-bot]
+verify_jwt = false
