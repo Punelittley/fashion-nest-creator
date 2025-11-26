@@ -77,9 +77,10 @@ serve(async (req) => {
       if (data === 'play_dalgona') {
         await sendMessage(chatId, '🍬 <b>Игра Dalgona</b>\n\nВыбери форму, которую нужно вырезать:', {
           inline_keyboard: [
-            [{ text: '⭐ Звезда', callback_data: 'dalgona_star' }],
-            [{ text: '☂️ Зонтик', callback_data: 'dalgona_umbrella' }],
-            [{ text: '🔺 Треугольник', callback_data: 'dalgona_triangle' }],
+            [{ text: '⭐ Звезда', callback_data: 'dalgona_select_star' }],
+            [{ text: '☂️ Зонтик', callback_data: 'dalgona_select_umbrella' }],
+            [{ text: '🔺 Треугольник', callback_data: 'dalgona_select_triangle' }],
+            [{ text: '🖼️ Мона Лиза', callback_data: 'dalgona_select_monalisa' }],
             [{ text: '⬅️ Назад', callback_data: 'main_menu' }]
           ]
         });
@@ -90,8 +91,8 @@ serve(async (req) => {
           .eq('telegram_id', from.id)
           .single();
 
-        // Start new glass bridge game
-        const glassPattern = Array.from({ length: 18 }, () => Math.random() > 0.5 ? 'L' : 'R');
+        // Start new glass bridge game (60% chance to survive each step)
+        const glassPattern = Array.from({ length: 18 }, () => Math.random() < 0.6 ? 'L' : 'R');
         await supabaseClient.from('squid_game_sessions').insert({
           player1_id: playerData?.id,
           game_type: 'glass_bridge',
@@ -180,10 +181,24 @@ serve(async (req) => {
             });
           }
         } else {
-          // Lost
+          // Lost - but give reward if passed at least 1 step
           await supabaseClient.from('squid_game_sessions')
             .update({ status: 'finished', finished_at: new Date().toISOString() })
             .eq('id', session.id);
+
+          const stepReward = gameData.step >= 1 ? 1000 : 0;
+
+          if (stepReward > 0) {
+            const { data: currentPlayer } = await supabaseClient
+              .from('squid_players')
+              .select('balance')
+              .eq('id', playerData?.id)
+              .single();
+
+            await supabaseClient.from('squid_players')
+              .update({ balance: (currentPlayer?.balance || 0) + stepReward })
+              .eq('id', playerData?.id);
+          }
 
           await supabaseClient.from('squid_players')
             .update({ total_losses: (await supabaseClient.from('squid_players').select('total_losses').eq('id', playerData?.id).single()).data?.total_losses + 1 || 1 })
@@ -193,11 +208,12 @@ serve(async (req) => {
             player_id: playerData?.id,
             game_type: 'glass_bridge',
             bet_amount: 0,
-            win_amount: 0,
+            win_amount: stepReward,
             result: { completed: false, step: gameData.step }
           });
 
-          await sendMessage(chatId, `💥 Стекло разбилось!\n\nТы прошёл ${gameData.step}/18 стёкол.`, {
+          const rewardText = stepReward > 0 ? `\n💰 Награда за ${gameData.step} ${gameData.step === 1 ? 'плиту' : 'плиты'}: ${stepReward} монет` : '';
+          await sendMessage(chatId, `💥 Стекло разбилось!\n\nТы прошёл ${gameData.step}/18 стёкол.${rewardText}`, {
             inline_keyboard: [
               [{ text: '🎮 Играть ещё', callback_data: 'play_glass_bridge' }],
               [{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]
@@ -243,43 +259,97 @@ serve(async (req) => {
         const player1Chat = (session.player1 as any).telegram_id;
         await sendMessage(player1Chat, `⚔️ ${from.first_name} принял вызов!\n\nИгра началась! Отправь /attack или /defend`);
         await sendMessage(chatId, `⚔️ Ты принял вызов!\n\nСтавка: ${session.bet_amount} монет\nОтправь /attack или /defend`);
-      } else if (data.startsWith('dalgona_')) {
-        const shape = data.replace('dalgona_', '');
-        const success = Math.random() > 0.5;
-        const reward = success ? 100 : 0;
+      } else if (data.startsWith('dalgona_select_')) {
+        const shape = data.replace('dalgona_select_', '');
+        
+        const shapeConfig: Record<string, { name: string, bet: number, reward: number, chance: number }> = {
+          star: { name: '⭐ Звезда', bet: 100, reward: 400, chance: 0.7 },
+          umbrella: { name: '☂️ Зонтик', bet: 300, reward: 1000, chance: 0.4 },
+          triangle: { name: '🔺 Треугольник', bet: 120, reward: 300, chance: 0.75 },
+          monalisa: { name: '🖼️ Мона Лиза', bet: 500, reward: 5000, chance: 0.03 }
+        };
+
+        const config = shapeConfig[shape];
+        if (!config) return new Response('OK', { headers: corsHeaders });
+
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('balance')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if ((player?.balance || 0) < config.bet) {
+          await answerCallbackQuery(callbackId, 'Недостаточно монет!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        await sendMessage(chatId, 
+          `🍬 <b>${config.name}</b>\n\n💰 Ставка: ${config.bet} монет\n🎁 Выигрыш: ${config.reward} монет\n📊 Шанс успеха: ${Math.round(config.chance * 100)}%\n\nПодтверждаешь?`,
+          {
+            inline_keyboard: [
+              [{ text: '✅ Вырезать', callback_data: `dalgona_confirm_${shape}` }],
+              [{ text: '❌ Отмена', callback_data: 'play_dalgona' }]
+            ]
+          }
+        );
+      } else if (data.startsWith('dalgona_confirm_')) {
+        const shape = data.replace('dalgona_confirm_', '');
+        
+        const shapeConfig: Record<string, { name: string, bet: number, reward: number, chance: number }> = {
+          star: { name: '⭐ Звезда', bet: 100, reward: 400, chance: 0.7 },
+          umbrella: { name: '☂️ Зонтик', bet: 300, reward: 1000, chance: 0.4 },
+          triangle: { name: '🔺 Треугольник', bet: 120, reward: 300, chance: 0.75 },
+          monalisa: { name: '🖼️ Мона Лиза', bet: 500, reward: 5000, chance: 0.03 }
+        };
+
+        const config = shapeConfig[shape];
+        if (!config) return new Response('OK', { headers: corsHeaders });
+
+        const { data: currentPlayer } = await supabaseClient
+          .from('squid_players')
+          .select('balance')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if ((currentPlayer?.balance || 0) < config.bet) {
+          await answerCallbackQuery(callbackId, 'Недостаточно монет!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        // Deduct bet
+        await supabaseClient.from('squid_players')
+          .update({ balance: (currentPlayer?.balance || 0) - config.bet })
+          .eq('telegram_id', from.id);
+
+        const success = Math.random() < config.chance;
+        const winAmount = success ? config.reward : 0;
 
         if (success) {
-          const { data: currentPlayer } = await supabaseClient
-            .from('squid_players')
-            .select('balance')
-            .eq('telegram_id', from.id)
-            .single();
-
           await supabaseClient.from('squid_players')
-            .update({ balance: (currentPlayer?.balance || 0) + reward })
+            .update({ balance: (currentPlayer?.balance || 0) - config.bet + winAmount })
             .eq('telegram_id', from.id);
 
           await supabaseClient.from('squid_casino_history').insert({
             player_id: (await supabaseClient.from('squid_players').select('id').eq('telegram_id', from.id).single()).data?.id,
             game_type: 'dalgona',
-            bet_amount: 0,
-            win_amount: reward,
+            bet_amount: config.bet,
+            win_amount: winAmount,
             result: { shape, success: true }
           });
 
-          await sendMessage(chatId, `✅ Отлично! Ты вырезал форму и получил ${reward} монет! 💰`, {
+          await sendMessage(chatId, `✅ Отлично! Ты вырезал ${config.name} и получил ${winAmount} монет! 💰`, {
             inline_keyboard: [[{ text: '🎮 Играть ещё', callback_data: 'play_dalgona' }], [{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]]
           });
         } else {
           await supabaseClient.from('squid_casino_history').insert({
             player_id: (await supabaseClient.from('squid_players').select('id').eq('telegram_id', from.id).single()).data?.id,
             game_type: 'dalgona',
-            bet_amount: 0,
+            bet_amount: config.bet,
             win_amount: 0,
             result: { shape, success: false }
           });
 
-          await sendMessage(chatId, '❌ Печенье сломалось! Попробуй ещё раз.', {
+          await sendMessage(chatId, `❌ Печенье сломалось! Ты потерял ${config.bet} монет.`, {
             inline_keyboard: [[{ text: '🎮 Играть ещё', callback_data: 'play_dalgona' }], [{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]]
           });
         }
