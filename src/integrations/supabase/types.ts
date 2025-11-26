@@ -577,6 +577,17 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment: {
+        Args: { current_value: number; value: number }
+        Returns: number
+      }
+      increment_balance: {
+        Args: {
+          amount: number
+          player_row: Database["public"]["Tables"]["squid_players"]["Row"]
+        }
+        Returns: number
+      }
     }
     Enums: {
       app_role: "admin" | "user"
