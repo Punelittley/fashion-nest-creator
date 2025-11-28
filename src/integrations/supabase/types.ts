@@ -536,6 +536,7 @@ export type Database = {
           id: string
           last_daily_claim: string | null
           last_si_claim: string | null
+          prefix: string | null
           telegram_id: number
           total_losses: number | null
           total_wins: number | null
@@ -550,6 +551,7 @@ export type Database = {
           id?: string
           last_daily_claim?: string | null
           last_si_claim?: string | null
+          prefix?: string | null
           telegram_id: number
           total_losses?: number | null
           total_wins?: number | null
@@ -564,6 +566,7 @@ export type Database = {
           id?: string
           last_daily_claim?: string | null
           last_si_claim?: string | null
+          prefix?: string | null
           telegram_id?: number
           total_losses?: number | null
           total_wins?: number | null
