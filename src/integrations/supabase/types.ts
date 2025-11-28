@@ -492,6 +492,41 @@ export type Database = {
           },
         ]
       }
+      squid_player_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          item_name: string
+          item_rarity: string
+          player_id: string
+          sell_price: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          item_name: string
+          item_rarity: string
+          player_id: string
+          sell_price: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          item_name?: string
+          item_rarity?: string
+          player_id?: string
+          sell_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "squid_player_items_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "squid_players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       squid_players: {
         Row: {
           balance: number | null
@@ -499,6 +534,7 @@ export type Database = {
           first_name: string | null
           id: string
           last_daily_claim: string | null
+          last_si_claim: string | null
           telegram_id: number
           total_losses: number | null
           total_wins: number | null
@@ -511,6 +547,7 @@ export type Database = {
           first_name?: string | null
           id?: string
           last_daily_claim?: string | null
+          last_si_claim?: string | null
           telegram_id: number
           total_losses?: number | null
           total_wins?: number | null
@@ -523,6 +560,7 @@ export type Database = {
           first_name?: string | null
           id?: string
           last_daily_claim?: string | null
+          last_si_claim?: string | null
           telegram_id?: number
           total_losses?: number | null
           total_wins?: number | null
