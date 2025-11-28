@@ -1399,12 +1399,15 @@ serve(async (req) => {
           .single();
 
         await sendMessage(chat.id, `⚔️ Вызов отправлен!\n\nСтавка: ${betAmount} монет\nОжидаем ответ...`);
-        await sendMessage(opponentId, `⚔️ ${player.first_name} вызывает тебя!\n\nСтавка: ${betAmount} монет`, {
+        
+        console.log(`Sending challenge to opponent ${opponentId} with buttons`);
+        const challengeResult = await sendMessage(opponentId, `🦑 <b>Вызов на Игру в Кальмара!</b>\n\n${player.first_name} бросает тебе вызов!\n💰 Ставка: ${betAmount} монет\n\nТы принимаешь?`, {
           inline_keyboard: [
             [{ text: '✅ Принять', callback_data: `accept_challenge_${session.id}_u${opponentId}` }],
             [{ text: '❌ Отказаться', callback_data: `decline_challenge_${session.id}_u${opponentId}` }]
           ]
         });
+        console.log(`Challenge message result:`, challengeResult);
       } else if (text.startsWith('/admin_add_coins ')) {
         const { data: admin } = await supabaseClient
           .from('squid_admins')
