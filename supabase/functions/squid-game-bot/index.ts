@@ -145,10 +145,10 @@ serve(async (req) => {
       if (data === 'play_dalgona') {
         await editMessage(chatId, message!.message_id, '🍬 <b>Игра Dalgona</b>\n\nВыбери форму, которую нужно вырезать:', {
           inline_keyboard: [
-            [{ text: '⭐ Звезда', callback_data: 'dalgona_select_star' }],
-            [{ text: '☂️ Зонтик', callback_data: 'dalgona_select_umbrella' }],
-            [{ text: '🔺 Треугольник', callback_data: 'dalgona_select_triangle' }],
-            [{ text: '🖼️ Мона Лиза', callback_data: 'dalgona_select_monalisa' }],
+            [{ text: '⭐ Звезда', callback_data: `dalgona_select_star_u${from.id}` }],
+            [{ text: '☂️ Зонтик', callback_data: `dalgona_select_umbrella_u${from.id}` }],
+            [{ text: '🔺 Треугольник', callback_data: `dalgona_select_triangle_u${from.id}` }],
+            [{ text: '🖼️ Мона Лиза', callback_data: `dalgona_select_monalisa_u${from.id}` }],
             [{ text: '⬅️ Назад', callback_data: 'main_menu' }]
           ]
         });
@@ -389,7 +389,7 @@ serve(async (req) => {
         await sendMessage(player1Chat, `⚔️ ${from.first_name} принял вызов!\n\nИгра началась! Отправь /attack или /defend`);
         await sendMessage(chatId, `⚔️ Ты принял вызов!\n\nСтавка: ${session.bet_amount} монет\nОтправь /attack или /defend`);
       } else if (data.startsWith('dalgona_select_')) {
-        const shape = data.replace('dalgona_select_', '');
+        const shapePart = data.replace('dalgona_select_', '').split('_u')[0];
         
         const shapeConfig: Record<string, { name: string, bet: number, reward: number, chance: number }> = {
           star: { name: '⭐ Звезда', bet: 100, reward: 400, chance: 0.7 },
@@ -398,7 +398,7 @@ serve(async (req) => {
           monalisa: { name: '🖼️ Мона Лиза', bet: 500, reward: 5000, chance: 0.03 }
         };
 
-        const config = shapeConfig[shape];
+        const config = shapeConfig[shapePart];
         if (!config) return new Response('OK', { headers: corsHeaders });
 
         const { data: player } = await supabaseClient
@@ -416,13 +416,13 @@ serve(async (req) => {
           `🍬 <b>${config.name}</b>\n\n💰 Ставка: ${config.bet} монет\n🎁 Выигрыш: ${config.reward} монет\n📊 Шанс успеха: ${Math.round(config.chance * 100)}%\n\nПодтверждаешь?`,
           {
             inline_keyboard: [
-              [{ text: '✅ Вырезать', callback_data: `dalgona_confirm_${shape}` }],
+              [{ text: '✅ Вырезать', callback_data: `dalgona_confirm_${shapePart}_u${from.id}` }],
               [{ text: '❌ Отмена', callback_data: 'play_dalgona' }]
             ]
           }
         );
       } else if (data.startsWith('dalgona_confirm_')) {
-        const shape = data.replace('dalgona_confirm_', '');
+        const shapePart = data.replace('dalgona_confirm_', '').split('_u')[0];
         
         const shapeConfig: Record<string, { name: string, bet: number, reward: number, chance: number }> = {
           star: { name: '⭐ Звезда', bet: 100, reward: 400, chance: 0.7 },
@@ -431,7 +431,7 @@ serve(async (req) => {
           monalisa: { name: '🖼️ Мона Лиза', bet: 500, reward: 5000, chance: 0.03 }
         };
 
-        const config = shapeConfig[shape];
+        const config = shapeConfig[shapePart];
         if (!config) return new Response('OK', { headers: corsHeaders });
 
         const { data: currentPlayer } = await supabaseClient
@@ -463,7 +463,7 @@ serve(async (req) => {
             game_type: 'dalgona',
             bet_amount: config.bet,
             win_amount: winAmount,
-            result: { shape, success: true }
+            result: { shape: shapePart, success: true }
           });
 
           await sendMessage(chatId, `✅ Отлично! Ты вырезал ${config.name} и получил ${winAmount} монет! 💰`, {
@@ -475,7 +475,7 @@ serve(async (req) => {
             game_type: 'dalgona',
             bet_amount: config.bet,
             win_amount: 0,
-            result: { shape, success: false }
+            result: { shape: shapePart, success: false }
           });
 
           await sendMessage(chatId, `❌ Печенье сломалось! Ты потерял ${config.bet} монет.`, {
@@ -866,7 +866,7 @@ serve(async (req) => {
         );
       } else if (text === '/help') {
         await sendMessage(chat.id, 
-          `📋 <b>Список команд Squid Game Bot</b>\n\n<b>🎮 Основные:</b>\n/start - главное меню\n/top - топ 10 богатых игроков\n/daily - ежедневный бонус (1200 монет)\n/promo [код] - активировать промокод\n/pay [ID] [сумма] - перевести монеты\n\n<b>🎲 Казино:</b>\n/roulette <цвет> <ставка> - рулетка\n  Цвета: red/красное (x2), black/черное (x2), green/зеленое (x14)\n/slots - игровые автоматы\n/crash - краш игра\n\n<b>⚔️ PvP:</b>\n/challenge [ID] [ставка] - вызвать на дуэль\n/attack - атаковать\n/defend - защищаться`
+          `📋 <b>Список команд Squid Game Bot</b>\n\n<b>🎮 Основные:</b>\n/start - главное меню\n/top - топ 10 богатых игроков\n/daily - ежедневный бонус (1200 монет)\n/promo [код] - активировать промокод\n/pay [ID] [сумма] - перевести монеты\n/si - поиск предметов (раз в час)\n/items - показать инвентарь\n/sell [номер] - продать предмет\n\n<b>🎲 Казино:</b>\n/roulette <цвет> <ставка> - рулетка\n  Цвета: red/красное (x2), black/черное (x2), green/зеленое (x14)\n/slots - игровые автоматы\n/crash - краш игра\n\n<b>⚔️ PvP:</b>\n/challenge [ID] [ставка] - вызвать на дуэль\n/attack - атаковать\n/defend - защищаться`
         );
       } else if (text === '/top') {
         const { data: topPlayers } = await supabaseClient
@@ -1388,6 +1388,232 @@ serve(async (req) => {
         });
 
         await sendMessage(chat.id, serversText);
+      } else if (text.startsWith('/admin_delete_promo ')) {
+        const { data: admin } = await supabaseClient
+          .from('squid_admins')
+          .select('*')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!admin) {
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const code = text.split(' ')[1];
+        
+        if (!code) {
+          await sendMessage(chat.id, '❌ Формат: /admin_delete_promo [код]');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const { data: promo } = await supabaseClient
+          .from('squid_promo_codes')
+          .select('*')
+          .eq('code', code)
+          .single();
+
+        if (!promo) {
+          await sendMessage(chat.id, '❌ Промокод не найден!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        await supabaseClient
+          .from('squid_promo_codes')
+          .delete()
+          .eq('code', code);
+
+        await sendMessage(chat.id, `✅ Промокод "${code}" удалён!`);
+      } else if (text.startsWith('/admin_set_balance ')) {
+        const { data: admin } = await supabaseClient
+          .from('squid_admins')
+          .select('*')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!admin) {
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const args = text.split(' ');
+        if (args.length !== 3) {
+          await sendMessage(chat.id, '❌ Формат: /admin_set_balance [ID] [сумма]');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const targetId = parseInt(args[1]);
+        const newBalance = parseInt(args[2]);
+
+        if (isNaN(targetId) || isNaN(newBalance)) {
+          await sendMessage(chat.id, '❌ ID и сумма должны быть числами!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const { data: target } = await supabaseClient
+          .from('squid_players')
+          .select('id, balance, first_name')
+          .eq('telegram_id', targetId)
+          .single();
+
+        if (!target) {
+          await sendMessage(chat.id, '❌ Игрок не найден!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        await supabaseClient.from('squid_players')
+          .update({ balance: newBalance })
+          .eq('id', target.id);
+
+        await sendMessage(chat.id, `✅ Баланс игрока ${target.first_name} изменён с ${target.balance} на ${newBalance} монет`);
+      } else if (text === '/si') {
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('id, balance, last_si_claim')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!player) {
+          await sendMessage(chat.id, '❌ Игрок не найден.');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const now = new Date();
+        const lastClaim = player.last_si_claim ? new Date(player.last_si_claim) : null;
+        
+        // Check if 1 hour has passed
+        if (lastClaim && (now.getTime() - lastClaim.getTime()) < 60 * 60 * 1000) {
+          const minutesLeft = Math.ceil((60 * 60 * 1000 - (now.getTime() - lastClaim.getTime())) / (60 * 1000));
+          await sendMessage(chat.id, `⏰ Поиск предметов доступен раз в час!\n\nПриходи через ${minutesLeft} ${minutesLeft === 1 ? 'минуту' : minutesLeft < 5 ? 'минуты' : 'минут'}.`);
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        // Random money (0-4000)
+        const moneyFound = Math.floor(Math.random() * 4001);
+
+        // Item drop chances
+        const itemChance = Math.random() * 100;
+        let itemFound: { name: string, rarity: string, sellPrice: number } | null = null;
+
+        if (itemChance < 3) {
+          // 3% - Маска Фронтман (Мифическая)
+          itemFound = { name: '🎭 Маска Фронтман', rarity: 'Мифическая', sellPrice: 25000 };
+        } else if (itemChance < 13) {
+          // 10% - Карта VIP (Эпическая)
+          itemFound = { name: '💳 Карта VIP', rarity: 'Эпическая', sellPrice: 9000 };
+        } else if (itemChance < 33) {
+          // 20% - Маска квадрат (Раритет)
+          itemFound = { name: '🟥 Маска квадрат', rarity: 'Раритет', sellPrice: 5000 };
+        } else if (itemChance < 68) {
+          // 35% - Печенька Зонт (Обычная)
+          itemFound = { name: '🍪 Печенька Зонт', rarity: 'Обычная', sellPrice: 2000 };
+        } else if (itemChance < 98) {
+          // 30% - Зипка 456 (Обычная)
+          itemFound = { name: '🧥 Зипка 456', rarity: 'Обычная', sellPrice: 3000 };
+        }
+
+        // Update balance and last claim
+        await supabaseClient.from('squid_players')
+          .update({ 
+            balance: player.balance + moneyFound,
+            last_si_claim: now.toISOString()
+          })
+          .eq('id', player.id);
+
+        // Add item to inventory if found
+        if (itemFound) {
+          await supabaseClient.from('squid_player_items').insert({
+            player_id: player.id,
+            item_name: itemFound.name,
+            item_rarity: itemFound.rarity,
+            sell_price: itemFound.sellPrice
+          });
+        }
+
+        const resultText = itemFound
+          ? `🔍 <b>Поиск предметов</b>\n\n💰 Найдено монет: ${moneyFound}\n\n🎁 <b>Предмет найден!</b>\n${itemFound.name}\nРедкость: ${itemFound.rarity}\nЦена продажи: ${itemFound.sellPrice} монет\n\n💵 Новый баланс: ${player.balance + moneyFound} монет`
+          : `🔍 <b>Поиск предметов</b>\n\n💰 Найдено монет: ${moneyFound}\n\n❌ Предметов не найдено\n\n💵 Новый баланс: ${player.balance + moneyFound} монет`;
+
+        await sendMessage(chat.id, resultText);
+      } else if (text === '/items') {
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('id')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!player) {
+          await sendMessage(chat.id, '❌ Игрок не найден.');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const { data: items } = await supabaseClient
+          .from('squid_player_items')
+          .select('*')
+          .eq('player_id', player.id)
+          .order('created_at', { ascending: false });
+
+        if (!items || items.length === 0) {
+          await sendMessage(chat.id, '🎒 <b>Твой инвентарь пуст</b>\n\nИспользуй команду /si чтобы найти предметы!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        let inventoryText = '🎒 <b>Твой инвентарь</b>\n\n';
+        
+        items.forEach((item, index) => {
+          inventoryText += `${index + 1}. ${item.item_name}\nРедкость: ${item.item_rarity}\nЦена продажи: ${item.sell_price} монет\n\n`;
+        });
+
+        inventoryText += `\nЧтобы продать предмет, используй:\n/sell [номер]`;
+
+        await sendMessage(chat.id, inventoryText);
+      } else if (text.startsWith('/sell ')) {
+        const itemIndex = parseInt(text.split(' ')[1]);
+
+        if (isNaN(itemIndex) || itemIndex < 1) {
+          await sendMessage(chat.id, '❌ Неверный номер предмета!\nИспользуй: /sell [номер]\nПример: /sell 1');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('id, balance')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!player) {
+          await sendMessage(chat.id, '❌ Игрок не найден.');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const { data: items } = await supabaseClient
+          .from('squid_player_items')
+          .select('*')
+          .eq('player_id', player.id)
+          .order('created_at', { ascending: false });
+
+        if (!items || items.length === 0) {
+          await sendMessage(chat.id, '❌ У тебя нет предметов!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        if (itemIndex > items.length) {
+          await sendMessage(chat.id, `❌ Предмет с номером ${itemIndex} не найден!`);
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const itemToSell = items[itemIndex - 1];
+
+        // Delete item from inventory
+        await supabaseClient
+          .from('squid_player_items')
+          .delete()
+          .eq('id', itemToSell.id);
+
+        // Add money to balance
+        await supabaseClient.from('squid_players')
+          .update({ balance: player.balance + itemToSell.sell_price })
+          .eq('id', player.id);
+
+        await sendMessage(chat.id, `✅ Предмет продан!\n\n${itemToSell.item_name}\n💰 Получено: ${itemToSell.sell_price} монет\n💵 Новый баланс: ${player.balance + itemToSell.sell_price} монет`);
       }
     }
 
