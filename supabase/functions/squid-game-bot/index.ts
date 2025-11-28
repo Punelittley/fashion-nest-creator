@@ -436,7 +436,7 @@ serve(async (req) => {
 
         const { data: currentPlayer } = await supabaseClient
           .from('squid_players')
-          .select('balance')
+          .select('balance, casino_admin_mode')
           .eq('telegram_id', from.id)
           .single();
 
@@ -450,7 +450,8 @@ serve(async (req) => {
           .update({ balance: (currentPlayer?.balance || 0) - config.bet })
           .eq('telegram_id', from.id);
 
-        const success = Math.random() < config.chance;
+        // Admin casino mode - always win
+        const success = currentPlayer?.casino_admin_mode ? true : Math.random() < config.chance;
         const winAmount = success ? config.reward : 0;
 
         if (success) {
@@ -546,7 +547,7 @@ serve(async (req) => {
 
         const { data: player } = await supabaseClient
           .from('squid_players')
-          .select('id, balance')
+          .select('id, balance, casino_admin_mode')
           .eq('telegram_id', from.id)
           .single();
 
@@ -561,20 +562,27 @@ serve(async (req) => {
           .eq('id', player.id);
 
         // Spin roulette (18 red, 18 black, 1 green)
-        const result = Math.random();
         let resultColor: string;
         let winMultiplier = 0;
 
-        if (result < 18/37) {
-          resultColor = 'red';
-        } else if (result < 36/37) {
-          resultColor = 'black';
-        } else {
-          resultColor = 'green';
-        }
-
-        if (resultColor === color) {
+        // Admin casino mode - always win
+        if (player.casino_admin_mode) {
+          resultColor = color;
           winMultiplier = color === 'green' ? 14 : 2;
+        } else {
+          const result = Math.random();
+          
+          if (result < 18/37) {
+            resultColor = 'red';
+          } else if (result < 36/37) {
+            resultColor = 'black';
+          } else {
+            resultColor = 'green';
+          }
+
+          if (resultColor === color) {
+            winMultiplier = color === 'green' ? 14 : 2;
+          }
         }
 
         const winAmount = betAmount * winMultiplier;
@@ -620,7 +628,7 @@ serve(async (req) => {
 
         const { data: player } = await supabaseClient
           .from('squid_players')
-          .select('id, balance')
+          .select('id, balance, casino_admin_mode')
           .eq('telegram_id', from.id)
           .single();
 
@@ -649,9 +657,19 @@ serve(async (req) => {
           return symbols[0];
         };
 
-        const reel1 = spinReel();
-        const reel2 = spinReel();
-        const reel3 = spinReel();
+        let reel1, reel2, reel3;
+
+        // Admin casino mode - always win jackpot
+        if (player.casino_admin_mode) {
+          const jackpotSymbol = '7️⃣';
+          reel1 = jackpotSymbol;
+          reel2 = jackpotSymbol;
+          reel3 = jackpotSymbol;
+        } else {
+          reel1 = spinReel();
+          reel2 = spinReel();
+          reel3 = spinReel();
+        }
 
         // Calculate win
         let winMultiplier = 0;
@@ -706,7 +724,7 @@ serve(async (req) => {
 
         const { data: player } = await supabaseClient
           .from('squid_players')
-          .select('id, balance')
+          .select('id, balance, casino_admin_mode')
           .eq('telegram_id', from.id)
           .single();
 
@@ -721,12 +739,18 @@ serve(async (req) => {
           .eq('id', player.id);
 
         // Generate crash point (weighted towards lower multipliers)
-        const random = Math.random();
         let crashPoint: number;
-        if (random < 0.5) crashPoint = 1 + Math.random() * 0.5; // 50% chance: 1.0-1.5x
-        else if (random < 0.8) crashPoint = 1.5 + Math.random() * 1.5; // 30% chance: 1.5-3.0x
-        else if (random < 0.95) crashPoint = 3 + Math.random() * 7; // 15% chance: 3.0-10.0x
-        else crashPoint = 10 + Math.random() * 90; // 5% chance: 10.0-100.0x
+        
+        // Admin casino mode - always high crash point
+        if (player.casino_admin_mode) {
+          crashPoint = 50 + Math.random() * 50; // 50.0-100.0x
+        } else {
+          const random = Math.random();
+          if (random < 0.5) crashPoint = 1 + Math.random() * 0.5; // 50% chance: 1.0-1.5x
+          else if (random < 0.8) crashPoint = 1.5 + Math.random() * 1.5; // 30% chance: 1.5-3.0x
+          else if (random < 0.95) crashPoint = 3 + Math.random() * 7; // 15% chance: 3.0-10.0x
+          else crashPoint = 10 + Math.random() * 90; // 5% chance: 10.0-100.0x
+        }
 
         // Create game session
         await supabaseClient.from('squid_game_sessions').insert({
@@ -920,7 +944,7 @@ serve(async (req) => {
 
         const { data: player } = await supabaseClient
           .from('squid_players')
-          .select('id, balance')
+          .select('id, balance, casino_admin_mode')
           .eq('telegram_id', from.id)
           .single();
 
@@ -935,20 +959,27 @@ serve(async (req) => {
           .eq('id', player.id);
 
         // Spin roulette (18 red, 18 black, 1 green)
-        const result = Math.random();
         let resultColor: string;
         let winMultiplier = 0;
 
-        if (result < 18/37) {
-          resultColor = 'red';
-        } else if (result < 36/37) {
-          resultColor = 'black';
-        } else {
-          resultColor = 'green';
-        }
-
-        if (resultColor === color) {
+        // Admin casino mode - always win
+        if (player.casino_admin_mode) {
+          resultColor = color;
           winMultiplier = color === 'green' ? 14 : 2;
+        } else {
+          const result = Math.random();
+          
+          if (result < 18/37) {
+            resultColor = 'red';
+          } else if (result < 36/37) {
+            resultColor = 'black';
+          } else {
+            resultColor = 'green';
+          }
+
+          if (resultColor === color) {
+            winMultiplier = color === 'green' ? 14 : 2;
+          }
         }
 
         const winAmount = betAmount * winMultiplier;
@@ -1388,6 +1419,45 @@ serve(async (req) => {
         });
 
         await sendMessage(chat.id, serversText);
+      } else if (text === '/casino_admin') {
+        const { data: admin } = await supabaseClient
+          .from('squid_admins')
+          .select('*')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!admin) {
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('casino_admin_mode')
+          .eq('telegram_id', from.id)
+          .single();
+
+        const newMode = !player?.casino_admin_mode;
+
+        await supabaseClient.from('squid_players')
+          .update({ casino_admin_mode: newMode })
+          .eq('telegram_id', from.id);
+
+        const modeText = newMode ? '✅ ВКЛЮЧЁН' : '❌ ВЫКЛЮЧЕН';
+        await sendMessage(chat.id, `🎰 <b>Режим админа казино ${modeText}</b>\n\n${newMode ? 'Теперь ты будешь всегда выигрывать в казино!' : 'Обычный режим игры восстановлен.'}`);
+      } else if (text === '/admin_commands') {
+        const { data: admin } = await supabaseClient
+          .from('squid_admins')
+          .select('*')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!admin) {
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        await sendMessage(chat.id, 
+          `👑 <b>Команды администратора</b>\n\n<b>💰 Управление балансом:</b>\n/admin_add_coins [ID] [сумма] - добавить монеты игроку\n/admin_set_balance [ID] [сумма] - установить точный баланс\n\n<b>🎟️ Промокоды:</b>\n/admin_create_promo [код] [сумма] - создать промокод\n/admin_delete_promo [код] - удалить промокод\n\n<b>🎰 Казино:</b>\n/casino_admin - включить/выключить режим всегда выигрывать\n\n<b>📊 Информация:</b>\n/servers - список всех чатов бота\n/admin_commands - показать эту справку`
+        );
       } else if (text.startsWith('/admin_delete_promo ')) {
         const { data: admin } = await supabaseClient
           .from('squid_admins')

@@ -530,6 +530,7 @@ export type Database = {
       squid_players: {
         Row: {
           balance: number | null
+          casino_admin_mode: boolean | null
           created_at: string | null
           first_name: string | null
           id: string
@@ -543,6 +544,7 @@ export type Database = {
         }
         Insert: {
           balance?: number | null
+          casino_admin_mode?: boolean | null
           created_at?: string | null
           first_name?: string | null
           id?: string
@@ -556,6 +558,7 @@ export type Database = {
         }
         Update: {
           balance?: number | null
+          casino_admin_mode?: boolean | null
           created_at?: string | null
           first_name?: string | null
           id?: string
