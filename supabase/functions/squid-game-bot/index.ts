@@ -1493,20 +1493,20 @@ serve(async (req) => {
         const itemChance = Math.random() * 100;
         let itemFound: { name: string, rarity: string, sellPrice: number } | null = null;
 
-        if (itemChance < 3) {
-          // 3% - Маска Фронтман (Мифическая)
+        if (itemChance < 2) {
+          // 2% - Маска Фронтман (Мифическая)
           itemFound = { name: '🎭 Маска Фронтман', rarity: 'Мифическая', sellPrice: 25000 };
-        } else if (itemChance < 13) {
-          // 10% - Карта VIP (Эпическая)
+        } else if (itemChance < 9) {
+          // 7% - Карта VIP (Эпическая)
           itemFound = { name: '💳 Карта VIP', rarity: 'Эпическая', sellPrice: 9000 };
-        } else if (itemChance < 33) {
-          // 20% - Маска квадрат (Раритет)
+        } else if (itemChance < 22) {
+          // 13% - Маска квадрат (Раритет)
           itemFound = { name: '🟥 Маска квадрат', rarity: 'Раритет', sellPrice: 5000 };
-        } else if (itemChance < 68) {
-          // 35% - Печенька Зонт (Обычная)
+        } else if (itemChance < 47) {
+          // 25% - Печенька Зонт (Обычная)
           itemFound = { name: '🍪 Печенька Зонт', rarity: 'Обычная', sellPrice: 2000 };
-        } else if (itemChance < 98) {
-          // 30% - Зипка 456 (Обычная)
+        } else if (itemChance < 67) {
+          // 20% - Зипка 456 (Обычная)
           itemFound = { name: '🧥 Зипка 456', rarity: 'Обычная', sellPrice: 3000 };
         }
 
