@@ -869,21 +869,92 @@ serve(async (req) => {
         });
 
         await sendMessage(chat.id, topText);
-      } else if (text === '/roulette') {
+      } else if (text.startsWith('/roulette')) {
+        const args = text.split(' ').slice(1);
+        
+        if (args.length !== 2) {
+          await sendMessage(chat.id, '❌ Неверный формат команды!\n\nИспользуй: /roulette <цвет> <ставка>\n\nЦвет: red/красное, black/черное, green/зеленое\nПример: /roulette red 100');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const colorInput = args[0].toLowerCase();
+        const betAmount = parseInt(args[1]);
+
+        // Validate color
+        let color: string;
+        if (colorInput === 'red' || colorInput === 'красное' || colorInput === 'красный') {
+          color = 'red';
+        } else if (colorInput === 'black' || colorInput === 'черное' || colorInput === 'черный') {
+          color = 'black';
+        } else if (colorInput === 'green' || colorInput === 'зеленое' || colorInput === 'зеленый') {
+          color = 'green';
+        } else {
+          await sendMessage(chat.id, '❌ Неверный цвет!\n\nДоступные цвета:\n🔴 red/красное (x2)\n⚫ black/черное (x2)\n🟢 green/зеленое (x14)');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        // Validate bet amount
+        if (isNaN(betAmount) || betAmount <= 0) {
+          await sendMessage(chat.id, '❌ Неверная ставка! Укажи положительное число.');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
         const { data: player } = await supabaseClient
           .from('squid_players')
-          .select('balance')
+          .select('id, balance')
           .eq('telegram_id', from.id)
           .single();
 
-        await sendMessage(chat.id, `🎡 <b>Рулетка</b>\n\n💰 Твой баланс: ${player?.balance || 0} монет\n\nВыбери ставку и цвет:`, {
-          inline_keyboard: [
-            [{ text: '🔴 Красное (x2)', callback_data: `roulette_bet_red_u${from.id}` }],
-            [{ text: '⚫ Черное (x2)', callback_data: `roulette_bet_black_u${from.id}` }],
-            [{ text: '🟢 Зеленое (x14)', callback_data: `roulette_bet_green_u${from.id}` }],
-            [{ text: '⬅️ Назад', callback_data: 'main_menu' }]
-          ]
+        if (!player || player.balance < betAmount) {
+          await sendMessage(chat.id, `❌ Недостаточно монет!\n\n💰 Твой баланс: ${player?.balance || 0} монет`);
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        // Deduct bet
+        await supabaseClient.from('squid_players')
+          .update({ balance: player.balance - betAmount })
+          .eq('id', player.id);
+
+        // Spin roulette (18 red, 18 black, 1 green)
+        const result = Math.random();
+        let resultColor: string;
+        let winMultiplier = 0;
+
+        if (result < 18/37) {
+          resultColor = 'red';
+        } else if (result < 36/37) {
+          resultColor = 'black';
+        } else {
+          resultColor = 'green';
+        }
+
+        if (resultColor === color) {
+          winMultiplier = color === 'green' ? 14 : 2;
+        }
+
+        const winAmount = betAmount * winMultiplier;
+        const profit = winAmount - betAmount;
+
+        if (winAmount > 0) {
+          await supabaseClient.from('squid_players')
+            .update({ balance: player.balance - betAmount + winAmount })
+            .eq('id', player.id);
+        }
+
+        await supabaseClient.from('squid_casino_history').insert({
+          player_id: player.id,
+          game_type: 'roulette',
+          bet_amount: betAmount,
+          win_amount: winAmount,
+          result: { color: resultColor, bet: color }
         });
+
+        const resultEmoji = resultColor === 'red' ? '🔴' : resultColor === 'black' ? '⚫' : '🟢';
+        const resultText = winAmount > 0 
+          ? `🎉 <b>ВЫИГРЫШ!</b>\n\n🎡 Рулетка\nРезультат: ${resultEmoji} ${resultColor}\n💰 Выигрыш: ${profit} монет\n💵 Новый баланс: ${player.balance - betAmount + winAmount} монет`
+          : `😔 Проигрыш\n\n🎡 Рулетка\nРезультат: ${resultEmoji} ${resultColor}\n💸 Потеря: ${betAmount} монет\n💵 Новый баланс: ${player.balance - betAmount} монет`;
+
+        await sendMessage(chat.id, resultText);
       } else if (text === '/slots') {
         const { data: player } = await supabaseClient
           .from('squid_players')
@@ -948,10 +1019,31 @@ serve(async (req) => {
 
         await sendMessage(chat.id, `🎁 <b>Ежедневный бонус получен!</b>\n\n💰 +${dailyReward} монет\n💵 Новый баланс: ${(player.balance || 0) + dailyReward} монет`);
       } else if (text.startsWith('/promo ')) {
-        const promoCode = text.replace('/promo ', '').trim().toUpperCase();
+        const promoCode = text.split(' ')[1]?.trim();
         
         if (!promoCode) {
-          await sendMessage(chat.id, '❌ Использование: /promo [код]\nПример: /promo BONUS2025');
+          await sendMessage(chat.id, '❌ Укажи промокод!\nИспользуй: /promo КОД');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const { data: promo } = await supabaseClient
+          .from('squid_promo_codes')
+          .select('*')
+          .eq('code', promoCode)
+          .single();
+
+        if (!promo) {
+          await sendMessage(chat.id, '❌ Промокод не найден!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        if (promo.expires_at && new Date(promo.expires_at) < new Date()) {
+          await sendMessage(chat.id, '❌ Срок действия промокода истёк!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        if (promo.max_uses && promo.current_uses >= promo.max_uses) {
+          await sendMessage(chat.id, '❌ Лимит использований промокода исчерпан!');
           return new Response('OK', { headers: corsHeaders });
         }
 
@@ -961,314 +1053,145 @@ serve(async (req) => {
           .eq('telegram_id', from.id)
           .single();
 
-        if (!player) {
-          await sendMessage(chat.id, '❌ Игрок не найден.');
-          return new Response('OK', { headers: corsHeaders });
-        }
-
-        // Check if promo code exists and is valid
-        const { data: promo } = await supabaseClient
-          .from('squid_promo_codes')
-          .select('*')
-          .eq('code', promoCode)
-          .single();
-
-        if (!promo) {
-          await sendMessage(chat.id, '❌ Промокод не найден.');
-          return new Response('OK', { headers: corsHeaders });
-        }
-
-        // Check if expired
-        if (promo.expires_at && new Date(promo.expires_at) < new Date()) {
-          await sendMessage(chat.id, '❌ Промокод истёк.');
-          return new Response('OK', { headers: corsHeaders });
-        }
-
-        // Check if max uses reached
-        if (promo.max_uses && promo.current_uses >= promo.max_uses) {
-          await sendMessage(chat.id, '❌ Промокод исчерпан.');
-          return new Response('OK', { headers: corsHeaders });
-        }
-
-        // Check if player already used this promo
         const { data: existingRedemption } = await supabaseClient
           .from('squid_promo_redemptions')
-          .select('id')
-          .eq('player_id', player.id)
+          .select('*')
+          .eq('player_id', player?.id)
           .eq('promo_code_id', promo.id)
           .single();
 
         if (existingRedemption) {
-          await sendMessage(chat.id, '❌ Ты уже использовал этот промокод.');
+          await sendMessage(chat.id, '❌ Ты уже использовал этот промокод!');
           return new Response('OK', { headers: corsHeaders });
         }
 
-        // Redeem promo code
-        await supabaseClient.from('squid_players')
-          .update({ balance: (player.balance || 0) + promo.reward_amount })
-          .eq('id', player.id);
+        await supabaseClient.from('squid_promo_redemptions').insert({
+          player_id: player?.id,
+          promo_code_id: promo.id
+        });
 
         await supabaseClient.from('squid_promo_codes')
-          .update({ current_uses: promo.current_uses + 1 })
+          .update({ current_uses: (promo.current_uses || 0) + 1 })
           .eq('id', promo.id);
 
-        await supabaseClient.from('squid_promo_redemptions')
-          .insert({ player_id: player.id, promo_code_id: promo.id });
+        const newBalance = (player?.balance || 0) + promo.reward_amount;
+        await supabaseClient.from('squid_players')
+          .update({ balance: newBalance })
+          .eq('id', player?.id);
 
-        await sendMessage(chat.id, `✅ <b>Промокод активирован!</b>\n\n💰 +${promo.reward_amount} монет\n💵 Новый баланс: ${(player.balance || 0) + promo.reward_amount} монет`);
-      } else if (text === '/help') {
-        const helpText = `
-<b>📋 Все команды бота:</b>
-
-<b>🎮 Игры:</b>
-/dalgona - Игра "Дальгона" (вырезание фигур)
-  • Звезда: 70% шанс, 400 монет, ставка 100
-  • Зонт: 40% шанс, 1000 монет, ставка 300
-  • Треугольник: 75% шанс, 300 монет, ставка 120
-  • Мона Лиза: 3% шанс, 5000 монет, ставка 500
-
-/glass - Игра "Стеклянный мост"
-  • 60% шанс пройти плиту
-  • Ставка: 200 монет
-  • Награда растет с каждой плитой
-
-/challenge [ID] [ставка] - Вызвать игрока на PvP
-
-<b>🎰 Казино:</b>
-/roulette - Рулетка (красное/черное x2, зеленое x14)
-/slots - Слоты (совпадения символов до x100)
-/crash - Краш (выйди до краша до x100)
-
-<b>💰 Экономика:</b>
-/top - Топ 10 богатых игроков
-/daily - Ежедневный бонус 1200 монет (раз в 24 часа)
-/promo [код] - Ввести промокод
-/pay [ID] [сумма] - Перевести монеты игроку
-
-<b>ℹ️ Информация:</b>
-/start - Главное меню и ваш Telegram ID
-`;
-        await sendMessage(chat.id, helpText);
+        await sendMessage(chat.id, `🎉 <b>Промокод активирован!</b>\n\n💰 +${promo.reward_amount} монет\n💵 Новый баланс: ${newBalance} монет`);
       } else if (text.startsWith('/pay ')) {
-        const parts = text.split(' ');
-        
-        if (parts.length !== 3) {
-          await sendMessage(chat.id, '❌ Неверный формат команды!\n\nИспользуйте: /pay [ID получателя] [сумма]\nПример: /pay 123456789 500');
-          return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
+        const args = text.split(' ');
+        if (args.length !== 3) {
+          await sendMessage(chat.id, '❌ Неверный формат!\nИспользуй: /pay [ID] [сумма]\nПример: /pay 123456789 100');
+          return new Response('OK', { headers: corsHeaders });
         }
 
-        const recipientId = parseInt(parts[1]);
-        const amount = parseInt(parts[2]);
+        const recipientId = parseInt(args[1]);
+        const amount = parseInt(args[2]);
 
-        // Validate inputs
-        if (isNaN(recipientId) || isNaN(amount)) {
-          await sendMessage(chat.id, '❌ ID и сумма должны быть числами!');
-          return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
-        }
-
-        if (amount <= 0) {
-          await sendMessage(chat.id, '❌ Сумма должна быть больше 0!');
-          return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
-        }
-
-        if (amount > 1000000) {
-          await sendMessage(chat.id, '❌ Максимальная сумма перевода: 1,000,000 монет!');
-          return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
+        if (isNaN(recipientId) || isNaN(amount) || amount <= 0) {
+          await sendMessage(chat.id, '❌ Неверные данные! ID и сумма должны быть положительными числами.');
+          return new Response('OK', { headers: corsHeaders });
         }
 
         if (recipientId === from.id) {
-          await sendMessage(chat.id, '❌ Вы не можете перевести монеты самому себе!');
-          return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
+          await sendMessage(chat.id, '❌ Нельзя переводить монеты самому себе!');
+          return new Response('OK', { headers: corsHeaders });
         }
 
-        // Get sender
         const { data: sender } = await supabaseClient
           .from('squid_players')
-          .select('*')
+          .select('id, balance, first_name')
           .eq('telegram_id', from.id)
-          .maybeSingle();
+          .single();
 
-        if (!sender) {
-          await sendMessage(chat.id, '❌ Ошибка: ваш профиль не найден. Используйте /start');
-          return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
+        if (!sender || sender.balance < amount) {
+          await sendMessage(chat.id, `❌ Недостаточно монет!\n\n💰 Твой баланс: ${sender?.balance || 0} монет`);
+          return new Response('OK', { headers: corsHeaders });
         }
 
-        if (sender.balance < amount) {
-          await sendMessage(chat.id, `❌ Недостаточно монет!\nВаш баланс: ${sender.balance} монет\nТребуется: ${amount} монет`);
-          return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
-        }
-
-        // Get recipient
         const { data: recipient } = await supabaseClient
           .from('squid_players')
-          .select('*')
+          .select('id, balance, first_name')
           .eq('telegram_id', recipientId)
-          .maybeSingle();
+          .single();
 
         if (!recipient) {
-          await sendMessage(chat.id, '❌ Получатель не найден!\nУбедитесь, что игрок использовал /start в боте.');
-          return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
-        }
-
-        // Perform transfer
-        const { error: senderError } = await supabaseClient
-          .from('squid_players')
-          .update({ balance: sender.balance - amount })
-          .eq('telegram_id', from.id);
-
-        if (senderError) {
-          console.error('Error updating sender balance:', senderError);
-          await sendMessage(chat.id, '❌ Ошибка при переводе. Попробуйте позже.');
-          return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
-        }
-
-        const { error: recipientError } = await supabaseClient
-          .from('squid_players')
-          .update({ balance: recipient.balance + amount })
-          .eq('telegram_id', recipientId);
-
-        if (recipientError) {
-          console.error('Error updating recipient balance:', recipientError);
-          // Rollback sender balance
-          await supabaseClient
-            .from('squid_players')
-            .update({ balance: sender.balance })
-            .eq('telegram_id', from.id);
-          await sendMessage(chat.id, '❌ Ошибка при переводе. Попробуйте позже.');
-          return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
-        }
-
-        // Notify both parties
-        await sendMessage(chat.id, `✅ Успешно переведено ${amount} монет игроку ${recipient.first_name || recipient.username || recipientId}\n\nВаш новый баланс: ${sender.balance - amount} монет`);
-        
-        await sendMessage(recipientId, `💰 Вы получили ${amount} монет от игрока ${sender.first_name || sender.username || from.id}!\n\nВаш новый баланс: ${recipient.balance + amount} монет`);
-      } else if (text.startsWith('/admin_balance ')) {
-        // Check if user is admin
-        const { data: isAdmin } = await supabaseClient
-          .from('squid_admins')
-          .select('telegram_id')
-          .eq('telegram_id', from.id)
-          .single();
-
-        if (!isAdmin) {
-          await sendMessage(chat.id, '❌ У тебя нет прав администратора.');
-          return new Response('OK', { headers: corsHeaders });
-        }
-
-        const parts = text.split(' ');
-        if (parts.length < 3) {
-          await sendMessage(chat.id, '❌ Использование: /admin_balance [Telegram_ID] [сумма]\nПример: /admin_balance 123456789 5000');
-          return new Response('OK', { headers: corsHeaders });
-        }
-
-        const targetId = parseInt(parts[1]);
-        const newBalance = parseInt(parts[2]);
-
-        const { data: targetPlayer } = await supabaseClient
-          .from('squid_players')
-          .select('id, first_name')
-          .eq('telegram_id', targetId)
-          .single();
-
-        if (!targetPlayer) {
-          await sendMessage(chat.id, '❌ Игрок не найден.');
+          await sendMessage(chat.id, '❌ Получатель не найден!');
           return new Response('OK', { headers: corsHeaders });
         }
 
         await supabaseClient.from('squid_players')
-          .update({ balance: newBalance })
-          .eq('id', targetPlayer.id);
+          .update({ balance: sender.balance - amount })
+          .eq('id', sender.id);
 
-        await sendMessage(chat.id, `✅ Баланс игрока ${targetPlayer.first_name} (ID: ${targetId}) установлен на ${newBalance} монет.`);
-      } else if (text.startsWith('/admin_promo ')) {
-        // Check if user is admin
-        const { data: isAdmin } = await supabaseClient
-          .from('squid_admins')
-          .select('telegram_id')
-          .eq('telegram_id', from.id)
-          .single();
+        await supabaseClient.from('squid_players')
+          .update({ balance: recipient.balance + amount })
+          .eq('id', recipient.id);
 
-        if (!isAdmin) {
-          await sendMessage(chat.id, '❌ У тебя нет прав администратора.');
-          return new Response('OK', { headers: corsHeaders });
-        }
-
-        const parts = text.split(' ');
-        if (parts.length < 4) {
-          await sendMessage(chat.id, '❌ Использование: /admin_promo [код] [сумма] [лимит]\nПример: /admin_promo BONUS2025 1000 100');
-          return new Response('OK', { headers: corsHeaders });
-        }
-
-        const code = parts[1].toUpperCase();
-        const amount = parseInt(parts[2]);
-        const maxUses = parseInt(parts[3]);
-
-        const { error } = await supabaseClient.from('squid_promo_codes')
-          .insert({
-            code: code,
-            reward_amount: amount,
-            max_uses: maxUses
-          });
-
-        if (error) {
-          await sendMessage(chat.id, '❌ Ошибка создания промокода. Возможно, код уже существует.');
-          return new Response('OK', { headers: corsHeaders });
-        }
-
-        await sendMessage(chat.id, `✅ <b>Промокод создан!</b>\n\n📝 Код: ${code}\n💰 Награда: ${amount} монет\n👥 Лимит использований: ${maxUses}`);
+        await sendMessage(chat.id, `✅ Перевод выполнен!\n\n💸 Отправлено: ${amount} монет\n👤 Получатель: ${recipient.first_name}\n💵 Твой новый баланс: ${sender.balance - amount} монет`);
+        await sendMessage(recipientId, `💰 Тебе перевели ${amount} монет!\n\n👤 От: ${sender.first_name}\n💵 Твой новый баланс: ${recipient.balance + amount} монет`);
       } else if (text.startsWith('/challenge ')) {
-        const parts = text.split(' ');
-        if (parts.length < 3) {
-          await sendMessage(chat.id, '❌ Использование: /challenge [Telegram_ID] [ставка]\nПример: /challenge 123456789 100');
+        const args = text.split(' ');
+        if (args.length !== 3) {
+          await sendMessage(chat.id, '❌ Неверный формат!\nИспользуй: /challenge [ID] [ставка]');
           return new Response('OK', { headers: corsHeaders });
         }
 
-        const targetId = parseInt(parts[1]);
-        const betAmount = parseInt(parts[2]);
+        const opponentId = parseInt(args[1]);
+        const betAmount = parseInt(args[2]);
 
-        const { data: challenger } = await supabaseClient
+        if (isNaN(opponentId) || isNaN(betAmount) || betAmount <= 0) {
+          await sendMessage(chat.id, '❌ Неверные данные!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        if (opponentId === from.id) {
+          await sendMessage(chat.id, '❌ Нельзя вызвать самого себя!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const { data: player } = await supabaseClient
           .from('squid_players')
-          .select('id, balance')
+          .select('id, balance, first_name')
           .eq('telegram_id', from.id)
           .single();
 
-        if (!challenger || challenger.balance < betAmount) {
-          await sendMessage(chat.id, '❌ Недостаточно монет для этой ставки!');
+        if (!player || player.balance < betAmount) {
+          await sendMessage(chat.id, `❌ Недостаточно монет!\n\n💰 Твой баланс: ${player?.balance || 0} монет`);
           return new Response('OK', { headers: corsHeaders });
         }
 
         const { data: opponent } = await supabaseClient
           .from('squid_players')
-          .select('id, telegram_id')
-          .eq('telegram_id', targetId)
+          .select('id')
+          .eq('telegram_id', opponentId)
           .single();
 
         if (!opponent) {
-          await sendMessage(chat.id, '❌ Игрок не найден. Убедись, что он запустил бота командой /start');
+          await sendMessage(chat.id, '❌ Игрок не найден!');
           return new Response('OK', { headers: corsHeaders });
         }
 
-        // Create challenge
         const { data: session } = await supabaseClient
           .from('squid_game_sessions')
           .insert({
-            player1_id: challenger.id,
-            player2_id: null,
-            game_type: 'squid_game',
+            player1_id: player.id,
+            game_type: 'squid_pvp',
             bet_amount: betAmount,
             status: 'waiting'
           })
           .select()
           .single();
 
-        await sendMessage(chat.id, `⚔️ Вызов отправлен! Ожидаем ответа...`);
-        await sendMessage(targetId, `⚔️ <b>Вызов на бой!</b>\n\n${from.first_name} вызывает тебя на игру в Кальмара!\nСтавка: ${betAmount} монет\n\nТвой ID: ${targetId}`, {
-          inline_keyboard: [
-            [{ text: '✅ Принять вызов', callback_data: `accept_challenge_${session?.id}` }],
-            [{ text: '❌ Отклонить', callback_data: 'main_menu' }]
-          ]
+        await sendMessage(chat.id, `⚔️ Вызов отправлен!\n\nСтавка: ${betAmount} монет\nОжидаем ответ...`);
+        await sendMessage(opponentId, `⚔️ ${player.first_name} вызывает тебя!\n\nСтавка: ${betAmount} монет`, {
+          inline_keyboard: [[{ text: '✅ Принять', callback_data: `accept_challenge_${session.id}` }]]
         });
       } else if (text === '/attack' || text === '/defend') {
+        const action = text === '/attack' ? 'attack' : 'defend';
+        
         const { data: player } = await supabaseClient
           .from('squid_players')
           .select('id')
@@ -1279,111 +1202,146 @@ serve(async (req) => {
           .from('squid_game_sessions')
           .select('*, player1:squid_players!player1_id(telegram_id, first_name), player2:squid_players!player2_id(telegram_id, first_name)')
           .or(`player1_id.eq.${player?.id},player2_id.eq.${player?.id}`)
-          .eq('game_type', 'squid_game')
+          .eq('game_type', 'squid_pvp')
           .eq('status', 'active')
           .order('created_at', { ascending: false })
           .limit(1)
           .single();
 
         if (!session) {
-          await sendMessage(chat.id, '❌ У тебя нет активной игры!');
+          await sendMessage(chat.id, '❌ Активная игра не найдена!');
           return new Response('OK', { headers: corsHeaders });
         }
 
-        const gameData = (session.game_data as any) || { moves: [] };
+        const gameData = session.game_data as any || {};
         const isPlayer1 = session.player1_id === player?.id;
-        const moveKey = isPlayer1 ? 'p1' : 'p2';
+        const playerKey = isPlayer1 ? 'player1Action' : 'player2Action';
 
-        gameData.moves = gameData.moves || [];
-        const currentRound = Math.floor(gameData.moves.length / 2);
-
-        if (gameData.moves.some((m: any) => m.round === currentRound && m.player === moveKey)) {
-          await sendMessage(chat.id, '⏳ Ты уже сделал ход! Жди хода оппонента.');
+        if (gameData[playerKey]) {
+          await sendMessage(chat.id, '⏳ Ты уже сделал ход! Жди соперника...');
           return new Response('OK', { headers: corsHeaders });
         }
 
-        const move = text === '/attack' ? 'attack' : 'defend';
-        gameData.moves.push({ round: currentRound, player: moveKey, move });
+        gameData[playerKey] = action;
 
-        await supabaseClient.from('squid_game_sessions')
-          .update({ game_data: gameData })
-          .eq('id', session.id);
+        if (gameData.player1Action && gameData.player2Action) {
+          const p1Action = gameData.player1Action;
+          const p2Action = gameData.player2Action;
+          
+          let winnerId = null;
+          if (p1Action === 'attack' && p2Action === 'defend') {
+            winnerId = session.player2_id;
+          } else if (p1Action === 'defend' && p2Action === 'attack') {
+            winnerId = session.player1_id;
+          } else if (p1Action === 'attack' && p2Action === 'attack') {
+            winnerId = Math.random() < 0.5 ? session.player1_id : session.player2_id;
+          }
 
-        // Check if round is complete
-        const roundMoves = gameData.moves.filter((m: any) => m.round === currentRound);
-        if (roundMoves.length === 2) {
-          const p1Move = roundMoves.find((m: any) => m.player === 'p1')?.move;
-          const p2Move = roundMoves.find((m: any) => m.player === 'p2')?.move;
+          await supabaseClient.from('squid_game_sessions')
+            .update({ status: 'finished', winner_id: winnerId, finished_at: new Date().toISOString() })
+            .eq('id', session.id);
 
-          let winner = null;
-          if (p1Move === 'attack' && p2Move === 'defend') winner = null; // Draw
-          else if (p1Move === 'defend' && p2Move === 'attack') winner = null; // Draw
-          else if (p1Move === 'attack' && p2Move === 'attack') winner = Math.random() > 0.5 ? session.player1_id : session.player2_id;
-          else winner = Math.random() > 0.5 ? session.player1_id : session.player2_id;
-
-          if (currentRound >= 2 || winner) {
-            // Game over
-            const finalWinner = winner || (Math.random() > 0.5 ? session.player1_id : session.player2_id);
-            const loserId = finalWinner === session.player1_id ? session.player2_id : session.player1_id;
-
-            await supabaseClient.from('squid_game_sessions')
-              .update({ status: 'finished', winner_id: finalWinner, finished_at: new Date().toISOString() })
-              .eq('id', session.id);
-
-            const { data: winnerData } = await supabaseClient
+          if (winnerId) {
+            const { data: winner } = await supabaseClient
               .from('squid_players')
               .select('balance, total_wins')
-              .eq('id', finalWinner)
-              .single();
-
-            const { data: loserData } = await supabaseClient
-              .from('squid_players')
-              .select('balance, total_losses')
-              .eq('id', loserId)
+              .eq('id', winnerId)
               .single();
 
             await supabaseClient.from('squid_players')
               .update({ 
-                balance: (winnerData?.balance || 0) + (session.bet_amount * 2),
-                total_wins: (winnerData?.total_wins || 0) + 1
+                balance: (winner?.balance || 0) + (session.bet_amount * 2),
+                total_wins: (winner?.total_wins || 0) + 1
               })
-              .eq('id', finalWinner);
+              .eq('id', winnerId);
 
+            const loserId = winnerId === session.player1_id ? session.player2_id : session.player1_id;
             await supabaseClient.from('squid_players')
-              .update({ 
-                balance: (loserData?.balance || 0) - session.bet_amount,
-                total_losses: (loserData?.total_losses || 0) + 1
-              })
+              .update({ total_losses: (await supabaseClient.from('squid_players').select('total_losses').eq('id', loserId).single()).data?.total_losses + 1 || 1 })
               .eq('id', loserId);
 
-            const winnerTgId = finalWinner === session.player1_id ? (session.player1 as any).telegram_id : (session.player2 as any).telegram_id;
-            const loserTgId = loserId === session.player1_id ? (session.player1 as any).telegram_id : (session.player2 as any).telegram_id;
+            const winnerChatId = winnerId === session.player1_id ? (session.player1 as any).telegram_id : (session.player2 as any).telegram_id;
+            const loserChatId = winnerId === session.player1_id ? (session.player2 as any).telegram_id : (session.player1 as any).telegram_id;
 
-            await sendMessage(winnerTgId, `🎉 <b>ПОБЕДА!</b>\n\nТы выиграл ${session.bet_amount * 2} монет!`, {
-              inline_keyboard: [[{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]]
-            });
-
-            await sendMessage(loserTgId, `💀 Поражение!\n\nТы потерял ${session.bet_amount} монет.`, {
-              inline_keyboard: [[{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]]
-            });
-          } else {
-            // Next round
-            const p1TgId = (session.player1 as any).telegram_id;
-            const p2TgId = (session.player2 as any).telegram_id;
-            await sendMessage(p1TgId, `Раунд ${currentRound + 1} завершён!\nP1: ${p1Move}, P2: ${p2Move}\n\nСледующий раунд!`);
-            await sendMessage(p2TgId, `Раунд ${currentRound + 1} завершён!\nP1: ${p1Move}, P2: ${p2Move}\n\nСледующий раунд!`);
+            await sendMessage(winnerChatId, `🎉 <b>ПОБЕДА!</b>\n\nТвой ход: ${p1Action === 'attack' ? '⚔️ Атака' : '🛡 Защита'}\nХод соперника: ${p2Action === 'attack' ? '⚔️ Атака' : '🛡 Защита'}\n\n💰 Выигрыш: ${session.bet_amount * 2} монет`);
+            await sendMessage(loserChatId, `💀 <b>ПОРАЖЕНИЕ</b>\n\nТвой ход: ${p2Action === 'attack' ? '⚔️ Атака' : '🛡 Защита'}\nХод соперника: ${p1Action === 'attack' ? '⚔️ Атака' : '🛡 Защита'}\n\n💸 Потеря: ${session.bet_amount} монет`);
           }
         } else {
-          await sendMessage(chat.id, `✅ Ход принят! Ожидаем хода оппонента...`);
+          await supabaseClient.from('squid_game_sessions')
+            .update({ game_data: gameData })
+            .eq('id', session.id);
+
+          await sendMessage(chat.id, '⏳ Ход сделан! Жди соперника...');
         }
+      } else if (text.startsWith('/admin_add_coins ')) {
+        const { data: admin } = await supabaseClient
+          .from('squid_admins')
+          .select('*')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!admin) {
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const args = text.split(' ');
+        if (args.length !== 3) {
+          await sendMessage(chat.id, '❌ Формат: /admin_add_coins [ID] [сумма]');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const targetId = parseInt(args[1]);
+        const amount = parseInt(args[2]);
+
+        const { data: target } = await supabaseClient
+          .from('squid_players')
+          .select('id, balance, first_name')
+          .eq('telegram_id', targetId)
+          .single();
+
+        if (!target) {
+          await sendMessage(chat.id, '❌ Игрок не найден!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        await supabaseClient.from('squid_players')
+          .update({ balance: target.balance + amount })
+          .eq('id', target.id);
+
+        await sendMessage(chat.id, `✅ Добавлено ${amount} монет игроку ${target.first_name}`);
+      } else if (text.startsWith('/admin_create_promo ')) {
+        const { data: admin } = await supabaseClient
+          .from('squid_admins')
+          .select('*')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!admin) {
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const args = text.split(' ');
+        if (args.length !== 3) {
+          await sendMessage(chat.id, '❌ Формат: /admin_create_promo [код] [сумма]');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const code = args[1];
+        const reward = parseInt(args[2]);
+
+        await supabaseClient.from('squid_promo_codes').insert({
+          code: code,
+          reward_amount: reward
+        });
+
+        await sendMessage(chat.id, `✅ Промокод создан!\n\nКод: ${code}\nНаграда: ${reward} монет`);
       }
     }
 
     return new Response('OK', { headers: corsHeaders });
   } catch (error) {
     console.error('Error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
