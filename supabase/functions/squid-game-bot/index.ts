@@ -554,7 +554,7 @@ serve(async (req) => {
       } else if (data.startsWith('shop_prefixes_u')) {
         const { data: player } = await supabaseClient
           .from('squid_players')
-          .select('balance, prefix')
+          .select('balance, prefix, owned_prefixes')
           .eq('telegram_id', from.id)
           .single();
 
@@ -563,19 +563,105 @@ serve(async (req) => {
           { name: 'emperror', price: 3000000, emoji: '⚔️' }
         ];
 
+        const ownedPrefixes = player?.owned_prefixes || [];
+        
         let shopText = '🛍️ <b>Магазин префиксов</b>\n\n💰 Твой баланс: ' + (player?.balance || 0) + ' монет\n\n';
         
         prefixes.forEach(prefix => {
-          const owned = player?.prefix === prefix.name;
-          shopText += `${prefix.emoji} <b>${prefix.name}</b> - ${prefix.price.toLocaleString()} монет ${owned ? '✅ Куплен' : ''}\n`;
+          const isOwned = ownedPrefixes.includes(prefix.name);
+          const isActive = player?.prefix === prefix.name;
+          
+          if (isOwned) {
+            shopText += `${prefix.emoji} <b>${prefix.name}</b> - ${isActive ? '✅ Активен' : '✅ Куплен'}\n`;
+          } else {
+            shopText += `${prefix.emoji} <b>${prefix.name}</b> - ${prefix.price.toLocaleString()} монет\n`;
+          }
         });
 
+        const keyboard = [];
+        
+        prefixes.forEach(prefix => {
+          const isOwned = ownedPrefixes.includes(prefix.name);
+          const isActive = player?.prefix === prefix.name;
+          
+          if (isOwned && !isActive) {
+            keyboard.push([{ text: `${prefix.emoji} Включить ${prefix.name}`, callback_data: `activate_prefix_${prefix.name}_u${from.id}` }]);
+          } else if (!isOwned) {
+            keyboard.push([{ text: `${prefix.emoji} Купить ${prefix.name} (${(prefix.price / 1000000).toFixed(1)}M)`, callback_data: `buy_prefix_${prefix.name}_u${from.id}` }]);
+          }
+        });
+        
+        keyboard.push([{ text: '⬅️ Назад в профиль', callback_data: 'profile' }]);
+
         await editMessage(chatId, message!.message_id, shopText, {
-          inline_keyboard: [
-            [{ text: '👑 Купить absolute (2,000,000)', callback_data: `buy_prefix_absolute_u${from.id}` }],
-            [{ text: '⚔️ Купить emperror (3,000,000)', callback_data: `buy_prefix_emperror_u${from.id}` }],
-            [{ text: '⬅️ Назад в профиль', callback_data: 'profile' }]
-          ]
+          inline_keyboard: keyboard
+        });
+      } else if (data.startsWith('activate_prefix_')) {
+        const prefixName = data.split('_u')[0].replace('activate_prefix_', '');
+        
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('id, owned_prefixes')
+          .eq('telegram_id', from.id)
+          .single();
+
+        const ownedPrefixes = player?.owned_prefixes || [];
+        
+        if (!ownedPrefixes.includes(prefixName)) {
+          await answerCallbackQuery(callbackId, 'У тебя нет этого префикса!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        await supabaseClient.from('squid_players')
+          .update({ prefix: prefixName })
+          .eq('id', player.id);
+
+        await answerCallbackQuery(callbackId, `✅ Префикс ${prefixName} включен!`);
+        
+        // Refresh shop
+        const { data: updatedPlayer } = await supabaseClient
+          .from('squid_players')
+          .select('balance, prefix, owned_prefixes')
+          .eq('telegram_id', from.id)
+          .single();
+
+        const prefixes = [
+          { name: 'absolute', price: 2000000, emoji: '👑' },
+          { name: 'emperror', price: 3000000, emoji: '⚔️' }
+        ];
+
+        const updatedOwnedPrefixes = updatedPlayer?.owned_prefixes || [];
+        
+        let shopText = '🛍️ <b>Магазин префиксов</b>\n\n💰 Твой баланс: ' + (updatedPlayer?.balance || 0) + ' монет\n\n';
+        
+        prefixes.forEach(prefix => {
+          const isOwned = updatedOwnedPrefixes.includes(prefix.name);
+          const isActive = updatedPlayer?.prefix === prefix.name;
+          
+          if (isOwned) {
+            shopText += `${prefix.emoji} <b>${prefix.name}</b> - ${isActive ? '✅ Активен' : '✅ Куплен'}\n`;
+          } else {
+            shopText += `${prefix.emoji} <b>${prefix.name}</b> - ${prefix.price.toLocaleString()} монет\n`;
+          }
+        });
+
+        const keyboard = [];
+        
+        prefixes.forEach(prefix => {
+          const isOwned = updatedOwnedPrefixes.includes(prefix.name);
+          const isActive = updatedPlayer?.prefix === prefix.name;
+          
+          if (isOwned && !isActive) {
+            keyboard.push([{ text: `${prefix.emoji} Включить ${prefix.name}`, callback_data: `activate_prefix_${prefix.name}_u${from.id}` }]);
+          } else if (!isOwned) {
+            keyboard.push([{ text: `${prefix.emoji} Купить ${prefix.name} (${(prefix.price / 1000000).toFixed(1)}M)`, callback_data: `buy_prefix_${prefix.name}_u${from.id}` }]);
+          }
+        });
+        
+        keyboard.push([{ text: '⬅️ Назад в профиль', callback_data: 'profile' }]);
+
+        await editMessage(chatId, message!.message_id, shopText, {
+          inline_keyboard: keyboard
         });
       } else if (data.startsWith('buy_prefix_')) {
         const prefixName = data.split('_u')[0].replace('buy_prefix_', '');
@@ -593,7 +679,7 @@ serve(async (req) => {
 
         const { data: player } = await supabaseClient
           .from('squid_players')
-          .select('id, balance, prefix')
+          .select('id, balance, prefix, owned_prefixes')
           .eq('telegram_id', from.id)
           .single();
 
@@ -602,7 +688,9 @@ serve(async (req) => {
           return new Response('OK', { headers: corsHeaders });
         }
 
-        if (player?.prefix === prefixName) {
+        const ownedPrefixes = player?.owned_prefixes || [];
+        
+        if (ownedPrefixes.includes(prefixName)) {
           await answerCallbackQuery(callbackId, 'У тебя уже есть этот префикс!');
           return new Response('OK', { headers: corsHeaders });
         }
@@ -610,31 +698,58 @@ serve(async (req) => {
         await supabaseClient.from('squid_players')
           .update({ 
             balance: (player?.balance || 0) - price,
-            prefix: prefixName
+            prefix: prefixName,
+            owned_prefixes: [...ownedPrefixes, prefixName]
           })
           .eq('id', player.id);
 
-        await answerCallbackQuery(callbackId, `✅ Префикс ${prefixName} куплен!`);
+        await answerCallbackQuery(callbackId, `✅ Префикс ${prefixName} куплен и активирован!`);
         
-        // Refresh profile
+        // Refresh shop
         const { data: updatedPlayer } = await supabaseClient
           .from('squid_players')
-          .select('*')
+          .select('balance, prefix, owned_prefixes')
           .eq('telegram_id', from.id)
           .single();
 
-        const prefixText = updatedPlayer?.prefix ? `${updatedPlayer.prefix}` : 'Нет префикса';
+        const prefixes = [
+          { name: 'absolute', price: 2000000, emoji: '👑' },
+          { name: 'emperror', price: 3000000, emoji: '⚔️' }
+        ];
+
+        const updatedOwnedPrefixes = updatedPlayer?.owned_prefixes || [];
         
-        await editMessage(chatId, message!.message_id, 
-          `👤 <b>Твой профиль</b>\n\n💰 Баланс: ${updatedPlayer?.balance || 0} монет\n🏆 Побед: ${updatedPlayer?.total_wins || 0}\n💀 Поражений: ${updatedPlayer?.total_losses || 0}\n✨ Префикс: ${prefixText}`,
-          { 
-            inline_keyboard: [
-              [{ text: '🛍️ Магазин префиксов', callback_data: `shop_prefixes_u${from.id}` }],
-              updatedPlayer?.prefix ? [{ text: '❌ Убрать префикс', callback_data: `remove_prefix_u${from.id}` }] : [],
-              [{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]
-            ].filter(row => row.length > 0)
+        let shopText = '🛍️ <b>Магазин префиксов</b>\n\n💰 Твой баланс: ' + (updatedPlayer?.balance || 0) + ' монет\n\n';
+        
+        prefixes.forEach(prefix => {
+          const isOwned = updatedOwnedPrefixes.includes(prefix.name);
+          const isActive = updatedPlayer?.prefix === prefix.name;
+          
+          if (isOwned) {
+            shopText += `${prefix.emoji} <b>${prefix.name}</b> - ${isActive ? '✅ Активен' : '✅ Куплен'}\n`;
+          } else {
+            shopText += `${prefix.emoji} <b>${prefix.name}</b> - ${prefix.price.toLocaleString()} монет\n`;
           }
-        );
+        });
+
+        const keyboard = [];
+        
+        prefixes.forEach(prefix => {
+          const isOwned = updatedOwnedPrefixes.includes(prefix.name);
+          const isActive = updatedPlayer?.prefix === prefix.name;
+          
+          if (isOwned && !isActive) {
+            keyboard.push([{ text: `${prefix.emoji} Включить ${prefix.name}`, callback_data: `activate_prefix_${prefix.name}_u${from.id}` }]);
+          } else if (!isOwned) {
+            keyboard.push([{ text: `${prefix.emoji} Купить ${prefix.name} (${(prefix.price / 1000000).toFixed(1)}M)`, callback_data: `buy_prefix_${prefix.name}_u${from.id}` }]);
+          }
+        });
+        
+        keyboard.push([{ text: '⬅️ Назад в профиль', callback_data: 'profile' }]);
+
+        await editMessage(chatId, message!.message_id, shopText, {
+          inline_keyboard: keyboard
+        });
       } else if (data.startsWith('remove_prefix_u')) {
         const { data: player } = await supabaseClient
           .from('squid_players')
