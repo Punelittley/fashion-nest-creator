@@ -55,6 +55,38 @@ async function sendMessage(chatId: number, text: string, replyMarkup?: any) {
   }
 }
 
+async function editMessage(chatId: number, messageId: number, text: string, replyMarkup?: any) {
+  const body: any = { chat_id: chatId, message_id: messageId, text, parse_mode: 'HTML' };
+  if (replyMarkup) body.reply_markup = replyMarkup;
+  
+  try {
+    const response = await fetch(`${TELEGRAM_API}/editMessageText`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    
+    const result = await response.json();
+    
+    // Handle rate limit errors
+    if (!result.ok && result.error_code === 429) {
+      const retryAfter = result.parameters?.retry_after || 1;
+      console.log(`Rate limited, waiting ${retryAfter} seconds...`);
+      await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+      // Retry the request
+      return await fetch(`${TELEGRAM_API}/editMessageText`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Error editing message:', error);
+  }
+}
+
 async function answerCallbackQuery(callbackQueryId: string, text?: string) {
   await fetch(`${TELEGRAM_API}/answerCallbackQuery`, {
     method: 'POST',
@@ -105,7 +137,7 @@ serve(async (req) => {
       await answerCallbackQuery(callbackId);
 
       if (data === 'play_dalgona') {
-        await sendMessage(chatId, '🍬 <b>Игра Dalgona</b>\n\nВыбери форму, которую нужно вырезать:', {
+        await editMessage(chatId, message!.message_id, '🍬 <b>Игра Dalgona</b>\n\nВыбери форму, которую нужно вырезать:', {
           inline_keyboard: [
             [{ text: '⭐ Звезда', callback_data: 'dalgona_select_star' }],
             [{ text: '☂️ Зонтик', callback_data: 'dalgona_select_umbrella' }],
@@ -451,7 +483,7 @@ serve(async (req) => {
           .eq('telegram_id', from.id)
           .single();
 
-        await sendMessage(chatId, `🦑 <b>Добро пожаловать в Squid Game Bot!</b>\n\n💰 Твой баланс: ${player?.balance || 0} монет\n\nВыбери игру:`, {
+        await editMessage(chatId, message!.message_id, `🦑 <b>Добро пожаловать в Squid Game Bot!</b>\n\n💰 Твой баланс: ${player?.balance || 0} монет\n\nВыбери игру:`, {
           inline_keyboard: [
             [{ text: '🍬 Dalgona Challenge', callback_data: 'play_dalgona' }],
             [{ text: '🌉 Стеклянный мост', callback_data: 'play_glass_bridge' }],
@@ -466,10 +498,57 @@ serve(async (req) => {
           .eq('telegram_id', from.id)
           .single();
 
-        await sendMessage(chatId, 
+        await editMessage(chatId, message!.message_id, 
           `👤 <b>Твой профиль</b>\n\n💰 Баланс: ${player?.balance || 0} монет\n🏆 Побед: ${player?.total_wins || 0}\n💀 Поражений: ${player?.total_losses || 0}`,
           { inline_keyboard: [[{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]] }
         );
+      } else if (data.startsWith('view_profile_')) {
+        const targetId = parseInt(data.replace('view_profile_', ''));
+        
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('*')
+          .eq('telegram_id', targetId)
+          .single();
+
+        if (!player) {
+          await answerCallbackQuery(callbackId, '❌ Игрок не найден');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        await editMessage(chatId, message!.message_id, 
+          `👤 <b>Профиль игрока</b>\n\n👤 Имя: ${player.first_name || 'Неизвестно'}\n🆔 ID: ${player.telegram_id}\n💰 Баланс: ${player.balance || 0} монет\n🏆 Побед: ${player.total_wins || 0}\n💀 Поражений: ${player.total_losses || 0}`,
+          { inline_keyboard: [[{ text: '⬅️ Назад к топу', callback_data: 'show_top' }]] }
+        );
+      } else if (data === 'show_top') {
+        const { data: topPlayers } = await supabaseClient
+          .from('squid_players')
+          .select('*')
+          .order('balance', { ascending: false })
+          .limit(10);
+
+        if (!topPlayers || topPlayers.length === 0) {
+          await editMessage(chatId, message!.message_id, '❌ Топ игроков пуст', {
+            inline_keyboard: [[{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]]
+          });
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        let topText = '🏆 <b>Топ 10 богатых игроков</b>\n\n';
+        const buttons: any[] = [];
+        
+        topPlayers.forEach((player, index) => {
+          const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
+          topText += `${medal} ${player.first_name || 'Неизвестно'} - ${player.balance} монет\n`;
+          buttons.push([{ 
+            text: `${medal} ${player.first_name || 'Игрок'} (${player.balance} монет)`, 
+            callback_data: `view_profile_${player.telegram_id}` 
+          }]);
+        });
+
+        buttons.push([{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]);
+
+        await editMessage(chatId, message!.message_id, topText, { inline_keyboard: buttons });
       } else if (data === 'play_casino') {
         await sendMessage(chatId, '🎰 <b>Казино</b>\n\nВыбери игру:', {
           inline_keyboard: [
@@ -480,7 +559,7 @@ serve(async (req) => {
           ]
         });
       } else if (data.startsWith('casino_roulette_u')) {
-        await sendMessage(chatId, '🎡 <b>Рулетка</b>\n\nВыбери ставку (100-10000 монет) и цвет:', {
+        await editMessage(chatId, message!.message_id, '🎡 <b>Рулетка</b>\n\nВыбери ставку (100-10000 монет) и цвет:', {
           inline_keyboard: [
             [{ text: '🔴 Красное (x2)', callback_data: `roulette_bet_red_u${from.id}` }],
             [{ text: '⚫ Черное (x2)', callback_data: `roulette_bet_black_u${from.id}` }],
@@ -491,7 +570,7 @@ serve(async (req) => {
       } else if (data.startsWith('roulette_bet_')) {
         const color = data.includes('red') ? 'red' : data.includes('black') ? 'black' : 'green';
         
-        await sendMessage(chatId, `Выбран цвет: ${color === 'red' ? '🔴 Красное' : color === 'black' ? '⚫ Черное' : '🟢 Зеленое'}\n\nВыбери размер ставки:`, {
+        await editMessage(chatId, message!.message_id, `Выбран цвет: ${color === 'red' ? '🔴 Красное' : color === 'black' ? '⚫ Черное' : '🟢 Зеленое'}\n\nВыбери размер ставки:`, {
           inline_keyboard: [
             [{ text: '100 монет', callback_data: `roulette_play_${color}_100_u${from.id}` }],
             [{ text: '500 монет', callback_data: `roulette_play_${color}_500_u${from.id}` }],
@@ -561,20 +640,20 @@ serve(async (req) => {
           ? `🎉 <b>ВЫИГРЫШ!</b>\n\nРезультат: ${resultEmoji} ${resultColor}\n💰 Выигрыш: ${profit} монет\n💵 Новый баланс: ${player.balance - betAmount + winAmount} монет`
           : `😔 Проигрыш\n\nРезультат: ${resultEmoji} ${resultColor}\n💸 Потеря: ${betAmount} монет\n💵 Новый баланс: ${player.balance - betAmount} монет`;
 
-        await sendMessage(chatId, resultText, {
+        await editMessage(chatId, message!.message_id, resultText, {
           inline_keyboard: [
             [{ text: '🎡 Играть еще', callback_data: `casino_roulette_u${from.id}` }],
-            [{ text: '⬅️ Казино', callback_data: 'play_casino' }]
+            [{ text: '⬅️ Назад', callback_data: 'main_menu' }]
           ]
         });
       } else if (data.startsWith('casino_slots_u')) {
-        await sendMessage(chatId, '🎰 <b>Слоты</b>\n\nВыбери размер ставки:', {
+        await editMessage(chatId, message!.message_id, '🎰 <b>Слоты</b>\n\nВыбери размер ставки:', {
           inline_keyboard: [
             [{ text: '100 монет', callback_data: `slots_play_100_u${from.id}` }],
             [{ text: '500 монет', callback_data: `slots_play_500_u${from.id}` }],
             [{ text: '1000 монет', callback_data: `slots_play_1000_u${from.id}` }],
             [{ text: '5000 монет', callback_data: `slots_play_5000_u${from.id}` }],
-            [{ text: '⬅️ Назад', callback_data: 'play_casino' }]
+            [{ text: '⬅️ Назад', callback_data: 'main_menu' }]
           ]
         });
       } else if (data.startsWith('slots_play_')) {
@@ -647,20 +726,20 @@ serve(async (req) => {
           ? `🎰 ${reel1} ${reel2} ${reel3}\n\n🎉 <b>ВЫИГРЫШ!</b>\n💰 Выигрыш: ${profit} монет (x${winMultiplier})\n💵 Новый баланс: ${player.balance - betAmount + winAmount} монет`
           : `🎰 ${reel1} ${reel2} ${reel3}\n\n😔 Проигрыш\n💸 Потеря: ${betAmount} монет\n💵 Новый баланс: ${player.balance - betAmount} монет`;
 
-        await sendMessage(chatId, resultText, {
+        await editMessage(chatId, message!.message_id, resultText, {
           inline_keyboard: [
             [{ text: '🎰 Играть еще', callback_data: `casino_slots_u${from.id}` }],
-            [{ text: '⬅️ Казино', callback_data: 'play_casino' }]
+            [{ text: '⬅️ Назад', callback_data: 'main_menu' }]
           ]
         });
       } else if (data.startsWith('casino_crash_u')) {
-        await sendMessage(chatId, '📈 <b>Краш</b>\n\nВыбери размер ставки:', {
+        await editMessage(chatId, message!.message_id, '📈 <b>Краш</b>\n\nВыбери размер ставки:', {
           inline_keyboard: [
             [{ text: '100 монет', callback_data: `crash_start_100_u${from.id}` }],
             [{ text: '500 монет', callback_data: `crash_start_500_u${from.id}` }],
             [{ text: '1000 монет', callback_data: `crash_start_1000_u${from.id}` }],
             [{ text: '5000 монет', callback_data: `crash_start_5000_u${from.id}` }],
-            [{ text: '⬅️ Назад', callback_data: 'play_casino' }]
+            [{ text: '⬅️ Назад', callback_data: 'main_menu' }]
           ]
         });
       } else if (data.startsWith('crash_start_')) {
@@ -756,10 +835,10 @@ serve(async (req) => {
             result: { crashPoint, cashoutAt: cashoutMultiplier, won: true }
           });
 
-          await sendMessage(chatId, `🎉 <b>УСПЕХ!</b>\n\n📈 Вышел на x${cashoutMultiplier.toFixed(2)}\n💥 Крашпоинт был x${crashPoint.toFixed(2)}\n\n💰 Выигрыш: ${profit} монет\n💵 Новый баланс: ${(player?.balance || 0) + winAmount} монет`, {
+          await editMessage(chatId, message!.message_id, `🎉 <b>УСПЕХ!</b>\n\n📈 Вышел на x${cashoutMultiplier.toFixed(2)}\n💥 Крашпоинт был x${crashPoint.toFixed(2)}\n\n💰 Выигрыш: ${profit} монет\n💵 Новый баланс: ${(player?.balance || 0) + winAmount} монет`, {
             inline_keyboard: [
               [{ text: '📈 Играть еще', callback_data: `casino_crash_u${from.id}` }],
-              [{ text: '⬅️ Казино', callback_data: 'play_casino' }]
+              [{ text: '⬅️ Назад', callback_data: 'main_menu' }]
             ]
           });
         } else {
@@ -772,10 +851,10 @@ serve(async (req) => {
             result: { crashPoint, cashoutAt: cashoutMultiplier, won: false }
           });
 
-          await sendMessage(chatId, `💥 <b>КРАШ!</b>\n\n📈 Краш на x${crashPoint.toFixed(2)}\n❌ Не успел забрать на x${cashoutMultiplier.toFixed(2)}\n\n💸 Потеря: ${session.bet_amount} монет\n💵 Новый баланс: ${player?.balance || 0} монет`, {
+          await editMessage(chatId, message!.message_id, `💥 <b>КРАШ!</b>\n\n📈 Краш на x${crashPoint.toFixed(2)}\n❌ Не успел забрать на x${cashoutMultiplier.toFixed(2)}\n\n💸 Потеря: ${session.bet_amount} монет\n💵 Новый баланс: ${player?.balance || 0} монет`, {
             inline_keyboard: [
               [{ text: '📈 Играть еще', callback_data: `casino_crash_u${from.id}` }],
-              [{ text: '⬅️ Казино', callback_data: 'play_casino' }]
+              [{ text: '⬅️ Назад', callback_data: 'main_menu' }]
             ]
           });
         }
@@ -807,17 +886,90 @@ serve(async (req) => {
           .single();
 
         await sendMessage(chat.id, 
-          `🦑 <b>Добро пожаловать в Squid Game Bot!</b>\n\n💰 Твой баланс: ${player?.balance || 0} монет\n🆔 Твой ID: ${player?.telegram_id}\n\n<b>📋 Команды:</b>\n/help - список всех команд\n/daily - ежедневный бонус\n/promo [код] - активировать промокод\n/pay [ID] [сумма] - перевести монеты\n\nВыбери игру:`,
+          `🦑 <b>Добро пожаловать в Squid Game Bot!</b>\n\n💰 Твой баланс: ${player?.balance || 0} монет\n🆔 Твой ID: ${player?.telegram_id}\n\n<b>📋 Команды:</b>\n/help - список всех команд\n/top - топ богатых игроков\n/daily - ежедневный бонус\n/promo [код] - активировать промокод\n/pay [ID] [сумма] - перевести монеты\n\nВыбери игру:`,
           {
             inline_keyboard: [
               [{ text: '🍬 Dalgona Challenge', callback_data: 'play_dalgona' }],
               [{ text: '🌉 Стеклянный мост', callback_data: 'play_glass_bridge' }],
               [{ text: '🦑 Игра в Кальмара (PvP)', callback_data: 'play_squid_pvp' }],
-              [{ text: '🎰 Казино', callback_data: 'play_casino' }],
               [{ text: '👤 Мой профиль', callback_data: 'profile' }]
             ]
           }
         );
+      } else if (text === '/top') {
+        const { data: topPlayers } = await supabaseClient
+          .from('squid_players')
+          .select('*')
+          .order('balance', { ascending: false })
+          .limit(10);
+
+        if (!topPlayers || topPlayers.length === 0) {
+          await sendMessage(chat.id, '❌ Топ игроков пуст');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        let topText = '🏆 <b>Топ 10 богатых игроков</b>\n\n';
+        const buttons: any[] = [];
+        
+        topPlayers.forEach((player, index) => {
+          const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
+          topText += `${medal} ${player.first_name || 'Неизвестно'} - ${player.balance} монет\n`;
+          buttons.push([{ 
+            text: `${medal} ${player.first_name || 'Игрок'} (${player.balance} монет)`, 
+            callback_data: `view_profile_${player.telegram_id}` 
+          }]);
+        });
+
+        buttons.push([{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]);
+
+        await sendMessage(chat.id, topText, { inline_keyboard: buttons });
+      } else if (text === '/roulette') {
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('balance')
+          .eq('telegram_id', from.id)
+          .single();
+
+        await sendMessage(chat.id, `🎡 <b>Рулетка</b>\n\n💰 Твой баланс: ${player?.balance || 0} монет\n\nВыбери ставку и цвет:`, {
+          inline_keyboard: [
+            [{ text: '🔴 Красное (x2)', callback_data: `roulette_bet_red_u${from.id}` }],
+            [{ text: '⚫ Черное (x2)', callback_data: `roulette_bet_black_u${from.id}` }],
+            [{ text: '🟢 Зеленое (x14)', callback_data: `roulette_bet_green_u${from.id}` }],
+            [{ text: '⬅️ Назад', callback_data: 'main_menu' }]
+          ]
+        });
+      } else if (text === '/slots') {
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('balance')
+          .eq('telegram_id', from.id)
+          .single();
+
+        await sendMessage(chat.id, `🎰 <b>Слоты</b>\n\n💰 Твой баланс: ${player?.balance || 0} монет\n\nВыбери размер ставки:`, {
+          inline_keyboard: [
+            [{ text: '100 монет', callback_data: `slots_play_100_u${from.id}` }],
+            [{ text: '500 монет', callback_data: `slots_play_500_u${from.id}` }],
+            [{ text: '1000 монет', callback_data: `slots_play_1000_u${from.id}` }],
+            [{ text: '5000 монет', callback_data: `slots_play_5000_u${from.id}` }],
+            [{ text: '⬅️ Назад', callback_data: 'main_menu' }]
+          ]
+        });
+      } else if (text === '/crash') {
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('balance')
+          .eq('telegram_id', from.id)
+          .single();
+
+        await sendMessage(chat.id, `📈 <b>Краш</b>\n\n💰 Твой баланс: ${player?.balance || 0} монет\n\nВыбери размер ставки:`, {
+          inline_keyboard: [
+            [{ text: '100 монет', callback_data: `crash_start_100_u${from.id}` }],
+            [{ text: '500 монет', callback_data: `crash_start_500_u${from.id}` }],
+            [{ text: '1000 монет', callback_data: `crash_start_1000_u${from.id}` }],
+            [{ text: '5000 монет', callback_data: `crash_start_5000_u${from.id}` }],
+            [{ text: '⬅️ Назад', callback_data: 'main_menu' }]
+          ]
+        });
       } else if (text === '/daily') {
         const { data: player } = await supabaseClient
           .from('squid_players')
@@ -937,11 +1089,12 @@ serve(async (req) => {
 /challenge [ID] [ставка] - Вызвать игрока на PvP
 
 <b>🎰 Казино:</b>
-🎡 Рулетка - красное/черное (x2), зеленое (x14)
-🎰 Слоты - совпадения символов (до x100)
-📈 Краш - выйди до краша (до x100)
+/roulette - Рулетка (красное/черное x2, зеленое x14)
+/slots - Слоты (совпадения символов до x100)
+/crash - Краш (выйди до краша до x100)
 
 <b>💰 Экономика:</b>
+/top - Топ 10 богатых игроков
 /daily - Ежедневный бонус 1200 монет (раз в 24 часа)
 /promo [код] - Ввести промокод
 /pay [ID] [сумма] - Перевести монеты игроку
