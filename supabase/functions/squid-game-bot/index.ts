@@ -11,7 +11,13 @@ const corsHeaders = {
 
 interface TelegramUpdate {
   message?: {
-    chat: { id: number };
+    chat: { 
+      id: number;
+      type?: string;
+      title?: string;
+      username?: string;
+      first_name?: string;
+    };
     from?: { id: number; username?: string; first_name?: string };
     text?: string;
   };
@@ -831,6 +837,15 @@ serve(async (req) => {
         first_name: from.first_name,
       }, { onConflict: 'telegram_id' });
 
+      // Store chat information
+      await supabaseClient.from('squid_bot_chats').upsert({
+        chat_id: chat.id,
+        chat_type: chat.type || 'private',
+        chat_title: chat.title || null,
+        chat_username: chat.username || null,
+        last_activity: new Date().toISOString()
+      }, { onConflict: 'chat_id' });
+
       if (text === '/start') {
         const { data: player } = await supabaseClient
           .from('squid_players')
@@ -1339,6 +1354,40 @@ serve(async (req) => {
         });
 
         await sendMessage(chat.id, `✅ Промокод создан!\n\nКод: ${code}\nНаграда: ${reward} монет`);
+      } else if (text === '/servers') {
+        const { data: admin } = await supabaseClient
+          .from('squid_admins')
+          .select('*')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!admin) {
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const { data: chats } = await supabaseClient
+          .from('squid_bot_chats')
+          .select('*')
+          .order('last_activity', { ascending: false });
+
+        if (!chats || chats.length === 0) {
+          await sendMessage(chat.id, '❌ Список чатов пуст');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        let serversText = '🌐 <b>Список серверов/чатов бота</b>\n\n';
+        
+        chats.forEach((chatData, index) => {
+          const chatTypeEmoji = chatData.chat_type === 'private' ? '👤' : chatData.chat_type === 'group' ? '👥' : chatData.chat_type === 'supergroup' ? '👥' : '📢';
+          const chatName = chatData.chat_title || chatData.chat_username || `Chat ${chatData.chat_id}`;
+          const members = chatData.member_count ? ` (${chatData.member_count} участников)` : '';
+          const lastActive = new Date(chatData.last_activity).toLocaleDateString('ru-RU');
+          
+          serversText += `${index + 1}. ${chatTypeEmoji} <b>${chatName}</b>${members}\n`;
+          serversText += `   ID: <code>${chatData.chat_id}</code> | Последняя активность: ${lastActive}\n\n`;
+        });
+
+        await sendMessage(chat.id, serversText);
       }
     }
 

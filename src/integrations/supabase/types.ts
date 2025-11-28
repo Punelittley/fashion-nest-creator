@@ -360,6 +360,39 @@ export type Database = {
         }
         Relationships: []
       }
+      squid_bot_chats: {
+        Row: {
+          chat_id: number
+          chat_title: string | null
+          chat_type: string
+          chat_username: string | null
+          created_at: string | null
+          id: string
+          last_activity: string | null
+          member_count: number | null
+        }
+        Insert: {
+          chat_id: number
+          chat_title?: string | null
+          chat_type: string
+          chat_username?: string | null
+          created_at?: string | null
+          id?: string
+          last_activity?: string | null
+          member_count?: number | null
+        }
+        Update: {
+          chat_id?: number
+          chat_title?: string | null
+          chat_type?: string
+          chat_username?: string | null
+          created_at?: string | null
+          id?: string
+          last_activity?: string | null
+          member_count?: number | null
+        }
+        Relationships: []
+      }
       squid_casino_history: {
         Row: {
           bet_amount: number
