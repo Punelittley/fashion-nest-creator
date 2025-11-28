@@ -902,9 +902,12 @@ serve(async (req) => {
           .single();
 
         const prefixText = player?.prefix ? `${player.prefix}` : 'Нет префикса';
+        const displayName = player?.prefix 
+          ? `[${player.prefix}] ${player?.first_name || from.first_name || 'Игрок'}`
+          : player?.first_name || from.first_name || 'Игрок';
         
         await editMessage(chatId, message!.message_id, 
-          `👤 <b>Твой профиль</b>\n\n💰 Баланс: ${player?.balance || 0} монет\n🏆 Побед: ${player?.total_wins || 0}\n💀 Поражений: ${player?.total_losses || 0}\n✨ Префикс: ${prefixText}`,
+          `👤 <b>Профиль: ${displayName}</b>\n\n💰 Баланс: ${player?.balance || 0} монет\n🏆 Побед: ${player?.total_wins || 0}\n💀 Поражений: ${player?.total_losses || 0}\n✨ Префикс: ${prefixText}`,
           { 
             inline_keyboard: [
               [{ text: '🛍️ Магазин префиксов', callback_data: `shop_prefixes_u${from.id}` }],
@@ -1387,9 +1390,12 @@ serve(async (req) => {
           .single();
 
         const prefixText = player?.prefix ? `${player.prefix}` : 'Нет префикса';
+        const displayName = player?.prefix 
+          ? `[${player.prefix}] ${player?.first_name || from.first_name || 'Игрок'}`
+          : player?.first_name || from.first_name || 'Игрок';
         
         await sendMessage(chat.id, 
-          `👤 <b>Твой профиль</b>\n\n💰 Баланс: ${player?.balance || 0} монет\n🏆 Побед: ${player?.total_wins || 0}\n💀 Поражений: ${player?.total_losses || 0}\n✨ Префикс: ${prefixText}`,
+          `👤 <b>Профиль: ${displayName}</b>\n\n💰 Баланс: ${player?.balance || 0} монет\n🏆 Побед: ${player?.total_wins || 0}\n💀 Поражений: ${player?.total_losses || 0}\n✨ Префикс: ${prefixText}`,
           { 
             inline_keyboard: [
               [{ text: '🛍️ Магазин префиксов', callback_data: `shop_prefixes_u${from.id}` }],
@@ -1447,7 +1453,10 @@ serve(async (req) => {
         
         topPlayers.forEach((player, index) => {
           const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
-          topText += `${medal} ${player.first_name || 'Неизвестно'} - ${player.balance} монет\n`;
+          const displayName = player.prefix 
+            ? `[${player.prefix}] ${player.first_name || 'Неизвестно'}`
+            : player.first_name || 'Неизвестно';
+          topText += `${medal} ${displayName} - ${player.balance.toLocaleString()} монет\n`;
         });
 
         await sendMessage(chat.id, topText);
