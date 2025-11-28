@@ -502,53 +502,6 @@ serve(async (req) => {
           `👤 <b>Твой профиль</b>\n\n💰 Баланс: ${player?.balance || 0} монет\n🏆 Побед: ${player?.total_wins || 0}\n💀 Поражений: ${player?.total_losses || 0}`,
           { inline_keyboard: [[{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]] }
         );
-      } else if (data.startsWith('view_profile_')) {
-        const targetId = parseInt(data.replace('view_profile_', ''));
-        
-        const { data: player } = await supabaseClient
-          .from('squid_players')
-          .select('*')
-          .eq('telegram_id', targetId)
-          .single();
-
-        if (!player) {
-          await answerCallbackQuery(callbackId, '❌ Игрок не найден');
-          return new Response('OK', { headers: corsHeaders });
-        }
-
-        await editMessage(chatId, message!.message_id, 
-          `👤 <b>Профиль игрока</b>\n\n👤 Имя: ${player.first_name || 'Неизвестно'}\n🆔 ID: ${player.telegram_id}\n💰 Баланс: ${player.balance || 0} монет\n🏆 Побед: ${player.total_wins || 0}\n💀 Поражений: ${player.total_losses || 0}`,
-          { inline_keyboard: [[{ text: '⬅️ Назад к топу', callback_data: 'show_top' }]] }
-        );
-      } else if (data === 'show_top') {
-        const { data: topPlayers } = await supabaseClient
-          .from('squid_players')
-          .select('*')
-          .order('balance', { ascending: false })
-          .limit(10);
-
-        if (!topPlayers || topPlayers.length === 0) {
-          await editMessage(chatId, message!.message_id, '❌ Топ игроков пуст', {
-            inline_keyboard: [[{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]]
-          });
-          return new Response('OK', { headers: corsHeaders });
-        }
-
-        let topText = '🏆 <b>Топ 10 богатых игроков</b>\n\n';
-        const buttons: any[] = [];
-        
-        topPlayers.forEach((player, index) => {
-          const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
-          topText += `${medal} ${player.first_name || 'Неизвестно'} - ${player.balance} монет\n`;
-          buttons.push([{ 
-            text: `${medal} ${player.first_name || 'Игрок'} (${player.balance} монет)`, 
-            callback_data: `view_profile_${player.telegram_id}` 
-          }]);
-        });
-
-        buttons.push([{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]);
-
-        await editMessage(chatId, message!.message_id, topText, { inline_keyboard: buttons });
       } else if (data === 'play_casino') {
         await sendMessage(chatId, '🎰 <b>Казино</b>\n\nВыбери игру:', {
           inline_keyboard: [
@@ -909,20 +862,13 @@ serve(async (req) => {
         }
 
         let topText = '🏆 <b>Топ 10 богатых игроков</b>\n\n';
-        const buttons: any[] = [];
         
         topPlayers.forEach((player, index) => {
           const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
           topText += `${medal} ${player.first_name || 'Неизвестно'} - ${player.balance} монет\n`;
-          buttons.push([{ 
-            text: `${medal} ${player.first_name || 'Игрок'} (${player.balance} монет)`, 
-            callback_data: `view_profile_${player.telegram_id}` 
-          }]);
         });
 
-        buttons.push([{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]);
-
-        await sendMessage(chat.id, topText, { inline_keyboard: buttons });
+        await sendMessage(chat.id, topText);
       } else if (text === '/roulette') {
         const { data: player } = await supabaseClient
           .from('squid_players')
