@@ -126,8 +126,14 @@ serve(async (req) => {
 
       // Check if callback data contains user_id verification
       if (data.includes('_u')) {
-        const userId = parseInt(data.split('_u')[1].split('_')[0]);
+        const parts = data.split('_u');
+        const userIdStr = parts[parts.length - 1].split('_')[0]; // Get last _u occurrence
+        const userId = parseInt(userIdStr);
+        
+        console.log(`Button check: data=${data}, extracted userId=${userId}, from.id=${from.id}`);
+        
         if (userId !== from.id) {
+          console.log(`Access denied: ${userId} !== ${from.id}`);
           await answerCallbackQuery(callbackId, '❌ Это не твоя кнопка!');
           return new Response('OK', { headers: corsHeaders });
         }
