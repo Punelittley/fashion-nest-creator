@@ -798,6 +798,89 @@ serve(async (req) => {
             ].filter(row => row.length > 0)
           }
         );
+      } else if (data.startsWith('admin_set_prefix_absolute_')) {
+        const { data: admin } = await supabaseClient
+          .from('squid_admins')
+          .select('*')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!admin) {
+          await answerCallbackQuery(callbackId, 'Нет доступа');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const targetId = parseInt(data.replace('admin_set_prefix_absolute_', ''));
+        
+        await supabaseClient.from('squid_players')
+          .update({ prefix: 'absolute' })
+          .eq('telegram_id', targetId);
+
+        await answerCallbackQuery(callbackId, '✅ Префикс установлен!');
+        await editMessage(chatId, message!.message_id, `✅ Префикс "absolute" установлен игроку ${targetId}`);
+      } else if (data.startsWith('admin_set_prefix_emperror_')) {
+        const { data: admin } = await supabaseClient
+          .from('squid_admins')
+          .select('*')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!admin) {
+          await answerCallbackQuery(callbackId, 'Нет доступа');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const targetId = parseInt(data.replace('admin_set_prefix_emperror_', ''));
+        
+        await supabaseClient.from('squid_players')
+          .update({ prefix: 'emperror' })
+          .eq('telegram_id', targetId);
+
+        await answerCallbackQuery(callbackId, '✅ Префикс установлен!');
+        await editMessage(chatId, message!.message_id, `✅ Префикс "emperror" установлен игроку ${targetId}`);
+      } else if (data.startsWith('admin_remove_prefix_')) {
+        const { data: admin } = await supabaseClient
+          .from('squid_admins')
+          .select('*')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!admin) {
+          await answerCallbackQuery(callbackId, 'Нет доступа');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const targetId = parseInt(data.replace('admin_remove_prefix_', ''));
+        
+        await supabaseClient.from('squid_players')
+          .update({ prefix: null })
+          .eq('telegram_id', targetId);
+
+        await answerCallbackQuery(callbackId, '✅ Префикс убран!');
+        await editMessage(chatId, message!.message_id, `✅ Префикс убран у игрока ${targetId}`);
+      } else if (data.startsWith('admin_reset_stats_')) {
+        const { data: admin } = await supabaseClient
+          .from('squid_admins')
+          .select('*')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!admin) {
+          await answerCallbackQuery(callbackId, 'Нет доступа');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const targetId = parseInt(data.replace('admin_reset_stats_', ''));
+        
+        await supabaseClient.from('squid_players')
+          .update({ 
+            total_wins: 0,
+            total_losses: 0
+          })
+          .eq('telegram_id', targetId);
+
+        await answerCallbackQuery(callbackId, '✅ Статистика обнулена!');
+        await editMessage(chatId, message!.message_id, `✅ Статистика обнулена у игрока ${targetId}`);
       } else if (data === 'play_casino') {
         await sendMessage(chatId, '🎰 <b>Казино</b>\n\nВыбери игру:', {
           inline_keyboard: [
@@ -1181,6 +1264,58 @@ serve(async (req) => {
         await sendMessage(chat.id, 
           `📋 <b>Список команд Squid Game Bot</b>\n\n<b>🎮 Основные:</b>\n/start - главное меню\n/top - топ 10 богатых игроков\n/daily - ежедневный бонус (1200 монет)\n/promo [код] - активировать промокод\n/pay [ID] [сумма] - перевести монеты\n/si - поиск предметов (раз в час)\n/items - показать инвентарь\n/sell [номер] - продать предмет\n\n<b>🎲 Казино:</b>\n/roulette [цвет] [ставка] - рулетка\n  Цвета: red/красное (x2), black/черное (x2), green/зеленое (x14)\n/slots - игровые автоматы\n/crash - краш игра\n\n<b>⚔️ PvP:</b>\n/challenge [ID] [ставка] - вызвать на дуэль\n/attack - атаковать\n/defend - защищаться`
         );
+      } else if (text === '/profile') {
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('*')
+          .eq('telegram_id', from.id)
+          .single();
+
+        const prefixText = player?.prefix ? `${player.prefix}` : 'Нет префикса';
+        
+        await sendMessage(chat.id, 
+          `👤 <b>Твой профиль</b>\n\n💰 Баланс: ${player?.balance || 0} монет\n🏆 Побед: ${player?.total_wins || 0}\n💀 Поражений: ${player?.total_losses || 0}\n✨ Префикс: ${prefixText}`,
+          { 
+            inline_keyboard: [
+              [{ text: '🛍️ Магазин префиксов', callback_data: `shop_prefixes_u${from.id}` }],
+              player?.prefix ? [{ text: '❌ Убрать префикс', callback_data: `remove_prefix_u${from.id}` }] : [],
+              [{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]
+            ].filter(row => row.length > 0)
+          }
+        );
+      } else if (text === '/balance') {
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('balance')
+          .eq('telegram_id', from.id)
+          .single();
+
+        await sendMessage(chat.id, `💰 Твой баланс: ${player?.balance || 0} монет`);
+      } else if (text === '/shop') {
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('balance, prefix')
+          .eq('telegram_id', from.id)
+          .single();
+        
+        const prefixes = [
+          { name: 'absolute', price: 2000000, emoji: '👑' },
+          { name: 'emperror', price: 3000000, emoji: '⚔️' }
+        ];
+
+        let shopText = '🛍️ <b>Магазин префиксов</b>\n\n💰 Твой баланс: ' + (player?.balance || 0) + ' монет\n\n';
+        
+        prefixes.forEach(prefix => {
+          const owned = player?.prefix === prefix.name;
+          shopText += `${prefix.emoji} <b>${prefix.name}</b> - ${prefix.price.toLocaleString()} монет ${owned ? '✅ Куплен' : ''}\n`;
+        });
+
+        await sendMessage(chat.id, shopText, {
+          inline_keyboard: [
+            [{ text: '👑 Купить absolute (2,000,000)', callback_data: `buy_prefix_absolute_u${from.id}` }],
+            [{ text: '⚔️ Купить emperror (3,000,000)', callback_data: `buy_prefix_emperror_u${from.id}` }]
+          ]
+        });
       } else if (text === '/top') {
         const { data: topPlayers } = await supabaseClient
           .from('squid_players')
@@ -1778,6 +1913,53 @@ serve(async (req) => {
           .eq('id', target.id);
 
         await sendMessage(chat.id, `✅ Баланс игрока ${target.first_name} изменён с ${target.balance} на ${newBalance} монет`);
+      } else if (text.startsWith('/admin_edit ')) {
+        const { data: admin } = await supabaseClient
+          .from('squid_admins')
+          .select('*')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!admin) {
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const args = text.split(' ');
+        if (args.length !== 2) {
+          await sendMessage(chat.id, '❌ Формат: /admin_edit [ID]');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const targetId = parseInt(args[1]);
+        if (isNaN(targetId)) {
+          await sendMessage(chat.id, '❌ ID должен быть числом!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const { data: target } = await supabaseClient
+          .from('squid_players')
+          .select('*')
+          .eq('telegram_id', targetId)
+          .single();
+
+        if (!target) {
+          await sendMessage(chat.id, '❌ Игрок не найден!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const prefixText = target.prefix ? target.prefix : 'нет';
+        
+        await sendMessage(chat.id, 
+          `⚙️ <b>Редактирование игрока ${targetId}</b>\n\n💰 Баланс: ${target.balance} монет\n✨ Префикс: ${prefixText}\n🏆 Побед: ${target.total_wins}\n💀 Поражений: ${target.total_losses}`,
+          {
+            inline_keyboard: [
+              [{ text: '✨ Дать префикс absolute', callback_data: `admin_set_prefix_absolute_${targetId}` }],
+              [{ text: '✨ Дать префикс emperror', callback_data: `admin_set_prefix_emperror_${targetId}` }],
+              [{ text: '❌ Убрать префикс', callback_data: `admin_remove_prefix_${targetId}` }],
+              [{ text: '🔄 Обнулить статистику', callback_data: `admin_reset_stats_${targetId}` }]
+            ]
+          }
+        );
       } else if (text === '/si') {
         const { data: player } = await supabaseClient
           .from('squid_players')
