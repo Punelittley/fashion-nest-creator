@@ -1506,7 +1506,7 @@ serve(async (req) => {
           .update({ balance: player.balance - betAmount })
           .eq('id', player.id);
 
-        // Spin roulette (18 red, 18 black, 1 green)
+        // Spin roulette with weighted probabilities
         let resultColor: string;
         let winMultiplier = 0;
 
@@ -1517,9 +1517,10 @@ serve(async (req) => {
         } else {
           const result = Math.random();
           
-          if (result < 18/37) {
+          // Red: 45%, Black: 45%, Green: 10%
+          if (result < 0.45) {
             resultColor = 'red';
-          } else if (result < 36/37) {
+          } else if (result < 0.90) {
             resultColor = 'black';
           } else {
             resultColor = 'green';
