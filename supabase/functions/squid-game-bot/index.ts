@@ -360,7 +360,7 @@ serve(async (req) => {
           inline_keyboard: [[{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]]
         });
       } else if (data.startsWith('accept_challenge_')) {
-        const sessionId = data.replace('accept_challenge_', '');
+        const sessionId = data.split('_u')[0].replace('accept_challenge_', '');
         
         const { data: playerData } = await supabaseClient
           .from('squid_players')
@@ -1243,7 +1243,7 @@ serve(async (req) => {
 
         await sendMessage(chat.id, `⚔️ Вызов отправлен!\n\nСтавка: ${betAmount} монет\nОжидаем ответ...`);
         await sendMessage(opponentId, `⚔️ ${player.first_name} вызывает тебя!\n\nСтавка: ${betAmount} монет`, {
-          inline_keyboard: [[{ text: '✅ Принять', callback_data: `accept_challenge_${session.id}` }]]
+          inline_keyboard: [[{ text: '✅ Принять', callback_data: `accept_challenge_${session.id}_u${opponentId}` }]]
         });
       } else if (text === '/attack' || text === '/defend') {
         const action = text === '/attack' ? 'attack' : 'defend';
