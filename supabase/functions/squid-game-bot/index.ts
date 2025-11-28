@@ -359,12 +359,34 @@ serve(async (req) => {
         await sendMessage(chatId, `🦑 <b>Игра в Кальмара (PvP)</b>\n\nЧтобы пригласить игрока, отправь:\n<code>/challenge [Telegram_ID] [ставка]</code>\n\nНапример:\n<code>/challenge 123456789 100</code>\n\nИли жди приглашения от других игроков!`, {
           inline_keyboard: [[{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]]
         });
+      } else if (data.startsWith('decline_challenge_')) {
+        const sessionId = data.split('_u')[0].replace('decline_challenge_', '');
+        
+        const { data: session } = await supabaseClient
+          .from('squid_game_sessions')
+          .select('*, player1:squid_players!player1_id(telegram_id, first_name)')
+          .eq('id', sessionId)
+          .eq('status', 'waiting')
+          .single();
+
+        if (!session) {
+          await answerCallbackQuery(callbackId, 'Игра уже началась или отменена');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        await supabaseClient.from('squid_game_sessions')
+          .update({ status: 'cancelled' })
+          .eq('id', sessionId);
+
+        const player1Chat = (session.player1 as any).telegram_id;
+        await sendMessage(player1Chat, `❌ ${from.first_name} отказался от вызова.`);
+        await editMessage(chatId, message.message_id, `❌ Вы отказались от вызова.`);
       } else if (data.startsWith('accept_challenge_')) {
         const sessionId = data.split('_u')[0].replace('accept_challenge_', '');
         
         const { data: playerData } = await supabaseClient
           .from('squid_players')
-          .select('id, balance')
+          .select('id, balance, first_name')
           .eq('telegram_id', from.id)
           .single();
 
@@ -385,15 +407,150 @@ serve(async (req) => {
           return new Response('OK', { headers: corsHeaders });
         }
 
-        // Accept challenge
+        // Deduct bets from both players
+        const { data: player1Data } = await supabaseClient
+          .from('squid_players')
+          .select('balance')
+          .eq('id', session.player1_id)
+          .single();
+
+        await supabaseClient.from('squid_players')
+          .update({ balance: (playerData?.balance || 0) - session.bet_amount })
+          .eq('id', playerData.id);
+
+        await supabaseClient.from('squid_players')
+          .update({ balance: (player1Data?.balance || 0) - session.bet_amount })
+          .eq('id', session.player1_id);
+
+        // Initialize game with 3 lives each
+        const gameData = {
+          player1_hp: 3,
+          player2_hp: 3,
+          player1_name: (session.player1 as any).first_name,
+          player2_name: playerData.first_name
+        };
+
         await supabaseClient.from('squid_game_sessions')
-          .update({ player2_id: playerData?.id, status: 'active' })
+          .update({ 
+            player2_id: playerData?.id, 
+            status: 'active',
+            game_data: gameData
+          })
           .eq('id', sessionId);
 
-        // Notify both players
+        // Send game interface to both players
         const player1Chat = (session.player1 as any).telegram_id;
-        await sendMessage(player1Chat, `⚔️ ${from.first_name} принял вызов!\n\nИгра началась! Отправь /attack или /defend`);
-        await sendMessage(chatId, `⚔️ Ты принял вызов!\n\nСтавка: ${session.bet_amount} монет\nОтправь /attack или /defend`);
+        const battleStatus = `⚔️ <b>БОЙ В КАЛЬМАРА</b>\n\n👤 ${gameData.player1_name}: ❤️❤️❤️\n👤 ${gameData.player2_name}: ❤️❤️❤️\n\n💰 Ставка: ${session.bet_amount} монет`;
+
+        await sendMessage(player1Chat, battleStatus, {
+          inline_keyboard: [[{ text: '🎯 Ударить', callback_data: `pvp_attack_${sessionId}_u${player1Chat}` }]]
+        });
+
+        await editMessage(chatId, message.message_id, battleStatus, {
+          inline_keyboard: [[{ text: '🎯 Ударить', callback_data: `pvp_attack_${sessionId}_u${from.id}` }]]
+        });
+
+        await answerCallbackQuery(callbackId, 'Бой начался! Атакуй первым!');
+      } else if (data.startsWith('pvp_attack_')) {
+        const sessionId = data.split('_u')[0].replace('pvp_attack_', '');
+        
+        const { data: session } = await supabaseClient
+          .from('squid_game_sessions')
+          .select('*, player1:squid_players!player1_id(telegram_id, first_name), player2:squid_players!player2_id(telegram_id, first_name)')
+          .eq('id', sessionId)
+          .eq('status', 'active')
+          .single();
+
+        if (!session) {
+          await answerCallbackQuery(callbackId, 'Игра уже завершена');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const gameData = session.game_data as any;
+        const isPlayer1 = from.id === (session.player1 as any).telegram_id;
+        const player1Chat = (session.player1 as any).telegram_id;
+        const player2Chat = (session.player2 as any).telegram_id;
+
+        // Random hit or miss (60% hit, 40% miss)
+        const isHit = Math.random() < 0.6;
+        
+        if (isHit) {
+          // Reduce opponent's HP
+          if (isPlayer1) {
+            gameData.player2_hp -= 1;
+          } else {
+            gameData.player1_hp -= 1;
+          }
+        }
+
+        const actionText = isHit ? '✅ попал!' : '❌ промазал!';
+        const hearts1 = '❤️'.repeat(Math.max(0, gameData.player1_hp)) + '💔'.repeat(Math.max(0, 3 - gameData.player1_hp));
+        const hearts2 = '❤️'.repeat(Math.max(0, gameData.player2_hp)) + '💔'.repeat(Math.max(0, 3 - gameData.player2_hp));
+
+        // Check if game is over
+        if (gameData.player1_hp <= 0 || gameData.player2_hp <= 0) {
+          const winnerId = gameData.player1_hp > 0 ? session.player1_id : session.player2_id;
+          const winnerChat = gameData.player1_hp > 0 ? player1Chat : player2Chat;
+          const loserChat = gameData.player1_hp > 0 ? player2Chat : player1Chat;
+          const winnerName = gameData.player1_hp > 0 ? gameData.player1_name : gameData.player2_name;
+
+          await supabaseClient.from('squid_game_sessions')
+            .update({ status: 'finished', winner_id: winnerId, finished_at: new Date().toISOString() })
+            .eq('id', sessionId);
+
+          // Winner gets double bet
+          const { data: winner } = await supabaseClient
+            .from('squid_players')
+            .select('balance, total_wins')
+            .eq('id', winnerId)
+            .single();
+
+          await supabaseClient.from('squid_players')
+            .update({ 
+              balance: (winner?.balance || 0) + (session.bet_amount * 2),
+              total_wins: (winner?.total_wins || 0) + 1
+            })
+            .eq('id', winnerId);
+
+          const loserId = winnerId === session.player1_id ? session.player2_id : session.player1_id;
+          const { data: loser } = await supabaseClient
+            .from('squid_players')
+            .select('total_losses')
+            .eq('id', loserId)
+            .single();
+
+          await supabaseClient.from('squid_players')
+            .update({ total_losses: (loser?.total_losses || 0) + 1 })
+            .eq('id', loserId);
+
+          const finalStatus = `⚔️ <b>ИГРА ОКОНЧЕНА!</b>\n\n👤 ${gameData.player1_name}: ${hearts1}\n👤 ${gameData.player2_name}: ${hearts2}\n\n${isPlayer1 ? gameData.player1_name : gameData.player2_name} ${actionText}`;
+
+          await sendMessage(winnerChat, `${finalStatus}\n\n🎉 <b>ПОБЕДА!</b>\n💰 Выигрыш: ${session.bet_amount * 2} монет`, {
+            inline_keyboard: [[{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]]
+          });
+
+          await sendMessage(loserChat, `${finalStatus}\n\n💀 <b>ПОРАЖЕНИЕ</b>\n💸 Потеря: ${session.bet_amount} монет`, {
+            inline_keyboard: [[{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]]
+          });
+        } else {
+          // Game continues
+          await supabaseClient.from('squid_game_sessions')
+            .update({ game_data: gameData })
+            .eq('id', sessionId);
+
+          const battleStatus = `⚔️ <b>БОЙ В КАЛЬМАРА</b>\n\n👤 ${gameData.player1_name}: ${hearts1}\n👤 ${gameData.player2_name}: ${hearts2}\n\n${isPlayer1 ? gameData.player1_name : gameData.player2_name} ${actionText}`;
+
+          // Update both players' messages
+          await sendMessage(player1Chat, battleStatus, {
+            inline_keyboard: [[{ text: '🎯 Ударить', callback_data: `pvp_attack_${sessionId}_u${player1Chat}` }]]
+          });
+
+          await sendMessage(player2Chat, battleStatus, {
+            inline_keyboard: [[{ text: '🎯 Ударить', callback_data: `pvp_attack_${sessionId}_u${player2Chat}` }]]
+          });
+
+          await answerCallbackQuery(callbackId, actionText);
+        }
       } else if (data.startsWith('dalgona_select_')) {
         const shapePart = data.replace('dalgona_select_', '').split('_u')[0];
         
@@ -1243,92 +1400,11 @@ serve(async (req) => {
 
         await sendMessage(chat.id, `⚔️ Вызов отправлен!\n\nСтавка: ${betAmount} монет\nОжидаем ответ...`);
         await sendMessage(opponentId, `⚔️ ${player.first_name} вызывает тебя!\n\nСтавка: ${betAmount} монет`, {
-          inline_keyboard: [[{ text: '✅ Принять', callback_data: `accept_challenge_${session.id}_u${opponentId}` }]]
+          inline_keyboard: [
+            [{ text: '✅ Принять', callback_data: `accept_challenge_${session.id}_u${opponentId}` }],
+            [{ text: '❌ Отказаться', callback_data: `decline_challenge_${session.id}_u${opponentId}` }]
+          ]
         });
-      } else if (text === '/attack' || text === '/defend') {
-        const action = text === '/attack' ? 'attack' : 'defend';
-        
-        const { data: player } = await supabaseClient
-          .from('squid_players')
-          .select('id')
-          .eq('telegram_id', from.id)
-          .single();
-
-        const { data: session } = await supabaseClient
-          .from('squid_game_sessions')
-          .select('*, player1:squid_players!player1_id(telegram_id, first_name), player2:squid_players!player2_id(telegram_id, first_name)')
-          .or(`player1_id.eq.${player?.id},player2_id.eq.${player?.id}`)
-          .eq('game_type', 'squid_pvp')
-          .eq('status', 'active')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-
-        if (!session) {
-          await sendMessage(chat.id, '❌ Активная игра не найдена!');
-          return new Response('OK', { headers: corsHeaders });
-        }
-
-        const gameData = session.game_data as any || {};
-        const isPlayer1 = session.player1_id === player?.id;
-        const playerKey = isPlayer1 ? 'player1Action' : 'player2Action';
-
-        if (gameData[playerKey]) {
-          await sendMessage(chat.id, '⏳ Ты уже сделал ход! Жди соперника...');
-          return new Response('OK', { headers: corsHeaders });
-        }
-
-        gameData[playerKey] = action;
-
-        if (gameData.player1Action && gameData.player2Action) {
-          const p1Action = gameData.player1Action;
-          const p2Action = gameData.player2Action;
-          
-          let winnerId = null;
-          if (p1Action === 'attack' && p2Action === 'defend') {
-            winnerId = session.player2_id;
-          } else if (p1Action === 'defend' && p2Action === 'attack') {
-            winnerId = session.player1_id;
-          } else if (p1Action === 'attack' && p2Action === 'attack') {
-            winnerId = Math.random() < 0.5 ? session.player1_id : session.player2_id;
-          }
-
-          await supabaseClient.from('squid_game_sessions')
-            .update({ status: 'finished', winner_id: winnerId, finished_at: new Date().toISOString() })
-            .eq('id', session.id);
-
-          if (winnerId) {
-            const { data: winner } = await supabaseClient
-              .from('squid_players')
-              .select('balance, total_wins')
-              .eq('id', winnerId)
-              .single();
-
-            await supabaseClient.from('squid_players')
-              .update({ 
-                balance: (winner?.balance || 0) + (session.bet_amount * 2),
-                total_wins: (winner?.total_wins || 0) + 1
-              })
-              .eq('id', winnerId);
-
-            const loserId = winnerId === session.player1_id ? session.player2_id : session.player1_id;
-            await supabaseClient.from('squid_players')
-              .update({ total_losses: (await supabaseClient.from('squid_players').select('total_losses').eq('id', loserId).single()).data?.total_losses + 1 || 1 })
-              .eq('id', loserId);
-
-            const winnerChatId = winnerId === session.player1_id ? (session.player1 as any).telegram_id : (session.player2 as any).telegram_id;
-            const loserChatId = winnerId === session.player1_id ? (session.player2 as any).telegram_id : (session.player1 as any).telegram_id;
-
-            await sendMessage(winnerChatId, `🎉 <b>ПОБЕДА!</b>\n\nТвой ход: ${p1Action === 'attack' ? '⚔️ Атака' : '🛡 Защита'}\nХод соперника: ${p2Action === 'attack' ? '⚔️ Атака' : '🛡 Защита'}\n\n💰 Выигрыш: ${session.bet_amount * 2} монет`);
-            await sendMessage(loserChatId, `💀 <b>ПОРАЖЕНИЕ</b>\n\nТвой ход: ${p2Action === 'attack' ? '⚔️ Атака' : '🛡 Защита'}\nХод соперника: ${p1Action === 'attack' ? '⚔️ Атака' : '🛡 Защита'}\n\n💸 Потеря: ${session.bet_amount} монет`);
-          }
-        } else {
-          await supabaseClient.from('squid_game_sessions')
-            .update({ game_data: gameData })
-            .eq('id', session.id);
-
-          await sendMessage(chat.id, '⏳ Ход сделан! Жди соперника...');
-        }
       } else if (text.startsWith('/admin_add_coins ')) {
         const { data: admin } = await supabaseClient
           .from('squid_admins')
