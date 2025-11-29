@@ -1662,20 +1662,22 @@ serve(async (req) => {
         }
 
         const args = text.split(' ');
-        if (args.length !== 3) {
-          await sendMessage(chat.id, '❌ Формат: /admin_create_promo [код] [сумма]');
+        if (args.length !== 4) {
+          await sendMessage(chat.id, '❌ Формат: /admin_create_promo [код] [сумма] [количество использований]');
           return new Response('OK', { headers: corsHeaders });
         }
 
         const code = args[1];
         const reward = parseInt(args[2]);
+        const maxUses = parseInt(args[3]);
 
         await supabaseClient.from('squid_promo_codes').insert({
           code: code,
-          reward_amount: reward
+          reward_amount: reward,
+          max_uses: maxUses
         });
 
-        await sendMessage(chat.id, `✅ Промокод создан!\n\nКод: ${code}\nНаграда: ${reward} монет`);
+        await sendMessage(chat.id, `✅ Промокод создан!\n\nКод: ${code}\nНаграда: ${reward} монет\nМакс. использований: ${maxUses}`);
       } else if (text === '/servers') {
         const { data: admin } = await supabaseClient
           .from('squid_admins')
