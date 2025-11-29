@@ -1374,8 +1374,8 @@ serve(async (req) => {
           return new Response('OK', { headers: corsHeaders });
         }
 
-        if (isNaN(betAmount) || betAmount < 100 || betAmount > 10000) {
-          await sendMessage(chat.id, '❌ Ставка должна быть от 100 до 10000 монет!');
+        if (isNaN(betAmount) || betAmount <= 0) {
+          await sendMessage(chat.id, '❌ Ставка должна быть положительным числом!');
           return new Response('OK', { headers: corsHeaders });
         }
 
