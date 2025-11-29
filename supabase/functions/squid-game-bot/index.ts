@@ -1405,10 +1405,10 @@ serve(async (req) => {
         } else {
           const rand = Math.random() * 100;
           
-          // Green has 0.2% chance (extremely rare)
-          if (rand < 0.2) {
+          // Green has 3% chance
+          if (rand < 3) {
             resultColor = 'green';
-          } else if (rand < 50.2) {
+          } else if (rand < 51.5) {
             resultColor = 'red';
           } else {
             resultColor = 'black';
