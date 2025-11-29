@@ -186,7 +186,7 @@ serve(async (req) => {
           game_data: { pattern: glassPattern, step: 0, lives: 1, accumulatedReward: 0 }
         });
 
-        await sendMessage(chatId, '🌉 <b>Стеклянный мост</b>\n\n💰 Ставка: 200 монет\n\nПеред тобой 18 пар стёкол. Одно из них безопасное, другое разобьётся!\n\nВыбирай: Левое (L) или Правое (R)?', {
+        await editMessage(chatId, message!.message_id, '🌉 <b>Стеклянный мост</b>\n\n💰 Ставка: 200 монет\n\nПеред тобой 18 пар стёкол. Одно из них безопасное, другое разобьётся!\n\nВыбирай: Левое (L) или Правое (R)?', {
           inline_keyboard: [
             [{ text: '⬅️ Левое (L)', callback_data: 'glass_L' }, { text: 'Правое (R) ➡️', callback_data: 'glass_R' }],
             [{ text: '💰 Забрать деньги', callback_data: 'glass_cashout' }]
@@ -210,7 +210,7 @@ serve(async (req) => {
           .single();
 
         if (!session) {
-          await sendMessage(chatId, '❌ Игра не найдена.');
+          await editMessage(chatId, message!.message_id, '❌ Игра не найдена.');
           return new Response('OK', { headers: corsHeaders });
         }
 
@@ -240,14 +240,14 @@ serve(async (req) => {
             result: { completed: false, step: gameData.step, cashout: true }
           });
 
-          await sendMessage(chatId, `💰 <b>Выигрыш забран!</b>\n\nТы прошёл ${gameData.step}/18 стёкол\nПолучено: ${accumulatedReward} монет`, {
+          await editMessage(chatId, message!.message_id, `💰 <b>Выигрыш забран!</b>\n\nТы прошёл ${gameData.step}/18 стёкол\nПолучено: ${accumulatedReward} монет`, {
             inline_keyboard: [
               [{ text: '🎮 Играть ещё', callback_data: 'play_glass_bridge' }],
               [{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]
             ]
           });
         } else {
-          await sendMessage(chatId, '❌ У тебя пока нет выигрыша. Пройди хотя бы одну плиту!', {
+          await editMessage(chatId, message!.message_id, '❌ У тебя пока нет выигрыша. Пройди хотя бы одну плиту!', {
             inline_keyboard: [[{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]]
           });
         }
@@ -271,7 +271,7 @@ serve(async (req) => {
           .single();
 
         if (!session) {
-          await sendMessage(chatId, '❌ Игра не найдена. Начни новую!');
+          await editMessage(chatId, message!.message_id, '❌ Игра не найдена. Начни новую!');
           return new Response('OK', { headers: corsHeaders });
         }
 
@@ -313,7 +313,7 @@ serve(async (req) => {
               result: { completed: true, steps: 18 }
             });
 
-            await sendMessage(chatId, `🎉 <b>НЕВЕРОЯТНО!</b>\n\nТы прошёл все 18 стёкол!\n💰 Общий выигрыш: ${totalReward} монет`, {
+            await editMessage(chatId, message!.message_id, `🎉 <b>НЕВЕРОЯТНО!</b>\n\nТы прошёл все 18 стёкол!\n💰 Общий выигрыш: ${totalReward} монет`, {
               inline_keyboard: [[{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]]
             });
           } else {
@@ -321,7 +321,7 @@ serve(async (req) => {
               .update({ game_data: gameData })
               .eq('id', session.id);
 
-            await sendMessage(chatId, `✅ Правильно! Шаг ${gameData.step}/18\n💵 +${stepReward} монет\n💰 Накоплено: ${gameData.accumulatedReward} монет\n\nСледующее стекло?`, {
+            await editMessage(chatId, message!.message_id, `✅ Правильно! Шаг ${gameData.step}/18\n💵 +${stepReward} монет\n💰 Накоплено: ${gameData.accumulatedReward} монет\n\nСледующее стекло?`, {
               inline_keyboard: [
                 [{ text: '⬅️ Левое (L)', callback_data: 'glass_L' }, { text: 'Правое (R) ➡️', callback_data: 'glass_R' }],
                 [{ text: '💰 Забрать деньги', callback_data: 'glass_cashout' }]
@@ -348,7 +348,7 @@ serve(async (req) => {
 
           const lostReward = gameData.accumulatedReward || 0;
           const lostText = lostReward > 0 ? `\n💸 Потеряно: ${lostReward} монет` : '';
-          await sendMessage(chatId, `💥 Стекло разбилось!\n\nТы прошёл ${gameData.step}/18 стёкол${lostText}`, {
+          await editMessage(chatId, message!.message_id, `💥 Стекло разбилось!\n\nТы прошёл ${gameData.step}/18 стёкол${lostText}`, {
             inline_keyboard: [
               [{ text: '🎮 Играть ещё', callback_data: 'play_glass_bridge' }],
               [{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]
@@ -356,7 +356,7 @@ serve(async (req) => {
           });
         }
       } else if (data === 'play_squid_pvp') {
-        await sendMessage(chatId, `🦑 <b>Игра в Кальмара (PvP)</b>\n\nЧтобы пригласить игрока, отправь:\n<code>/challenge [Telegram_ID] [ставка]</code>\n\nНапример:\n<code>/challenge 123456789 100</code>\n\nИли жди приглашения от других игроков!`, {
+        await editMessage(chatId, message!.message_id, `🦑 <b>Игра в Кальмара (PvP)</b>\n\nЧтобы пригласить игрока, отправь:\n<code>/challenge [Telegram_ID] [ставка]</code>\n\nНапример:\n<code>/challenge 123456789 100</code>\n\nИли жди приглашения от других игроков!`, {
           inline_keyboard: [[{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]]
         });
       } else if (data.startsWith('decline_challenge_')) {
@@ -380,7 +380,7 @@ serve(async (req) => {
 
         const player1Chat = (session.player1 as any).telegram_id;
         await sendMessage(player1Chat, `❌ ${from.first_name} отказался от вызова.`);
-        await editMessage(chatId, message.message_id, `❌ Вы отказались от вызова.`);
+        await editMessage(chatId, message!.message_id, `❌ Вы отказались от вызова.`);
       } else if (data.startsWith('accept_challenge_')) {
         const sessionId = data.split('_u')[0].replace('accept_challenge_', '');
         
@@ -426,34 +426,37 @@ serve(async (req) => {
         const gameData = {
           player1_hp: 3,
           player2_hp: 3,
-          player1_name: (session.player1 as any).first_name,
-          player2_name: playerData.first_name
+          current_turn: 'player1',
+          moves: []
         };
 
         await supabaseClient.from('squid_game_sessions')
           .update({ 
-            player2_id: playerData?.id, 
+            player2_id: playerData.id, 
             status: 'active',
             game_data: gameData
           })
           .eq('id', sessionId);
 
-        // Send game interface to both players
-        const player1Chat = (session.player1 as any).telegram_id;
-        const battleStatus = `⚔️ <b>БОЙ В КАЛЬМАРА</b>\n\n👤 ${gameData.player1_name}: ❤️❤️❤️\n👤 ${gameData.player2_name}: ❤️❤️❤️\n\n💰 Ставка: ${session.bet_amount} монет`;
+        const player1Name = (session.player1 as any).first_name;
+        const player2Name = playerData.first_name;
 
-        await sendMessage(player1Chat, battleStatus, {
-          inline_keyboard: [[{ text: '🎯 Ударить', callback_data: `pvp_attack_${sessionId}_u${player1Chat}` }]]
-        });
+        // Send interactive buttons to both players
+        await sendMessage((session.player1 as any).telegram_id, 
+          `⚔️ <b>Игра началась!</b>\n\nТы против ${player2Name}\nСтавка: ${session.bet_amount} монет\n\n❤️ Твоё HP: ${gameData.player1_hp}\n❤️ HP противника: ${gameData.player2_hp}\n\n🎯 <b>Твой ход!</b>`,
+          {
+            inline_keyboard: [[{ text: '⚔️ Ударить', callback_data: `squid_attack_${sessionId}_p1` }]]
+          }
+        );
 
-        await editMessage(chatId, message.message_id, battleStatus, {
-          inline_keyboard: [[{ text: '🎯 Ударить', callback_data: `pvp_attack_${sessionId}_u${from.id}` }]]
-        });
+        await editMessage(chatId, message!.message_id, 
+          `⚔️ <b>Игра началась!</b>\n\nТы против ${player1Name}\nСтавка: ${session.bet_amount} монет\n\n❤️ Твоё HP: ${gameData.player2_hp}\n❤️ HP противника: ${gameData.player1_hp}\n\n⏳ Ожидание хода противника...`
+        );
+      } else if (data.startsWith('squid_attack_')) {
+        const parts = data.split('_');
+        const sessionId = parts[2];
+        const player = parts[3]; // p1 or p2
 
-        await answerCallbackQuery(callbackId, 'Бой начался! Атакуй первым!');
-      } else if (data.startsWith('pvp_attack_')) {
-        const sessionId = data.split('_u')[0].replace('pvp_attack_', '');
-        
         const { data: session } = await supabaseClient
           .from('squid_game_sessions')
           .select('*, player1:squid_players!player1_id(telegram_id, first_name), player2:squid_players!player2_id(telegram_id, first_name)')
@@ -462,44 +465,51 @@ serve(async (req) => {
           .single();
 
         if (!session) {
-          await answerCallbackQuery(callbackId, 'Игра уже завершена');
+          await answerCallbackQuery(callbackId, 'Игра не найдена или уже завершена');
           return new Response('OK', { headers: corsHeaders });
         }
 
         const gameData = session.game_data as any;
-        const isPlayer1 = from.id === (session.player1 as any).telegram_id;
-        const player1Chat = (session.player1 as any).telegram_id;
-        const player2Chat = (session.player2 as any).telegram_id;
-
-        // Random hit or miss (60% hit, 40% miss)
-        const isHit = Math.random() < 0.6;
         
-        if (isHit) {
-          // Reduce opponent's HP
-          if (isPlayer1) {
+        // Check if it's the correct player's turn
+        if ((player === 'p1' && gameData.current_turn !== 'player1') || 
+            (player === 'p2' && gameData.current_turn !== 'player2')) {
+          await answerCallbackQuery(callbackId, 'Не твой ход!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        // 60% hit chance
+        const hit = Math.random() < 0.6;
+        const hitText = hit ? '✅ попал' : '❌ промазал';
+
+        if (hit) {
+          if (player === 'p1') {
             gameData.player2_hp -= 1;
           } else {
             gameData.player1_hp -= 1;
           }
         }
 
-        const actionText = isHit ? '✅ попал!' : '❌ промазал!';
-        const hearts1 = '❤️'.repeat(Math.max(0, gameData.player1_hp)) + '💔'.repeat(Math.max(0, 3 - gameData.player1_hp));
-        const hearts2 = '❤️'.repeat(Math.max(0, gameData.player2_hp)) + '💔'.repeat(Math.max(0, 3 - gameData.player2_hp));
+        gameData.moves.push({ player, hit });
 
-        // Check if game is over
+        const player1Name = (session.player1 as any).first_name;
+        const player2Name = (session.player2 as any).first_name;
+        const player1Id = (session.player1 as any).telegram_id;
+        const player2Id = (session.player2 as any).telegram_id;
+
+        // Check if game over
         if (gameData.player1_hp <= 0 || gameData.player2_hp <= 0) {
           const winnerId = gameData.player1_hp > 0 ? session.player1_id : session.player2_id;
-          const winnerChat = gameData.player1_hp > 0 ? player1Chat : player2Chat;
-          const loserChat = gameData.player1_hp > 0 ? player2Chat : player1Chat;
-          const winnerName = gameData.player1_hp > 0 ? gameData.player1_name : gameData.player2_name;
+          const loserHp = gameData.player1_hp > 0 ? gameData.player2_hp : gameData.player1_hp;
+          const winnerName = gameData.player1_hp > 0 ? player1Name : player2Name;
+          const winAmount = session.bet_amount * 2;
 
           await supabaseClient.from('squid_game_sessions')
             .update({ status: 'finished', winner_id: winnerId, finished_at: new Date().toISOString() })
             .eq('id', sessionId);
 
-          // Winner gets double bet
-          const { data: winner } = await supabaseClient
+          // Update winner balance
+          const { data: winnerData } = await supabaseClient
             .from('squid_players')
             .select('balance, total_wins')
             .eq('id', winnerId)
@@ -507,279 +517,188 @@ serve(async (req) => {
 
           await supabaseClient.from('squid_players')
             .update({ 
-              balance: (winner?.balance || 0) + (session.bet_amount * 2),
-              total_wins: (winner?.total_wins || 0) + 1
+              balance: (winnerData?.balance || 0) + winAmount,
+              total_wins: (winnerData?.total_wins || 0) + 1
             })
             .eq('id', winnerId);
 
-          const loserId = winnerId === session.player1_id ? session.player2_id : session.player1_id;
-          const { data: loser } = await supabaseClient
+          // Update loser stats
+          const loserId = gameData.player1_hp > 0 ? session.player2_id : session.player1_id;
+          const { data: loserData } = await supabaseClient
             .from('squid_players')
             .select('total_losses')
             .eq('id', loserId)
             .single();
 
           await supabaseClient.from('squid_players')
-            .update({ total_losses: (loser?.total_losses || 0) + 1 })
+            .update({ total_losses: (loserData?.total_losses || 0) + 1 })
             .eq('id', loserId);
 
-          const finalStatus = `⚔️ <b>ИГРА ОКОНЧЕНА!</b>\n\n👤 ${gameData.player1_name}: ${hearts1}\n👤 ${gameData.player2_name}: ${hearts2}\n\n${isPlayer1 ? gameData.player1_name : gameData.player2_name} ${actionText}`;
+          await sendMessage(player1Id, 
+            `🎮 <b>Игра окончена!</b>\n\n🏆 Победитель: ${winnerName}\n💰 Выигрыш: ${winAmount} монет\n\n${hitText}`
+          );
 
-          await sendMessage(winnerChat, `${finalStatus}\n\n🎉 <b>ПОБЕДА!</b>\n💰 Выигрыш: ${session.bet_amount * 2} монет`, {
-            inline_keyboard: [[{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]]
-          });
-
-          await sendMessage(loserChat, `${finalStatus}\n\n💀 <b>ПОРАЖЕНИЕ</b>\n💸 Потеря: ${session.bet_amount} монет`, {
-            inline_keyboard: [[{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]]
-          });
+          await sendMessage(player2Id, 
+            `🎮 <b>Игра окончена!</b>\n\n🏆 Победитель: ${winnerName}\n💰 Выигрыш: ${winAmount} монет\n\n${hitText}`
+          );
         } else {
-          // Game continues
+          // Switch turn
+          gameData.current_turn = gameData.current_turn === 'player1' ? 'player2' : 'player1';
+          
           await supabaseClient.from('squid_game_sessions')
             .update({ game_data: gameData })
             .eq('id', sessionId);
 
-          const battleStatus = `⚔️ <b>БОЙ В КАЛЬМАРА</b>\n\n👤 ${gameData.player1_name}: ${hearts1}\n👤 ${gameData.player2_name}: ${hearts2}\n\n${isPlayer1 ? gameData.player1_name : gameData.player2_name} ${actionText}`;
+          const nextPlayerId = gameData.current_turn === 'player1' ? player1Id : player2Id;
+          const waitingPlayerId = gameData.current_turn === 'player1' ? player2Id : player1Id;
 
-          // Update both players' messages
-          await sendMessage(player1Chat, battleStatus, {
-            inline_keyboard: [[{ text: '🎯 Ударить', callback_data: `pvp_attack_${sessionId}_u${player1Chat}` }]]
-          });
-
-          await sendMessage(player2Chat, battleStatus, {
-            inline_keyboard: [[{ text: '🎯 Ударить', callback_data: `pvp_attack_${sessionId}_u${player2Chat}` }]]
-          });
-
-          await answerCallbackQuery(callbackId, actionText);
-        }
-      } else if (data.startsWith('shop_prefixes_u')) {
-        const { data: player } = await supabaseClient
-          .from('squid_players')
-          .select('balance, prefix, owned_prefixes')
-          .eq('telegram_id', from.id)
-          .single();
-
-        const prefixes = [
-          { name: 'absolute', price: 2000000, emoji: '👑' },
-          { name: 'emperror', price: 3000000, emoji: '⚔️' }
-        ];
-
-        const ownedPrefixes = player?.owned_prefixes || [];
-        
-        let shopText = '🛍️ <b>Магазин префиксов</b>\n\n💰 Твой баланс: ' + (player?.balance || 0) + ' монет\n\n';
-        
-        prefixes.forEach(prefix => {
-          const isOwned = ownedPrefixes.includes(prefix.name);
-          const isActive = player?.prefix === prefix.name;
-          
-          if (isOwned) {
-            shopText += `${prefix.emoji} <b>${prefix.name}</b> - ${isActive ? '✅ Активен' : '✅ Куплен'}\n`;
+          // Update message for current player with hit result
+          if (player === 'p1') {
+            await editMessage(player1Id, message!.message_id,
+              `⚔️ Твой удар: ${hitText}\n\n❤️ Твоё HP: ${gameData.player1_hp}\n❤️ HP противника: ${gameData.player2_hp}\n\n⏳ Ожидание хода противника...`
+            );
           } else {
-            shopText += `${prefix.emoji} <b>${prefix.name}</b> - ${prefix.price.toLocaleString()} монет\n`;
+            await editMessage(player2Id, message!.message_id,
+              `⚔️ Твой удар: ${hitText}\n\n❤️ Твоё HP: ${gameData.player2_hp}\n❤️ HP противника: ${gameData.player1_hp}\n\n⏳ Ожидание хода противника...`
+            );
           }
-        });
 
-        const keyboard = [];
-        
-        prefixes.forEach(prefix => {
-          const isOwned = ownedPrefixes.includes(prefix.name);
-          const isActive = player?.prefix === prefix.name;
-          
-          if (isOwned && !isActive) {
-            keyboard.push([{ text: `${prefix.emoji} Включить ${prefix.name}`, callback_data: `activate_prefix_${prefix.name}_u${from.id}` }]);
-          } else if (!isOwned) {
-            keyboard.push([{ text: `${prefix.emoji} Купить ${prefix.name} (${(prefix.price / 1000000).toFixed(1)}M)`, callback_data: `buy_prefix_${prefix.name}_u${from.id}` }]);
-          }
-        });
-        
-        keyboard.push([{ text: '⬅️ Назад в профиль', callback_data: 'profile' }]);
-
-        await editMessage(chatId, message!.message_id, shopText, {
-          inline_keyboard: keyboard
-        });
-      } else if (data.startsWith('activate_prefix_')) {
-        const prefixName = data.split('_u')[0].replace('activate_prefix_', '');
-        
-        const { data: player } = await supabaseClient
-          .from('squid_players')
-          .select('id, owned_prefixes')
-          .eq('telegram_id', from.id)
-          .single();
-
-        const ownedPrefixes = player?.owned_prefixes || [];
-        
-        if (!ownedPrefixes.includes(prefixName)) {
-          await answerCallbackQuery(callbackId, 'У тебя нет этого префикса!');
-          return new Response('OK', { headers: corsHeaders });
+          // Send attack button to next player
+          await sendMessage(nextPlayerId, 
+            `⚔️ <b>Твой ход!</b>\n\n❤️ Твоё HP: ${gameData.current_turn === 'player1' ? gameData.player1_hp : gameData.player2_hp}\n❤️ HP противника: ${gameData.current_turn === 'player1' ? gameData.player2_hp : gameData.player1_hp}`,
+            {
+              inline_keyboard: [[{ text: '⚔️ Ударить', callback_data: `squid_attack_${sessionId}_${gameData.current_turn === 'player1' ? 'p1' : 'p2'}` }]]
+            }
+          );
         }
-
-        await supabaseClient.from('squid_players')
-          .update({ prefix: prefixName })
-          .eq('id', player.id);
-
-        await answerCallbackQuery(callbackId, `✅ Префикс ${prefixName} включен!`);
-        
-        // Refresh shop
-        const { data: updatedPlayer } = await supabaseClient
-          .from('squid_players')
-          .select('balance, prefix, owned_prefixes')
-          .eq('telegram_id', from.id)
-          .single();
-
-        const prefixes = [
-          { name: 'absolute', price: 2000000, emoji: '👑' },
-          { name: 'emperror', price: 3000000, emoji: '⚔️' }
-        ];
-
-        const updatedOwnedPrefixes = updatedPlayer?.owned_prefixes || [];
-        
-        let shopText = '🛍️ <b>Магазин префиксов</b>\n\n💰 Твой баланс: ' + (updatedPlayer?.balance || 0) + ' монет\n\n';
-        
-        prefixes.forEach(prefix => {
-          const isOwned = updatedOwnedPrefixes.includes(prefix.name);
-          const isActive = updatedPlayer?.prefix === prefix.name;
-          
-          if (isOwned) {
-            shopText += `${prefix.emoji} <b>${prefix.name}</b> - ${isActive ? '✅ Активен' : '✅ Куплен'}\n`;
-          } else {
-            shopText += `${prefix.emoji} <b>${prefix.name}</b> - ${prefix.price.toLocaleString()} монет\n`;
-          }
-        });
-
-        const keyboard = [];
-        
-        prefixes.forEach(prefix => {
-          const isOwned = updatedOwnedPrefixes.includes(prefix.name);
-          const isActive = updatedPlayer?.prefix === prefix.name;
-          
-          if (isOwned && !isActive) {
-            keyboard.push([{ text: `${prefix.emoji} Включить ${prefix.name}`, callback_data: `activate_prefix_${prefix.name}_u${from.id}` }]);
-          } else if (!isOwned) {
-            keyboard.push([{ text: `${prefix.emoji} Купить ${prefix.name} (${(prefix.price / 1000000).toFixed(1)}M)`, callback_data: `buy_prefix_${prefix.name}_u${from.id}` }]);
-          }
-        });
-        
-        keyboard.push([{ text: '⬅️ Назад в профиль', callback_data: 'profile' }]);
-
-        await editMessage(chatId, message!.message_id, shopText, {
-          inline_keyboard: keyboard
-        });
       } else if (data.startsWith('buy_prefix_')) {
         const prefixName = data.split('_u')[0].replace('buy_prefix_', '');
         
-        const prefixPrices: Record<string, number> = {
-          absolute: 2000000,
-          emperror: 3000000
+        const prefixes: Record<string, { price: number, name: string }> = {
+          absolute: { price: 2000000, name: 'absolute' },
+          emperror: { price: 3000000, name: 'emperror' }
         };
 
-        const price = prefixPrices[prefixName];
-        if (!price) {
-          await answerCallbackQuery(callbackId, 'Неизвестный префикс');
+        const prefixData = prefixes[prefixName];
+        if (!prefixData) {
+          await answerCallbackQuery(callbackId, 'Префикс не найден');
           return new Response('OK', { headers: corsHeaders });
         }
 
         const { data: player } = await supabaseClient
           .from('squid_players')
-          .select('id, balance, prefix, owned_prefixes')
+          .select('id, balance, owned_prefixes')
           .eq('telegram_id', from.id)
           .single();
-
-        if ((player?.balance || 0) < price) {
-          await answerCallbackQuery(callbackId, 'Недостаточно монет!');
-          return new Response('OK', { headers: corsHeaders });
-        }
 
         const ownedPrefixes = player?.owned_prefixes || [];
         
         if (ownedPrefixes.includes(prefixName)) {
-          await answerCallbackQuery(callbackId, 'У тебя уже есть этот префикс!');
+          await answerCallbackQuery(callbackId, 'Ты уже владеешь этим префиксом!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        if ((player?.balance || 0) < prefixData.price) {
+          await answerCallbackQuery(callbackId, `Недостаточно монет! Нужно ${prefixData.price.toLocaleString()} монет`);
           return new Response('OK', { headers: corsHeaders });
         }
 
         await supabaseClient.from('squid_players')
           .update({ 
-            balance: (player?.balance || 0) - price,
-            prefix: prefixName,
+            balance: (player?.balance || 0) - prefixData.price,
             owned_prefixes: [...ownedPrefixes, prefixName]
           })
-          .eq('id', player.id);
+          .eq('id', player!.id);
 
-        await answerCallbackQuery(callbackId, `✅ Префикс ${prefixName} куплен и активирован!`);
-        
-        // Refresh shop
-        const { data: updatedPlayer } = await supabaseClient
-          .from('squid_players')
-          .select('balance, prefix, owned_prefixes')
-          .eq('telegram_id', from.id)
-          .single();
-
-        const prefixes = [
-          { name: 'absolute', price: 2000000, emoji: '👑' },
-          { name: 'emperror', price: 3000000, emoji: '⚔️' }
-        ];
-
-        const updatedOwnedPrefixes = updatedPlayer?.owned_prefixes || [];
-        
-        let shopText = '🛍️ <b>Магазин префиксов</b>\n\n💰 Твой баланс: ' + (updatedPlayer?.balance || 0) + ' монет\n\n';
-        
-        prefixes.forEach(prefix => {
-          const isOwned = updatedOwnedPrefixes.includes(prefix.name);
-          const isActive = updatedPlayer?.prefix === prefix.name;
-          
-          if (isOwned) {
-            shopText += `${prefix.emoji} <b>${prefix.name}</b> - ${isActive ? '✅ Активен' : '✅ Куплен'}\n`;
-          } else {
-            shopText += `${prefix.emoji} <b>${prefix.name}</b> - ${prefix.price.toLocaleString()} монет\n`;
-          }
-        });
-
-        const keyboard = [];
-        
-        prefixes.forEach(prefix => {
-          const isOwned = updatedOwnedPrefixes.includes(prefix.name);
-          const isActive = updatedPlayer?.prefix === prefix.name;
-          
-          if (isOwned && !isActive) {
-            keyboard.push([{ text: `${prefix.emoji} Включить ${prefix.name}`, callback_data: `activate_prefix_${prefix.name}_u${from.id}` }]);
-          } else if (!isOwned) {
-            keyboard.push([{ text: `${prefix.emoji} Купить ${prefix.name} (${(prefix.price / 1000000).toFixed(1)}M)`, callback_data: `buy_prefix_${prefix.name}_u${from.id}` }]);
-          }
-        });
-        
-        keyboard.push([{ text: '⬅️ Назад в профиль', callback_data: 'profile' }]);
-
-        await editMessage(chatId, message!.message_id, shopText, {
-          inline_keyboard: keyboard
+        await editMessage(chatId, message!.message_id, `✅ <b>Префикс \"${prefixName}\" успешно куплен!</b>\n\nТеперь ты можешь активировать его в профиле.`, {
+          inline_keyboard: [[{ text: '👤 Мой профиль', callback_data: 'profile' }]]
         });
       } else if (data.startsWith('remove_prefix_u')) {
-        const { data: player } = await supabaseClient
-          .from('squid_players')
-          .select('id, prefix')
-          .eq('telegram_id', from.id)
-          .single();
-
-        if (!player?.prefix) {
-          await answerCallbackQuery(callbackId, 'У тебя нет префикса');
-          return new Response('OK', { headers: corsHeaders });
-        }
-
         await supabaseClient.from('squid_players')
           .update({ prefix: null })
-          .eq('id', player.id);
+          .eq('telegram_id', from.id);
 
-        await answerCallbackQuery(callbackId, 'Префикс убран');
-        
-        // Refresh profile
-        const { data: updatedPlayer } = await supabaseClient
+        const { data: player } = await supabaseClient
           .from('squid_players')
           .select('*')
           .eq('telegram_id', from.id)
           .single();
 
+        await answerCallbackQuery(callbackId, '✅ Префикс убран!');
+        
+        const displayName = player?.first_name || from.first_name || 'Игрок';
+        
         await editMessage(chatId, message!.message_id, 
-          `👤 <b>Твой профиль</b>\n\n💰 Баланс: ${updatedPlayer?.balance || 0} монет\n🏆 Побед: ${updatedPlayer?.total_wins || 0}\n💀 Поражений: ${updatedPlayer?.total_losses || 0}\n✨ Префикс: Нет префикса`,
+          `👤 <b>Профиль: ${displayName}</b>\n\n💰 Баланс: ${player?.balance || 0} монет\n🏆 Побед: ${player?.total_wins || 0}\n💀 Поражений: ${player?.total_losses || 0}\n✨ Префикс: Нет префикса`,
           { 
             inline_keyboard: [
               [{ text: '🛍️ Магазин префиксов', callback_data: `shop_prefixes_u${from.id}` }],
+              [{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]
+            ]
+          }
+        );
+      } else if (data.startsWith('shop_prefixes_u')) {
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('owned_prefixes, prefix')
+          .eq('telegram_id', from.id)
+          .single();
+
+        const ownedPrefixes = player?.owned_prefixes || [];
+        const currentPrefix = player?.prefix;
+
+        const prefixButtons = [];
+        
+        // Show owned prefixes with toggle functionality
+        if (ownedPrefixes.includes('absolute')) {
+          prefixButtons.push([{ 
+            text: currentPrefix === 'absolute' ? '✅ absolute (активен)' : 'absolute', 
+            callback_data: currentPrefix === 'absolute' ? `remove_prefix_u${from.id}` : `activate_prefix_absolute_u${from.id}` 
+          }]);
+        } else {
+          prefixButtons.push([{ text: 'absolute - 2,000,000 💰', callback_data: `buy_prefix_absolute_u${from.id}` }]);
+        }
+        
+        if (ownedPrefixes.includes('emperror')) {
+          prefixButtons.push([{ 
+            text: currentPrefix === 'emperror' ? '✅ emperror (активен)' : 'emperror', 
+            callback_data: currentPrefix === 'emperror' ? `remove_prefix_u${from.id}` : `activate_prefix_emperror_u${from.id}` 
+          }]);
+        } else {
+          prefixButtons.push([{ text: 'emperror - 3,000,000 💰', callback_data: `buy_prefix_emperror_u${from.id}` }]);
+        }
+
+        prefixButtons.push([{ text: '⬅️ Назад', callback_data: 'profile' }]);
+
+        await editMessage(chatId, message!.message_id, 
+          `🛍️ <b>Магазин префиксов</b>\n\nДоступные префиксы для покупки:`,
+          {
+            inline_keyboard: prefixButtons
+          }
+        );
+      } else if (data.startsWith('activate_prefix_')) {
+        const prefixName = data.split('_u')[0].replace('activate_prefix_', '');
+        
+        await supabaseClient.from('squid_players')
+          .update({ prefix: prefixName })
+          .eq('telegram_id', from.id);
+
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('*')
+          .eq('telegram_id', from.id)
+          .single();
+
+        await answerCallbackQuery(callbackId, `✅ Префикс \"${prefixName}\" активирован!`);
+
+        const displayName = `[${prefixName}] ${player?.first_name || from.first_name || 'Игрок'}`;
+        
+        await editMessage(chatId, message!.message_id, 
+          `👤 <b>Профиль: ${displayName}</b>\n\n💰 Баланс: ${player?.balance || 0} монет\n🏆 Побед: ${player?.total_wins || 0}\n💀 Поражений: ${player?.total_losses || 0}\n✨ Префикс: ${prefixName}`,
+          { 
+            inline_keyboard: [
+              [{ text: '🛍️ Магазин префиксов', callback_data: `shop_prefixes_u${from.id}` }],
+              [{ text: '❌ Убрать префикс', callback_data: `remove_prefix_u${from.id}` }],
               [{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]
             ]
           }
@@ -808,7 +727,7 @@ serve(async (req) => {
           return new Response('OK', { headers: corsHeaders });
         }
 
-        await sendMessage(chatId, 
+        await editMessage(chatId, message!.message_id, 
           `🍬 <b>${config.name}</b>\n\n💰 Ставка: ${config.bet} монет\n🎁 Выигрыш: ${config.reward} монет\n📊 Шанс успеха: ${Math.round(config.chance * 100)}%\n\nПодтверждаешь?`,
           {
             inline_keyboard: [
@@ -863,7 +782,7 @@ serve(async (req) => {
             result: { shape: shapePart, success: true }
           });
 
-          await sendMessage(chatId, `✅ Отлично! Ты вырезал ${config.name} и получил ${winAmount} монет! 💰`, {
+          await editMessage(chatId, message!.message_id, `✅ Отлично! Ты вырезал ${config.name} и получил ${winAmount} монет! 💰`, {
             inline_keyboard: [[{ text: '🎮 Играть ещё', callback_data: 'play_dalgona' }], [{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]]
           });
         } else {
@@ -875,7 +794,7 @@ serve(async (req) => {
             result: { shape: shapePart, success: false }
           });
 
-          await sendMessage(chatId, `❌ Печенье сломалось! Ты потерял ${config.bet} монет.`, {
+          await editMessage(chatId, message!.message_id, `❌ Печенье сломалось! Ты потерял ${config.bet} монет.`, {
             inline_keyboard: [[{ text: '🎮 Играть ещё', callback_data: 'play_dalgona' }], [{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]]
           });
         }
@@ -935,7 +854,7 @@ serve(async (req) => {
           .eq('telegram_id', targetId);
 
         await answerCallbackQuery(callbackId, '✅ Префикс установлен!');
-        await editMessage(chatId, message!.message_id, `✅ Префикс "absolute" установлен игроку ${targetId}`);
+        await editMessage(chatId, message!.message_id, `✅ Префикс \"absolute\" установлен игроку ${targetId}`);
       } else if (data.startsWith('admin_set_prefix_emperror_')) {
         const { data: admin } = await supabaseClient
           .from('squid_admins')
@@ -955,7 +874,7 @@ serve(async (req) => {
           .eq('telegram_id', targetId);
 
         await answerCallbackQuery(callbackId, '✅ Префикс установлен!');
-        await editMessage(chatId, message!.message_id, `✅ Префикс "emperror" установлен игроку ${targetId}`);
+        await editMessage(chatId, message!.message_id, `✅ Префикс \"emperror\" установлен игроку ${targetId}`);
       } else if (data.startsWith('admin_remove_prefix_')) {
         const { data: admin } = await supabaseClient
           .from('squid_admins')
@@ -1000,7 +919,7 @@ serve(async (req) => {
         await answerCallbackQuery(callbackId, '✅ Статистика обнулена!');
         await editMessage(chatId, message!.message_id, `✅ Статистика обнулена у игрока ${targetId}`);
       } else if (data === 'play_casino') {
-        await sendMessage(chatId, '🎰 <b>Казино</b>\n\nДобро пожаловать в казино!', {
+        await editMessage(chatId, message!.message_id, '🎰 <b>Казино</b>\n\nДобро пожаловать в казино!', {
           inline_keyboard: [
             [{ text: '🎡 Рулетка', callback_data: `casino_roulette_u${from.id}` }],
             [{ text: '⬅️ Назад', callback_data: 'main_menu' }]
@@ -1162,76 +1081,239 @@ serve(async (req) => {
         );
       } else if (text === '/help') {
         await sendMessage(chat.id, 
-          `📋 <b>Список команд Squid Game Bot</b>\n\n<b>🎮 Основные команды:</b>\n/start - главное меню бота\n/help - список всех команд\n/profile - твой профиль с балансом и статистикой\n/top - топ 10 игроков этой беседы\n/topworld - топ 10 игроков мира\n\n<b>💰 Экономика:</b>\n/daily - ежедневный бонус 1200 монет (раз в 24 часа)\n/pay [ID] [сумма] - перевести монеты другому игроку\n/promo [код] - активировать промокод на бонус\n\n<b>🎁 Предметы:</b>\n/si - поиск предметов (раз в час)\n/items - показать инвентарь\n/sell [номер] - продать предмет из инвентаря\n\n<b>🎲 Казино:</b>\n/roulette [цвет] [ставка] - игра в рулетку\n  Цвета: red (🔴 x2), black (⚫ x2), green (🟢 x14)\n  Пример: /roulette red 1000\n\n<b>🎮 Игры:</b>\n🍬 Dalgona Challenge - вырежи фигуру\n🌉 Стеклянный мост - пройди мост\n\n<b>⚔️ PvP дуэли:</b>\n/challenge [ID] [ставка] - вызвать игрока на дуэль\n  Пример: /challenge 123456789 500`
+          `📋 <b>Список команд</b>\n\n<b>🎮 Игры:</b>\n🍬 Dalgona Challenge - вырезай фигурки из печенья\n🌉 Стеклянный мост - пройди по опасному мосту\n🦑 Игра в Кальмара (PvP) - бейся с другими игроками\n\n<b>💰 Команды:</b>\n/balance - проверить баланс\n/daily - получить ежедневный бонус\n/promo [код] - использовать промокод\n/pay [ID] [сумма] - перевести монеты игроку\n/top - топ 10 богатых игроков в чате\n/topworld - топ 10 богатых игроков глобально\n/shop - магазин префиксов\n\n<b>📦 Предметы:</b>\n/si - искать предметы (раз в час)\n/items - показать инвентарь\n/sell [номер] - продать предмет\n\n<b>🎲 Казино:</b>\n/roulette [цвет] [ставка] - сыграть в рулетку\nЦвета: red, black, green`
         );
-      } else if (text === '/profile') {
+      } else if (text === '/daily') {
         const { data: player } = await supabaseClient
           .from('squid_players')
-          .select('*')
+          .select('id, balance, last_daily_claim')
           .eq('telegram_id', from.id)
           .single();
 
-        const prefixText = player?.prefix ? `${player.prefix}` : 'Нет префикса';
-        const displayName = player?.prefix 
-          ? `[${player.prefix}] ${player?.first_name || from.first_name || 'Игрок'}`
-          : player?.first_name || from.first_name || 'Игрок';
+        if (!player) {
+          await sendMessage(chat.id, '❌ Игрок не найден.');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const now = new Date();
+        const lastClaim = player.last_daily_claim ? new Date(player.last_daily_claim) : null;
         
-        await sendMessage(chat.id, 
-          `👤 <b>Профиль: ${displayName}</b>\n\n💰 Баланс: ${player?.balance || 0} монет\n🏆 Побед: ${player?.total_wins || 0}\n💀 Поражений: ${player?.total_losses || 0}\n✨ Префикс: ${prefixText}`,
-          { 
+        // Check if 24 hours have passed
+        if (lastClaim && (now.getTime() - lastClaim.getTime()) < 24 * 60 * 60 * 1000) {
+          const hoursLeft = Math.ceil((24 * 60 * 60 * 1000 - (now.getTime() - lastClaim.getTime())) / (60 * 60 * 1000));
+          await sendMessage(chat.id, `⏰ Ты уже получил ежедневный бонус!\n\nПриходи через ${hoursLeft} ${hoursLeft === 1 ? 'час' : hoursLeft < 5 ? 'часа' : 'часов'}.`);
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const dailyBonus = 1200;
+        await supabaseClient.from('squid_players')
+          .update({ 
+            balance: player.balance + dailyBonus,
+            last_daily_claim: now.toISOString()
+          })
+          .eq('id', player.id);
+
+        await sendMessage(chat.id, `🎁 <b>Ежедневный бонус!</b>\n\n+${dailyBonus} монет\n💰 Новый баланс: ${player.balance + dailyBonus} монет`);
+      } else if (text.startsWith('/promo ')) {
+        const code = text.split(' ')[1];
+        
+        if (!code) {
+          await sendMessage(chat.id, '❌ Формат: /promo [код]');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const { data: promo } = await supabaseClient
+          .from('squid_promo_codes')
+          .select('*')
+          .eq('code', code)
+          .single();
+
+        if (!promo) {
+          await sendMessage(chat.id, '❌ Промокод не найден!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        // Check if promo is expired
+        if (promo.expires_at && new Date(promo.expires_at) < new Date()) {
+          await sendMessage(chat.id, '❌ Этот промокод истёк!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        // Check if max uses reached
+        if (promo.max_uses && promo.current_uses >= promo.max_uses) {
+          await sendMessage(chat.id, '❌ Этот промокод уже использован максимальное количество раз!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('id, balance')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!player) {
+          await sendMessage(chat.id, '❌ Игрок не найден.');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        // Check if player already redeemed this promo
+        const { data: redemption } = await supabaseClient
+          .from('squid_promo_redemptions')
+          .select('*')
+          .eq('player_id', player.id)
+          .eq('promo_code_id', promo.id)
+          .single();
+
+        if (redemption) {
+          await sendMessage(chat.id, '❌ Ты уже использовал этот промокод!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        // Redeem promo
+        await supabaseClient.from('squid_players')
+          .update({ balance: player.balance + promo.reward_amount })
+          .eq('id', player.id);
+
+        await supabaseClient.from('squid_promo_redemptions').insert({
+          player_id: player.id,
+          promo_code_id: promo.id
+        });
+
+        await supabaseClient.from('squid_promo_codes')
+          .update({ current_uses: (promo.current_uses || 0) + 1 })
+          .eq('id', promo.id);
+
+        await sendMessage(chat.id, `✅ <b>Промокод активирован!</b>\n\n+${promo.reward_amount} монет\n💰 Новый баланс: ${player.balance + promo.reward_amount} монет`);
+      } else if (text.startsWith('/challenge ')) {
+        const args = text.split(' ');
+        if (args.length !== 3) {
+          await sendMessage(chat.id, '❌ Формат: /challenge [Telegram_ID] [ставка]');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const targetId = parseInt(args[1]);
+        const betAmount = parseInt(args[2]);
+
+        if (targetId === from.id) {
+          await sendMessage(chat.id, '❌ Ты не можешь вызвать сам себя!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const { data: challenger } = await supabaseClient
+          .from('squid_players')
+          .select('id, balance, first_name')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!challenger || challenger.balance < betAmount) {
+          await sendMessage(chat.id, '❌ Недостаточно монет для ставки!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const { data: target } = await supabaseClient
+          .from('squid_players')
+          .select('id, balance, first_name')
+          .eq('telegram_id', targetId)
+          .single();
+
+        if (!target) {
+          await sendMessage(chat.id, '❌ Игрок не найден!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        if (target.balance < betAmount) {
+          await sendMessage(chat.id, '❌ У твоего противника недостаточно монет!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        // Create game session
+        const { data: session } = await supabaseClient.from('squid_game_sessions')
+          .insert({
+            player1_id: challenger.id,
+            game_type: 'squid_pvp',
+            bet_amount: betAmount,
+            status: 'waiting'
+          })
+          .select()
+          .single();
+
+        await sendMessage(chat.id, `✅ Вызов отправлен игроку ${target.first_name}!`);
+        
+        await sendMessage(targetId, 
+          `⚔️ <b>Вызов на Игру в Кальмара!</b>\n\n${challenger.first_name} вызывает тебя на дуэль!\n💰 Ставка: ${betAmount} монет\n\nПринимаешь вызов?`,
+          {
             inline_keyboard: [
-              [{ text: '🛍️ Магазин префиксов', callback_data: `shop_prefixes_u${from.id}` }],
-              player?.prefix ? [{ text: '❌ Убрать префикс', callback_data: `remove_prefix_u${from.id}` }] : [],
-              [{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]
-            ].filter(row => row.length > 0)
+              [{ text: '✅ Принять', callback_data: `accept_challenge_${session?.id}_u${targetId}` }],
+              [{ text: '❌ Отказать', callback_data: `decline_challenge_${session?.id}_u${targetId}` }]
+            ]
           }
         );
-      } else if (text === '/balance') {
-        const { data: player } = await supabaseClient
+      } else if (text.startsWith('/pay ')) {
+        const args = text.split(' ');
+        if (args.length !== 3) {
+          await sendMessage(chat.id, '❌ Формат: /pay [ID] [сумма]');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const targetId = parseInt(args[1]);
+        const amount = parseInt(args[2]);
+
+        if (amount <= 0) {
+          await sendMessage(chat.id, '❌ Сумма должна быть больше 0!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        if (targetId === from.id) {
+          await sendMessage(chat.id, '❌ Ты не можешь перевести монеты самому себе!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const { data: sender } = await supabaseClient
           .from('squid_players')
-          .select('balance')
+          .select('id, balance, first_name')
           .eq('telegram_id', from.id)
           .single();
 
-        await sendMessage(chat.id, `💰 Твой баланс: ${player?.balance || 0} монет`);
-      } else if (text === '/shop') {
-        const { data: player } = await supabaseClient
+        if (!sender || sender.balance < amount) {
+          await sendMessage(chat.id, '❌ Недостаточно монет!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const { data: target } = await supabaseClient
           .from('squid_players')
-          .select('balance, prefix')
-          .eq('telegram_id', from.id)
+          .select('id, balance, first_name')
+          .eq('telegram_id', targetId)
           .single();
-        
-        const prefixes = [
-          { name: 'absolute', price: 2000000, emoji: '👑' },
-          { name: 'emperror', price: 3000000, emoji: '⚔️' }
-        ];
 
-        let shopText = '🛍️ <b>Магазин префиксов</b>\n\n💰 Твой баланс: ' + (player?.balance || 0) + ' монет\n\n';
-        
-        prefixes.forEach(prefix => {
-          const owned = player?.prefix === prefix.name;
-          shopText += `${prefix.emoji} <b>${prefix.name}</b> - ${prefix.price.toLocaleString()} монет ${owned ? '✅ Куплен' : ''}\n`;
-        });
+        if (!target) {
+          await sendMessage(chat.id, '❌ Игрок не найден!');
+          return new Response('OK', { headers: corsHeaders });
+        }
 
-        await sendMessage(chat.id, shopText, {
-          inline_keyboard: [
-            [{ text: '👑 Купить absolute (2,000,000)', callback_data: `buy_prefix_absolute_u${from.id}` }],
-            [{ text: '⚔️ Купить emperror (3,000,000)', callback_data: `buy_prefix_emperror_u${from.id}` }]
-          ]
-        });
+        // Transfer money
+        await supabaseClient.from('squid_players')
+          .update({ balance: sender.balance - amount })
+          .eq('id', sender.id);
+
+        await supabaseClient.from('squid_players')
+          .update({ balance: target.balance + amount })
+          .eq('id', target.id);
+
+        await sendMessage(chat.id, `✅ Успешно переведено ${amount} монет игроку ${target.first_name}!`);
+        await sendMessage(targetId, `💰 ${sender.first_name} перевёл тебе ${amount} монет!`);
       } else if (text === '/top') {
-        // Get players who are active in this chat
+        // Get players from current chat only
         const { data: chatPlayers } = await supabaseClient
           .from('squid_player_chats')
           .select('player_id')
           .eq('chat_id', chat.id);
 
         if (!chatPlayers || chatPlayers.length === 0) {
-          await sendMessage(chat.id, '❌ В этой беседе пока нет игроков');
+          await sendMessage(chat.id, '❌ В этом чате нет игроков.');
           return new Response('OK', { headers: corsHeaders });
         }
 
-        const playerIds = chatPlayers.map(cp => cp.player_id);
+        const playerIds = chatPlayers.map(p => p.player_id);
 
         const { data: topPlayers } = await supabaseClient
           .from('squid_players')
@@ -1241,18 +1323,17 @@ serve(async (req) => {
           .limit(10);
 
         if (!topPlayers || topPlayers.length === 0) {
-          await sendMessage(chat.id, '❌ Топ игроков пуст');
+          await sendMessage(chat.id, '❌ Список игроков пуст.');
           return new Response('OK', { headers: corsHeaders });
         }
 
-        let topText = '🏆 <b>Топ 10 богатых игроков этой беседы</b>\n\n';
+        let topText = '🏆 <b>Топ 10 богатых игроков (этот чат)</b>\n\n';
         
         topPlayers.forEach((player, index) => {
           const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
-          const displayName = player.prefix 
-            ? `[${player.prefix}] ${player.first_name || 'Неизвестно'}`
-            : player.first_name || 'Неизвестно';
-          topText += `${medal} ${displayName} - ${player.balance.toLocaleString()} монет\n`;
+          const prefix = player.prefix ? `[${player.prefix}] ` : '';
+          const displayName = player.first_name || 'Неизвестно';
+          topText += `${medal} ${prefix}${displayName}\n💰 ${player.balance.toLocaleString()} монет\n\n`;
         });
 
         await sendMessage(chat.id, topText);
@@ -1264,48 +1345,37 @@ serve(async (req) => {
           .limit(10);
 
         if (!topPlayers || topPlayers.length === 0) {
-          await sendMessage(chat.id, '❌ Топ игроков пуст');
+          await sendMessage(chat.id, '❌ Список игроков пуст.');
           return new Response('OK', { headers: corsHeaders });
         }
 
-        let topText = '🌍 <b>Топ 10 богатых игроков мира</b>\n\n';
+        let topText = '🌍 <b>Топ 10 богатых игроков (весь мир)</b>\n\n';
         
         topPlayers.forEach((player, index) => {
           const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
-          const displayName = player.prefix 
-            ? `[${player.prefix}] ${player.first_name || 'Неизвестно'}`
-            : player.first_name || 'Неизвестно';
-          topText += `${medal} ${displayName} - ${player.balance.toLocaleString()} монет\n`;
+          const prefix = player.prefix ? `[${player.prefix}] ` : '';
+          const displayName = player.first_name || 'Неизвестно';
+          topText += `${medal} ${prefix}${displayName}\n💰 ${player.balance.toLocaleString()} монет\n\n`;
         });
 
         await sendMessage(chat.id, topText);
-      } else if (text.startsWith('/roulette')) {
-        const args = text.split(' ').slice(1);
-        
-        if (args.length !== 2) {
-          await sendMessage(chat.id, '❌ Неверный формат команды!\n\nИспользуй: /roulette <цвет> <ставка>\n\nЦвет: red/красное, black/черное, green/зеленое\nПример: /roulette red 100');
+      } else if (text.startsWith('/roulette ')) {
+        const args = text.split(' ');
+        if (args.length !== 3) {
+          await sendMessage(chat.id, '❌ Формат: /roulette [цвет] [ставка]\nЦвета: red, black, green');
           return new Response('OK', { headers: corsHeaders });
         }
 
-        const colorInput = args[0].toLowerCase();
-        const betAmount = parseInt(args[1]);
+        const color = args[1].toLowerCase();
+        const betAmount = parseInt(args[2]);
 
-        // Validate color
-        let color: string;
-        if (colorInput === 'red' || colorInput === 'красное' || colorInput === 'красный') {
-          color = 'red';
-        } else if (colorInput === 'black' || colorInput === 'черное' || colorInput === 'черный') {
-          color = 'black';
-        } else if (colorInput === 'green' || colorInput === 'зеленое' || colorInput === 'зеленый') {
-          color = 'green';
-        } else {
-          await sendMessage(chat.id, '❌ Неверный цвет!\n\nДоступные цвета:\n🔴 red/красное (x2)\n⚫ black/черное (x2)\n🟢 green/зеленое (x14)');
+        if (!['red', 'black', 'green'].includes(color)) {
+          await sendMessage(chat.id, '❌ Неверный цвет! Используй: red, black, или green');
           return new Response('OK', { headers: corsHeaders });
         }
 
-        // Validate bet amount
-        if (isNaN(betAmount) || betAmount <= 0) {
-          await sendMessage(chat.id, '❌ Неверная ставка! Укажи положительное число.');
+        if (isNaN(betAmount) || betAmount < 100 || betAmount > 10000) {
+          await sendMessage(chat.id, '❌ Ставка должна быть от 100 до 10000 монет!');
           return new Response('OK', { headers: corsHeaders });
         }
 
@@ -1316,7 +1386,7 @@ serve(async (req) => {
           .single();
 
         if (!player || player.balance < betAmount) {
-          await sendMessage(chat.id, `❌ Недостаточно монет!\n\n💰 Твой баланс: ${player?.balance || 0} монет`);
+          await sendMessage(chat.id, '❌ Недостаточно монет!');
           return new Response('OK', { headers: corsHeaders });
         }
 
@@ -1325,24 +1395,23 @@ serve(async (req) => {
           .update({ balance: player.balance - betAmount })
           .eq('id', player.id);
 
-        // Spin roulette with weighted probabilities
+        // Spin roulette
         let resultColor: string;
         let winMultiplier = 0;
 
-        // Admin casino mode - always win
         if (player.casino_admin_mode) {
           resultColor = color;
           winMultiplier = color === 'green' ? 14 : 2;
         } else {
-          const result = Math.random();
+          const rand = Math.random() * 100;
           
-          // Red: 49.9%, Black: 49.9%, Green: 0.2%
-          if (result < 0.499) {
-            resultColor = 'red';
-          } else if (result < 0.998) {
-            resultColor = 'black';
-          } else {
+          // Green has 0.2% chance (extremely rare)
+          if (rand < 0.2) {
             resultColor = 'green';
+          } else if (rand < 50.2) {
+            resultColor = 'red';
+          } else {
+            resultColor = 'black';
           }
 
           if (resultColor === color) {
@@ -1367,220 +1436,21 @@ serve(async (req) => {
           result: { color: resultColor, bet: color }
         });
 
-        const resultEmoji = resultColor === 'red' ? '🔴' : resultColor === 'black' ? '⚫' : '🟢';
-        const resultText = winAmount > 0 
-          ? `🎉 <b>ВЫИГРЫШ!</b>\n\n🎡 Рулетка\nРезультат: ${resultEmoji} ${resultColor}\n💰 Выигрыш: ${profit} монет\n💵 Новый баланс: ${player.balance - betAmount + winAmount} монет`
-          : `😔 Проигрыш\n\n🎡 Рулетка\nРезультат: ${resultEmoji} ${resultColor}\n💸 Потеря: ${betAmount} монет\n💵 Новый баланс: ${player.balance - betAmount} монет`;
+        const colorEmoji: Record<string, string> = {
+          red: '🔴',
+          black: '⚫',
+          green: '🟢'
+        };
 
-        await sendMessage(chat.id, resultText);
-      } else if (text === '/daily') {
-        const { data: player } = await supabaseClient
-          .from('squid_players')
-          .select('id, last_daily_claim, balance')
-          .eq('telegram_id', from.id)
-          .single();
-
-        if (!player) {
-          await sendMessage(chat.id, '❌ Игрок не найден.');
-          return new Response('OK', { headers: corsHeaders });
+        if (winAmount > 0) {
+          await sendMessage(chat.id, 
+            `🎉 <b>ВЫИГРЫШ!</b>\n\n🎡 Рулетка: ${colorEmoji[resultColor]} ${resultColor}\n💰 Ставка: ${betAmount} монет на ${colorEmoji[color]} ${color}\n🎁 Выигрыш: ${profit} монет (x${winMultiplier})\n💵 Новый баланс: ${player.balance - betAmount + winAmount} монет`
+          );
+        } else {
+          await sendMessage(chat.id,
+            `😔 <b>Проигрыш</b>\n\n🎡 Рулетка: ${colorEmoji[resultColor]} ${resultColor}\n💰 Ставка: ${betAmount} монет на ${colorEmoji[color]} ${color}\n💸 Потеря: ${betAmount} монет\n💵 Новый баланс: ${player.balance - betAmount} монет`
+          );
         }
-
-        const now = new Date();
-        const lastClaim = player.last_daily_claim ? new Date(player.last_daily_claim) : null;
-        
-        // Check if 24 hours have passed
-        if (lastClaim && (now.getTime() - lastClaim.getTime()) < 24 * 60 * 60 * 1000) {
-          const hoursLeft = Math.ceil((24 * 60 * 60 * 1000 - (now.getTime() - lastClaim.getTime())) / (60 * 60 * 1000));
-          await sendMessage(chat.id, `⏰ Ежедневный бонус уже получен!\n\nПриходи через ${hoursLeft} ${hoursLeft === 1 ? 'час' : hoursLeft < 5 ? 'часа' : 'часов'}.`);
-          return new Response('OK', { headers: corsHeaders });
-        }
-
-        const dailyReward = 1200;
-        await supabaseClient.from('squid_players')
-          .update({ 
-            balance: (player.balance || 0) + dailyReward,
-            last_daily_claim: now.toISOString()
-          })
-          .eq('id', player.id);
-
-        await sendMessage(chat.id, `🎁 <b>Ежедневный бонус получен!</b>\n\n💰 +${dailyReward} монет\n💵 Новый баланс: ${(player.balance || 0) + dailyReward} монет`);
-      } else if (text.startsWith('/promo ')) {
-        const promoCode = text.split(' ')[1]?.trim();
-        
-        if (!promoCode) {
-          await sendMessage(chat.id, '❌ Укажи промокод!\nИспользуй: /promo КОД');
-          return new Response('OK', { headers: corsHeaders });
-        }
-
-        const { data: promo } = await supabaseClient
-          .from('squid_promo_codes')
-          .select('*')
-          .eq('code', promoCode)
-          .single();
-
-        if (!promo) {
-          await sendMessage(chat.id, '❌ Промокод не найден!');
-          return new Response('OK', { headers: corsHeaders });
-        }
-
-        if (promo.expires_at && new Date(promo.expires_at) < new Date()) {
-          await sendMessage(chat.id, '❌ Срок действия промокода истёк!');
-          return new Response('OK', { headers: corsHeaders });
-        }
-
-        if (promo.max_uses && promo.current_uses >= promo.max_uses) {
-          await sendMessage(chat.id, '❌ Лимит использований промокода исчерпан!');
-          return new Response('OK', { headers: corsHeaders });
-        }
-
-        const { data: player } = await supabaseClient
-          .from('squid_players')
-          .select('id, balance')
-          .eq('telegram_id', from.id)
-          .single();
-
-        const { data: existingRedemption } = await supabaseClient
-          .from('squid_promo_redemptions')
-          .select('*')
-          .eq('player_id', player?.id)
-          .eq('promo_code_id', promo.id)
-          .single();
-
-        if (existingRedemption) {
-          await sendMessage(chat.id, '❌ Ты уже использовал этот промокод!');
-          return new Response('OK', { headers: corsHeaders });
-        }
-
-        await supabaseClient.from('squid_promo_redemptions').insert({
-          player_id: player?.id,
-          promo_code_id: promo.id
-        });
-
-        await supabaseClient.from('squid_promo_codes')
-          .update({ current_uses: (promo.current_uses || 0) + 1 })
-          .eq('id', promo.id);
-
-        const newBalance = (player?.balance || 0) + promo.reward_amount;
-        await supabaseClient.from('squid_players')
-          .update({ balance: newBalance })
-          .eq('id', player?.id);
-
-        await sendMessage(chat.id, `🎉 <b>Промокод активирован!</b>\n\n💰 +${promo.reward_amount} монет\n💵 Новый баланс: ${newBalance} монет`);
-      } else if (text.startsWith('/pay ')) {
-        const args = text.split(' ');
-        if (args.length !== 3) {
-          await sendMessage(chat.id, '❌ Неверный формат!\nИспользуй: /pay [ID] [сумма]\nПример: /pay 123456789 100');
-          return new Response('OK', { headers: corsHeaders });
-        }
-
-        const recipientId = parseInt(args[1]);
-        const amount = parseInt(args[2]);
-
-        if (isNaN(recipientId) || isNaN(amount) || amount <= 0) {
-          await sendMessage(chat.id, '❌ Неверные данные! ID и сумма должны быть положительными числами.');
-          return new Response('OK', { headers: corsHeaders });
-        }
-
-        if (recipientId === from.id) {
-          await sendMessage(chat.id, '❌ Нельзя переводить монеты самому себе!');
-          return new Response('OK', { headers: corsHeaders });
-        }
-
-        const { data: sender } = await supabaseClient
-          .from('squid_players')
-          .select('id, balance, first_name')
-          .eq('telegram_id', from.id)
-          .single();
-
-        if (!sender || sender.balance < amount) {
-          await sendMessage(chat.id, `❌ Недостаточно монет!\n\n💰 Твой баланс: ${sender?.balance || 0} монет`);
-          return new Response('OK', { headers: corsHeaders });
-        }
-
-        const { data: recipient } = await supabaseClient
-          .from('squid_players')
-          .select('id, balance, first_name')
-          .eq('telegram_id', recipientId)
-          .single();
-
-        if (!recipient) {
-          await sendMessage(chat.id, '❌ Получатель не найден!');
-          return new Response('OK', { headers: corsHeaders });
-        }
-
-        await supabaseClient.from('squid_players')
-          .update({ balance: sender.balance - amount })
-          .eq('id', sender.id);
-
-        await supabaseClient.from('squid_players')
-          .update({ balance: recipient.balance + amount })
-          .eq('id', recipient.id);
-
-        await sendMessage(chat.id, `✅ Перевод выполнен!\n\n💸 Отправлено: ${amount} монет\n👤 Получатель: ${recipient.first_name}\n💵 Твой новый баланс: ${sender.balance - amount} монет`);
-        await sendMessage(recipientId, `💰 Тебе перевели ${amount} монет!\n\n👤 От: ${sender.first_name}\n💵 Твой новый баланс: ${recipient.balance + amount} монет`);
-      } else if (text.startsWith('/challenge ')) {
-        const args = text.split(' ');
-        if (args.length !== 3) {
-          await sendMessage(chat.id, '❌ Неверный формат!\nИспользуй: /challenge [ID] [ставка]');
-          return new Response('OK', { headers: corsHeaders });
-        }
-
-        const opponentId = parseInt(args[1]);
-        const betAmount = parseInt(args[2]);
-
-        if (isNaN(opponentId) || isNaN(betAmount) || betAmount <= 0) {
-          await sendMessage(chat.id, '❌ Неверные данные!');
-          return new Response('OK', { headers: corsHeaders });
-        }
-
-        if (opponentId === from.id) {
-          await sendMessage(chat.id, '❌ Нельзя вызвать самого себя!');
-          return new Response('OK', { headers: corsHeaders });
-        }
-
-        const { data: player } = await supabaseClient
-          .from('squid_players')
-          .select('id, balance, first_name')
-          .eq('telegram_id', from.id)
-          .single();
-
-        if (!player || player.balance < betAmount) {
-          await sendMessage(chat.id, `❌ Недостаточно монет!\n\n💰 Твой баланс: ${player?.balance || 0} монет`);
-          return new Response('OK', { headers: corsHeaders });
-        }
-
-        const { data: opponent } = await supabaseClient
-          .from('squid_players')
-          .select('id')
-          .eq('telegram_id', opponentId)
-          .single();
-
-        if (!opponent) {
-          await sendMessage(chat.id, '❌ Игрок не найден!');
-          return new Response('OK', { headers: corsHeaders });
-        }
-
-        const { data: session } = await supabaseClient
-          .from('squid_game_sessions')
-          .insert({
-            player1_id: player.id,
-            game_type: 'squid_pvp',
-            bet_amount: betAmount,
-            status: 'waiting'
-          })
-          .select()
-          .single();
-
-        await sendMessage(chat.id, `⚔️ Вызов отправлен!\n\nСтавка: ${betAmount} монет\nОжидаем ответ...`);
-        
-        console.log(`Sending challenge to opponent ${opponentId} with buttons`);
-        const challengeResult = await sendMessage(opponentId, `🦑 Вызов на Игру в Кальмара!\n\n${player.first_name} бросает тебе вызов!\n💰 Ставка: ${betAmount} монет\n\nТы принимаешь?`, {
-          inline_keyboard: [
-            [{ text: '✅ Принять', callback_data: `accept_challenge_${session.id}_u${opponentId}` }],
-            [{ text: '❌ Отказаться', callback_data: `decline_challenge_${session.id}_u${opponentId}` }]
-          ]
-        });
-        console.log(`Challenge message result:`, challengeResult);
       } else if (text.startsWith('/admin_add_coins ')) {
         const { data: admin } = await supabaseClient
           .from('squid_admins')
@@ -1749,7 +1619,7 @@ serve(async (req) => {
         }
 
         await sendMessage(chat.id, 
-          `👑 <b>Команды администратора</b>\n\n<b>💰 Управление балансом:</b>\n/admin_add_coins [ID] [сумма] - добавить монеты игроку\n/admin_set_balance [ID] [сумма] - установить точный баланс\n\n<b>🎟️ Промокоды:</b>\n/admin_create_promo [код] [сумма] - создать промокод\n/admin_delete_promo [код] - удалить промокод\n\n<b>🎰 Казино:</b>\n/casino_admin - включить/выключить режим всегда выигрывать\n\n<b>📊 Информация:</b>\n/servers - список всех чатов бота\n/admin_search - список всех игроков с ID\n/admin_commands - показать эту справку`
+          `👑 <b>Команды администратора</b>\n\n<b>💰 Управление балансом:</b>\n/admin_add_coins [ID] [сумма] - добавить монеты игроку\n/admin_set_balance [ID] [сумма] - установить точный баланс\n\n<b>🎟️ Промокоды:</b>\n/admin_create_promo [код] [сумма] [количество] - создать промокод\n/admin_delete_promo [код] - удалить промокод\n\n<b>🎰 Казино:</b>\n/casino_admin - включить/выключить режим всегда выигрывать\n\n<b>📊 Информация:</b>\n/servers - список всех чатов бота\n/admin_search - список всех игроков с ID\n/admin_commands - показать эту справку`
         );
       } else if (text === '/admin_search') {
         const { data: admin } = await supabaseClient
@@ -1817,7 +1687,7 @@ serve(async (req) => {
           .delete()
           .eq('code', code);
 
-        await sendMessage(chat.id, `✅ Промокод "${code}" удалён!`);
+        await sendMessage(chat.id, `✅ Промокод \"${code}\" удалён!`);
       } else if (text.startsWith('/admin_set_balance ')) {
         const { data: admin } = await supabaseClient
           .from('squid_admins')
@@ -2001,19 +1871,22 @@ serve(async (req) => {
         let inventoryText = '🎒 <b>Твой инвентарь</b>\n\n';
         
         items.forEach((item, index) => {
-          inventoryText += `${index + 1}. ${item.item_name}\nРедкость: ${item.item_rarity}\nЦена продажи: ${item.sell_price} монет\n\n`;
+          inventoryText += `${index + 1}. ${item.item_name}\n`;
+          inventoryText += `   Редкость: ${item.item_rarity}\n`;
+          inventoryText += `   Цена: ${item.sell_price} монет\n\n`;
         });
 
-        inventoryText += `\nЧтобы продать предмет, используй:\n/sell [номер]`;
+        inventoryText += '\nИспользуй /sell [номер] чтобы продать предмет';
 
         await sendMessage(chat.id, inventoryText);
       } else if (text.startsWith('/sell ')) {
-        const itemIndex = parseInt(text.split(' ')[1]);
-
-        if (isNaN(itemIndex) || itemIndex < 1) {
-          await sendMessage(chat.id, '❌ Неверный номер предмета!\nИспользуй: /sell [номер]\nПример: /sell 1');
+        const args = text.split(' ');
+        if (args.length !== 2) {
+          await sendMessage(chat.id, '❌ Формат: /sell [номер]');
           return new Response('OK', { headers: corsHeaders });
         }
+
+        const itemIndex = parseInt(args[1]) - 1;
 
         const { data: player } = await supabaseClient
           .from('squid_players')
@@ -2032,17 +1905,17 @@ serve(async (req) => {
           .eq('player_id', player.id)
           .order('created_at', { ascending: false });
 
-        if (!items || items.length === 0) {
-          await sendMessage(chat.id, '❌ У тебя нет предметов!');
+        if (!items || items.length === 0 || itemIndex < 0 || itemIndex >= items.length) {
+          await sendMessage(chat.id, '❌ Предмет не найден!');
           return new Response('OK', { headers: corsHeaders });
         }
 
-        if (itemIndex > items.length) {
-          await sendMessage(chat.id, `❌ Предмет с номером ${itemIndex} не найден!`);
-          return new Response('OK', { headers: corsHeaders });
-        }
+        const itemToSell = items[itemIndex];
 
-        const itemToSell = items[itemIndex - 1];
+        // Add money to player
+        await supabaseClient.from('squid_players')
+          .update({ balance: player.balance + itemToSell.sell_price })
+          .eq('id', player.id);
 
         // Delete item from inventory
         await supabaseClient
@@ -2050,21 +1923,18 @@ serve(async (req) => {
           .delete()
           .eq('id', itemToSell.id);
 
-        // Add money to balance
-        await supabaseClient.from('squid_players')
-          .update({ balance: player.balance + itemToSell.sell_price })
-          .eq('id', player.id);
-
-        await sendMessage(chat.id, `✅ Предмет продан!\n\n${itemToSell.item_name}\n💰 Получено: ${itemToSell.sell_price} монет\n💵 Новый баланс: ${player.balance + itemToSell.sell_price} монет`);
+        await sendMessage(chat.id, 
+          `✅ <b>Предмет продан!</b>\n\n${itemToSell.item_name}\n💰 Получено: ${itemToSell.sell_price} монет\n💵 Новый баланс: ${player.balance + itemToSell.sell_price} монет`
+        );
       }
     }
 
     return new Response('OK', { headers: corsHeaders });
   } catch (error) {
     console.error('Error:', error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), {
-      status: 500,
+    return new Response(JSON.stringify({ error: String(error) }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 500,
     });
   }
 });
