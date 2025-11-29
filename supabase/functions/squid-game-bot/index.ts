@@ -1115,11 +1115,14 @@ serve(async (req) => {
       }
 
       // Create or update player
-      await supabaseClient.from('squid_players').upsert({
-        telegram_id: from.id,
-        username: from.username,
-        first_name: from.first_name,
-      }, { onConflict: 'telegram_id' });
+      const { data: player } = await supabaseClient.from('squid_players')
+        .upsert({
+          telegram_id: from.id,
+          username: from.username,
+          first_name: from.first_name,
+        }, { onConflict: 'telegram_id' })
+        .select()
+        .single();
 
       // Store chat information
       await supabaseClient.from('squid_bot_chats').upsert({
@@ -1129,6 +1132,15 @@ serve(async (req) => {
         chat_username: chat.username || null,
         last_activity: new Date().toISOString()
       }, { onConflict: 'chat_id' });
+
+      // Track player activity in this chat
+      if (player) {
+        await supabaseClient.from('squid_player_chats').upsert({
+          player_id: player.id,
+          chat_id: chat.id,
+          last_message_at: new Date().toISOString()
+        }, { onConflict: 'player_id,chat_id' });
+      }
 
       if (text === '/start') {
         const { data: player } = await supabaseClient
@@ -1208,9 +1220,23 @@ serve(async (req) => {
           ]
         });
       } else if (text === '/top') {
+        // Get players who are active in this chat
+        const { data: chatPlayers } = await supabaseClient
+          .from('squid_player_chats')
+          .select('player_id')
+          .eq('chat_id', chat.id);
+
+        if (!chatPlayers || chatPlayers.length === 0) {
+          await sendMessage(chat.id, '❌ В этой беседе пока нет игроков');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const playerIds = chatPlayers.map(cp => cp.player_id);
+
         const { data: topPlayers } = await supabaseClient
           .from('squid_players')
           .select('*')
+          .in('id', playerIds)
           .order('balance', { ascending: false })
           .limit(10);
 
@@ -1721,8 +1747,40 @@ serve(async (req) => {
         }
 
         await sendMessage(chat.id, 
-          `👑 <b>Команды администратора</b>\n\n<b>💰 Управление балансом:</b>\n/admin_add_coins [ID] [сумма] - добавить монеты игроку\n/admin_set_balance [ID] [сумма] - установить точный баланс\n\n<b>🎟️ Промокоды:</b>\n/admin_create_promo [код] [сумма] - создать промокод\n/admin_delete_promo [код] - удалить промокод\n\n<b>🎰 Казино:</b>\n/casino_admin - включить/выключить режим всегда выигрывать\n\n<b>📊 Информация:</b>\n/servers - список всех чатов бота\n/admin_commands - показать эту справку`
+          `👑 <b>Команды администратора</b>\n\n<b>💰 Управление балансом:</b>\n/admin_add_coins [ID] [сумма] - добавить монеты игроку\n/admin_set_balance [ID] [сумма] - установить точный баланс\n\n<b>🎟️ Промокоды:</b>\n/admin_create_promo [код] [сумма] - создать промокод\n/admin_delete_promo [код] - удалить промокод\n\n<b>🎰 Казино:</b>\n/casino_admin - включить/выключить режим всегда выигрывать\n\n<b>📊 Информация:</b>\n/servers - список всех чатов бота\n/admin_search - список всех игроков с ID\n/admin_commands - показать эту справку`
         );
+      } else if (text === '/admin_search') {
+        const { data: admin } = await supabaseClient
+          .from('squid_admins')
+          .select('*')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!admin) {
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const { data: allPlayers } = await supabaseClient
+          .from('squid_players')
+          .select('*')
+          .order('balance', { ascending: false });
+
+        if (!allPlayers || allPlayers.length === 0) {
+          await sendMessage(chat.id, '❌ Список игроков пуст');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        let searchText = '🔍 <b>Список всех игроков</b>\n\n';
+        
+        allPlayers.forEach((player, index) => {
+          const prefix = player.prefix ? `[${player.prefix}] ` : '';
+          const displayName = player.first_name || 'Неизвестно';
+          const username = player.username ? `@${player.username}` : '';
+          searchText += `${index + 1}. ${prefix}${displayName} ${username}\n`;
+          searchText += `   ID: <code>${player.telegram_id}</code> | 💰 ${player.balance.toLocaleString()} монет\n\n`;
+        });
+
+        await sendMessage(chat.id, searchText);
       } else if (text.startsWith('/admin_delete_promo ')) {
         const { data: admin } = await supabaseClient
           .from('squid_admins')
