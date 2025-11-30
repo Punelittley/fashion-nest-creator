@@ -251,6 +251,199 @@ serve(async (req) => {
             inline_keyboard: [[{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]]
           });
         }
+      } else if (data.startsWith('buy_business_')) {
+        const businessType = data.replace('buy_business_', '').split('_u')[0];
+        
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('id, balance')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!player) {
+          await answerCallbackQuery(callbackId, '❌ Игрок не найден');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        // Check if player already owns this business
+        const { data: existingBusiness } = await supabaseClient
+          .from('squid_player_businesses')
+          .select('*')
+          .eq('player_id', player.id)
+          .eq('business_type', businessType)
+          .single();
+
+        if (existingBusiness) {
+          await answerCallbackQuery(callbackId, '❌ У тебя уже есть этот бизнес!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const costs = {
+          mask_factory: 200000,
+          vip_casino: 500000
+        };
+        const names = {
+          mask_factory: '🏭 Фабрика масок',
+          vip_casino: '🎰 VIP Казино'
+        };
+
+        const cost = costs[businessType as keyof typeof costs];
+
+        if (player.balance < cost) {
+          await answerCallbackQuery(callbackId, `❌ Недостаточно монет! Нужно ${cost.toLocaleString()}`);
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        // Deduct cost and add business
+        await supabaseClient
+          .from('squid_players')
+          .update({ balance: player.balance - cost })
+          .eq('id', player.id);
+
+        await supabaseClient
+          .from('squid_player_businesses')
+          .insert({
+            player_id: player.id,
+            business_type: businessType,
+            upgrade_level: 0
+          });
+
+        await editMessage(chatId, message!.message_id, 
+          `✅ <b>Бизнес куплен!</b>\n\n${names[businessType as keyof typeof names]}\n💰 Потрачено: ${cost.toLocaleString()} монет\n💵 Новый баланс: ${(player.balance - cost).toLocaleString()} монет\n\nИспользуй /collect чтобы собирать прибыль!`
+        );
+      } else if (data.startsWith('upgrade_business_')) {
+        const businessType = data.replace('upgrade_business_', '').split('_u')[0];
+        
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('id, balance')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!player) {
+          await answerCallbackQuery(callbackId, '❌ Игрок не найден');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const { data: business } = await supabaseClient
+          .from('squid_player_businesses')
+          .select('*')
+          .eq('player_id', player.id)
+          .eq('business_type', businessType)
+          .single();
+
+        if (!business) {
+          await answerCallbackQuery(callbackId, '❌ Бизнес не найден');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        if (business.upgrade_level >= 3) {
+          await answerCallbackQuery(callbackId, '❌ Максимальный уровень!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const upgradeCosts = {
+          mask_factory: [100000, 200000, 300000],
+          vip_casino: [600000, 700000, 800000]
+        };
+        const incomes = {
+          mask_factory: [3000, 6000, 9000, 12000],
+          vip_casino: [20000, 25000, 30000, 40000]
+        };
+        const names = {
+          mask_factory: '🏭 Фабрика масок',
+          vip_casino: '🎰 VIP Казино'
+        };
+
+        const cost = upgradeCosts[businessType as keyof typeof upgradeCosts][business.upgrade_level];
+        const newIncome = incomes[businessType as keyof typeof incomes][business.upgrade_level + 1];
+
+        if (player.balance < cost) {
+          await answerCallbackQuery(callbackId, `❌ Недостаточно монет! Нужно ${cost.toLocaleString()}`);
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        // Deduct cost and upgrade business
+        await supabaseClient
+          .from('squid_players')
+          .update({ balance: player.balance - cost })
+          .eq('id', player.id);
+
+        await supabaseClient
+          .from('squid_player_businesses')
+          .update({ upgrade_level: business.upgrade_level + 1 })
+          .eq('id', business.id);
+
+        await editMessage(chatId, message!.message_id,
+          `✅ <b>Бизнес улучшен!</b>\n\n${names[businessType as keyof typeof names]}\n📊 Новый уровень: ${business.upgrade_level + 2}/4\n💰 Новый доход: ${newIncome.toLocaleString()} монет/час\n💵 Новый баланс: ${(player.balance - cost).toLocaleString()} монет`
+        );
+      } else if (data === 'my_businesses') {
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('id, balance')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!player) {
+          await answerCallbackQuery(callbackId, '❌ Игрок не найден');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const { data: businesses } = await supabaseClient
+          .from('squid_player_businesses')
+          .select('*')
+          .eq('player_id', player.id);
+
+        if (!businesses || businesses.length === 0) {
+          await editMessage(chatId, message!.message_id, '❌ У тебя нет бизнесов!\n\nИспользуй /business_shop чтобы купить свой первый бизнес.');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const businessInfo = (type: string, level: number) => {
+          if (type === 'mask_factory') {
+            const incomes = [3000, 6000, 9000, 12000];
+            const upgradeCosts = [100000, 200000, 300000];
+            return {
+              name: '🏭 Фабрика масок',
+              income: incomes[level],
+              upgradeCost: level < 3 ? upgradeCosts[level] : null
+            };
+          } else {
+            const incomes = [20000, 25000, 30000, 40000];
+            const upgradeCosts = [600000, 700000, 800000];
+            return {
+              name: '🎰 VIP Казино',
+              income: incomes[level],
+              upgradeCost: level < 3 ? upgradeCosts[level] : null
+            };
+          }
+        };
+
+        let listText = '💼 <b>Мои бизнесы</b>\n\n';
+        const buttons: any[] = [];
+
+        businesses.forEach(biz => {
+          const info = businessInfo(biz.business_type, biz.upgrade_level);
+          listText += `${info.name}\n`;
+          listText += `📊 Уровень: ${biz.upgrade_level + 1}/4\n`;
+          listText += `💰 Доход: ${info.income.toLocaleString()} монет/час\n`;
+          if (info.upgradeCost) {
+            listText += `⬆️ Улучшение: ${info.upgradeCost.toLocaleString()} монет\n`;
+            buttons.push([{ 
+              text: `⬆️ Улучшить ${info.name}`, 
+              callback_data: `upgrade_business_${biz.business_type}_u${from.id}` 
+            }]);
+          } else {
+            listText += `✅ Максимальный уровень!\n`;
+          }
+          listText += '\n';
+        });
+
+        listText += `💵 Баланс: ${player.balance.toLocaleString()} монет`;
+
+        await editMessage(chatId, message!.message_id, listText, {
+          inline_keyboard: buttons.length > 0 ? buttons : undefined
+        });
       } else if (data.startsWith('glass_')) {
         const choice = data.replace('glass_', '');
         
@@ -1926,6 +2119,199 @@ serve(async (req) => {
         await sendMessage(chat.id, 
           `✅ <b>Предмет продан!</b>\n\n${itemToSell.item_name}\n💰 Получено: ${itemToSell.sell_price} монет\n💵 Новый баланс: ${player.balance + itemToSell.sell_price} монет`
         );
+      } else if (text === '/business_shop') {
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('id, balance')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!player) {
+          await sendMessage(chat.id, '❌ Игрок не найден.');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const shopText = `🏭 <b>Магазин бизнесов</b>
+
+💼 <b>Фабрика масок</b>
+🪙 Стоимость: 200,000 монет
+💰 Доход: 3,000 монет/час
+⬆️ 3 улучшения доступно
+
+🎰 <b>VIP Казино</b>
+🪙 Стоимость: 500,000 монет
+💰 Доход: 20,000 монет/час
+⬆️ 3 улучшения доступно
+
+💵 Твой баланс: ${player.balance.toLocaleString()} монет`;
+
+        await sendMessage(chat.id, shopText, {
+          inline_keyboard: [
+            [{ text: '🏭 Купить Фабрику масок', callback_data: `buy_business_mask_factory_u${from.id}` }],
+            [{ text: '🎰 Купить VIP Казино', callback_data: `buy_business_vip_casino_u${from.id}` }],
+            [{ text: '📊 Мои бизнесы', callback_data: `my_businesses_u${from.id}` }]
+          ]
+        });
+      } else if (text === '/my_buss') {
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('id, balance')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!player) {
+          await sendMessage(chat.id, '❌ Игрок не найден.');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const { data: businesses } = await supabaseClient
+          .from('squid_player_businesses')
+          .select('*')
+          .eq('player_id', player.id);
+
+        if (!businesses || businesses.length === 0) {
+          await sendMessage(chat.id, '❌ У тебя нет бизнесов!\n\nИспользуй /business_shop чтобы купить свой первый бизнес.');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const businessInfo = (type: string, level: number) => {
+          if (type === 'mask_factory') {
+            const incomes = [3000, 6000, 9000, 12000];
+            const upgradeCosts = [100000, 200000, 300000];
+            return {
+              name: '🏭 Фабрика масок',
+              income: incomes[level],
+              upgradeCost: level < 3 ? upgradeCosts[level] : null
+            };
+          } else {
+            const incomes = [20000, 25000, 30000, 40000];
+            const upgradeCosts = [600000, 700000, 800000];
+            return {
+              name: '🎰 VIP Казино',
+              income: incomes[level],
+              upgradeCost: level < 3 ? upgradeCosts[level] : null
+            };
+          }
+        };
+
+        let listText = '💼 <b>Мои бизнесы</b>\n\n';
+        const buttons: any[] = [];
+
+        businesses.forEach(biz => {
+          const info = businessInfo(biz.business_type, biz.upgrade_level);
+          listText += `${info.name}\n`;
+          listText += `📊 Уровень: ${biz.upgrade_level + 1}/4\n`;
+          listText += `💰 Доход: ${info.income.toLocaleString()} монет/час\n`;
+          if (info.upgradeCost) {
+            listText += `⬆️ Улучшение: ${info.upgradeCost.toLocaleString()} монет\n`;
+            buttons.push([{ 
+              text: `⬆️ Улучшить ${info.name}`, 
+              callback_data: `upgrade_business_${biz.business_type}_u${from.id}` 
+            }]);
+          } else {
+            listText += `✅ Максимальный уровень!\n`;
+          }
+          listText += '\n';
+        });
+
+        listText += `💵 Баланс: ${player.balance.toLocaleString()} монет`;
+
+        await sendMessage(chat.id, listText, {
+          inline_keyboard: buttons.length > 0 ? buttons : undefined
+        });
+      } else if (text === '/collect') {
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('id, balance')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!player) {
+          await sendMessage(chat.id, '❌ Игрок не найден.');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const { data: businesses } = await supabaseClient
+          .from('squid_player_businesses')
+          .select('*')
+          .eq('player_id', player.id);
+
+        if (!businesses || businesses.length === 0) {
+          await sendMessage(chat.id, '❌ У тебя нет бизнесов!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        let totalIncome = 0;
+
+        for (const biz of businesses) {
+          const lastCollection = new Date(biz.last_collection);
+          const now = new Date();
+          const hoursPassed = (now.getTime() - lastCollection.getTime()) / (1000 * 60 * 60);
+
+          let hourlyIncome = 0;
+          if (biz.business_type === 'mask_factory') {
+            const incomes = [3000, 6000, 9000, 12000];
+            hourlyIncome = incomes[biz.upgrade_level];
+          } else {
+            const incomes = [20000, 25000, 30000, 40000];
+            hourlyIncome = incomes[biz.upgrade_level];
+          }
+
+          const income = Math.floor(hourlyIncome * hoursPassed);
+          totalIncome += income;
+
+          // Update last collection time
+          await supabaseClient
+            .from('squid_player_businesses')
+            .update({ last_collection: now.toISOString() })
+            .eq('id', biz.id);
+        }
+
+        if (totalIncome === 0) {
+          await sendMessage(chat.id, '⏳ Пока нечего собирать. Подожди немного!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        // Add income to player balance
+        await supabaseClient
+          .from('squid_players')
+          .update({ balance: player.balance + totalIncome })
+          .eq('id', player.id);
+
+        await sendMessage(chat.id, 
+          `💰 <b>Прибыль собрана!</b>\n\n🪙 Получено: ${totalIncome.toLocaleString()} монет\n💵 Новый баланс: ${(player.balance + totalIncome).toLocaleString()} монет`
+        );
+      } else if (text.startsWith('/admin_del_bus ')) {
+        const args = text.split(' ');
+        if (args.length !== 2) {
+          await sendMessage(chat.id, '❌ Формат: /admin_del_bus [id бизнеса]');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        // Check if user is admin
+        const { data: admin } = await supabaseClient
+          .from('squid_admins')
+          .select('*')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!admin) {
+          await sendMessage(chat.id, '❌ У тебя нет прав администратора.');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const businessId = args[1];
+
+        const { error } = await supabaseClient
+          .from('squid_player_businesses')
+          .delete()
+          .eq('id', businessId);
+
+        if (error) {
+          await sendMessage(chat.id, `❌ Ошибка при удалении бизнеса: ${error.message}`);
+        } else {
+          await sendMessage(chat.id, '✅ Бизнес успешно удалён!');
+        }
       }
     }
 
