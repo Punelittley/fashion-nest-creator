@@ -492,6 +492,41 @@ export type Database = {
           },
         ]
       }
+      squid_player_businesses: {
+        Row: {
+          business_type: string
+          created_at: string | null
+          id: string
+          last_collection: string | null
+          player_id: string
+          upgrade_level: number
+        }
+        Insert: {
+          business_type: string
+          created_at?: string | null
+          id?: string
+          last_collection?: string | null
+          player_id: string
+          upgrade_level?: number
+        }
+        Update: {
+          business_type?: string
+          created_at?: string | null
+          id?: string
+          last_collection?: string | null
+          player_id?: string
+          upgrade_level?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "squid_player_businesses_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "squid_players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       squid_player_chats: {
         Row: {
           chat_id: number
