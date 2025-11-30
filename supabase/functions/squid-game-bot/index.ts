@@ -2283,8 +2283,8 @@ serve(async (req) => {
         );
       } else if (text.startsWith('/admin_del_bus ')) {
         const args = text.split(' ');
-        if (args.length !== 2) {
-          await sendMessage(chat.id, '❌ Формат: /admin_del_bus [id бизнеса]');
+        if (args.length !== 3) {
+          await sendMessage(chat.id, '❌ Формат: /admin_del_bus [telegram_id] [тип]\nТипы: mask_factory, vip_casino');
           return new Response('OK', { headers: corsHeaders });
         }
 
@@ -2300,17 +2300,38 @@ serve(async (req) => {
           return new Response('OK', { headers: corsHeaders });
         }
 
-        const businessId = args[1];
+        const telegramId = parseInt(args[1]);
+        const businessType = args[2];
 
+        if (businessType !== 'mask_factory' && businessType !== 'vip_casino') {
+          await sendMessage(chat.id, '❌ Неверный тип бизнеса. Доступны: mask_factory, vip_casino');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        // Find player
+        const { data: targetPlayer } = await supabaseClient
+          .from('squid_players')
+          .select('id')
+          .eq('telegram_id', telegramId)
+          .single();
+
+        if (!targetPlayer) {
+          await sendMessage(chat.id, '❌ Игрок не найден');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        // Delete business
         const { error } = await supabaseClient
           .from('squid_player_businesses')
           .delete()
-          .eq('id', businessId);
+          .eq('player_id', targetPlayer.id)
+          .eq('business_type', businessType);
 
         if (error) {
           await sendMessage(chat.id, `❌ Ошибка при удалении бизнеса: ${error.message}`);
         } else {
-          await sendMessage(chat.id, '✅ Бизнес успешно удалён!');
+          const businessName = businessType === 'mask_factory' ? 'Фабрика масок' : 'VIP Казино';
+          await sendMessage(chat.id, `✅ Бизнес "${businessName}" успешно удалён у игрока ${telegramId}!`);
         }
       }
     }
