@@ -87,7 +87,6 @@ export const ProductImageSlider = ({ images, alt }: ProductImageSliderProps) => 
         </div>
       </div>
 
-      {/* Navigation Buttons */}
       <button
         onClick={scrollPrev}
         style={{
@@ -138,7 +137,6 @@ export const ProductImageSlider = ({ images, alt }: ProductImageSliderProps) => 
         <ChevronRight size={20} color="hsl(var(--foreground))" />
       </button>
 
-      {/* Dots Indicator */}
       <div style={{
         position: "absolute",
         bottom: "0.75rem",

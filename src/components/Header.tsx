@@ -15,7 +15,6 @@ const Header = () => {
   useEffect(() => {
     checkAuth();
     
-    // Слушаем изменения состояния авторизации Supabase
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
         setIsAuthenticated(true);
@@ -36,26 +35,21 @@ const Header = () => {
   const checkAuth = async () => {
     const token = localStorage.getItem('auth_token');
     if (token === 'supabase') {
-      // Проверяем Supabase сессию
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         setIsAuthenticated(true);
         loadCartCount();
-        // Проверяем роль админа
         checkAdminRole(session.user.id);
       } else {
         setIsAuthenticated(false);
       }
     } else if (token) {
-      // Локальный Express токен — проверяем валидность через /auth/me
       try {
         await authApi.me();
         setIsAuthenticated(true);
         loadCartCount();
-        // Проверяем роль админа через SQLite API
         checkAdminRoleSQLite();
       } catch {
-        // Токен недействителен или сервер недоступен — считаем, что не авторизованы
         setIsAuthenticated(false);
       }
     }
@@ -161,7 +155,6 @@ const Header = () => {
           />
         </Link>
 
-        {/* Desktop Menu */}
         <div style={{
           display: "flex",
           gap: "2rem",
@@ -310,7 +303,6 @@ const Header = () => {
         </div>
       </nav>
 
-      {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div style={{
           backgroundColor: "hsl(var(--background))",

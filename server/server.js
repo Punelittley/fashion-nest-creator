@@ -3,7 +3,6 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { initDatabase } from './database.js';
 
-// Импорт роутов
 import authRoutes from './routes/auth.js';
 import productsRoutes from './routes/products.js';
 import categoriesRoutes from './routes/categories.js';
@@ -15,15 +14,13 @@ import roleRoutes from './routes/role.js';
 import usersRoutes from './routes/users.js';
 import uploadRoutes from './routes/upload.js';
 
-// Загрузка переменных окружения
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware
 app.use(cors({
-  origin: true, // Разрешаем любой origin для разработки (включая превью-ссылку Lovable)
+  origin: true,
   credentials: true,
   exposedHeaders: ['Authorization'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -31,13 +28,11 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Логирование запросов
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.path}`);
   next();
 });
 
-// Роуты API
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productsRoutes);
 app.use('/api/categories', categoriesRoutes);
@@ -49,26 +44,21 @@ app.use('/api/role', roleRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/upload', uploadRoutes);
 
-// Проверка здоровья сервера
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' });
 });
 
-// Обработка 404
 app.use((req, res) => {
   res.status(404).json({ error: 'Endpoint not found' });
 });
 
-// Обработка ошибок
 app.use((err, req, res, next) => {
   console.error('Server error:', err);
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// Запуск сервера
 const startServer = async () => {
   try {
-    // Инициализация базы данных
     await initDatabase();
     
     app.listen(PORT, () => {

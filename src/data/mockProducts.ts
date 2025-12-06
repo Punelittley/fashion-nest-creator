@@ -15,7 +15,6 @@ export interface MockCategory {
   name: string;
 }
 
-// КАТЕГОРИИ - можешь добавлять свои
 export const mockCategories: MockCategory[] = [
   { id: "718cdc3d-26bc-4e4f-bf49-1477e8e9104e", name: "Пальто" },
   { id: "255f1dd8-8577-40b1-ad9a-71cd7692accf", name: "Штаны" },
@@ -23,7 +22,6 @@ export const mockCategories: MockCategory[] = [
   { id: "a27cdd64-f618-44a8-a641-e359b0daf430", name: "Обувь" },
 ];
 
-// ТОВАРЫ - меняй названия, цены, описания и пути к картинкам здесь
 export const mockProducts: MockProduct[] = [
   {
     id: "e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8a9b",
