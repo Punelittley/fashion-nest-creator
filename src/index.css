@@ -2,11 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Fashion Store Design System - Elegant & Minimal */
-
 @layer base {
   :root {
-    /* Core Colors - Monochrome with warm accents */
     --background: 0 0% 100%;
     --foreground: 0 0% 10%;
     
@@ -16,19 +13,15 @@
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 10%;
     
-    /* Primary - Elegant Black */
     --primary: 0 0% 10%;
     --primary-foreground: 0 0% 98%;
     
-    /* Secondary - Cool Gray */
     --secondary: 0 0% 95%;
     --secondary-foreground: 0 0% 10%;
     
-    /* Muted - Soft Gray */
     --muted: 0 0% 96%;
     --muted-foreground: 0 0% 45%;
     
-    /* Accent - Elegant Silver Gray */
     --accent: 220 10% 55%;
     --accent-foreground: 0 0% 100%;
     
@@ -41,7 +34,6 @@
     
     --radius: 0rem;
     
-    /* Custom Design Tokens */
     --gradient-hero: linear-gradient(135deg, hsl(0 0% 98%), hsl(220 10% 96%));
     --gradient-overlay: linear-gradient(0deg, hsl(0 0% 10% / 0.6), transparent);
     --shadow-soft: 0 2px 20px hsl(0 0% 0% / 0.05);
@@ -100,7 +92,6 @@
   }
 }
 
-/* Custom Utilities */
 @layer utilities {
   .text-balance {
     text-wrap: balance;
@@ -119,7 +110,6 @@
   }
 }
 
-/* Toast Animations */
 @keyframes toast-slide-in {
   from {
     transform: translateY(120%) scale(0.9) rotateX(10deg);

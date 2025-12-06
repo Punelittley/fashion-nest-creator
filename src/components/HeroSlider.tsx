@@ -21,19 +21,19 @@ const HeroSlider = () => {
       id: 1,
       title: "Весенняя коллекция",
       subtitle: "Новые поступления 2025",
-      image: "/placeholder.svg", // Замените на свое изображение
+      image: "/placeholder.svg",
     },
     {
       id: 2,
       title: "Стиль и комфорт",
       subtitle: "Эксклюзивные модели",
-      image: "/placeholder.svg", // Замените на свое изображение
+      image: "/placeholder.svg",
     },
     {
       id: 3,
       title: "Тренды сезона",
       subtitle: "Скидки до 30%",
-      image: "/placeholder.svg", // Замените на свое изображение
+      image: "/placeholder.svg",
     },
   ]);
 
@@ -68,7 +68,6 @@ const HeroSlider = () => {
                   backgroundColor: "hsl(var(--muted))",
                 }}
               >
-                {/* Background Image */}
                 <div
                   style={{
                     position: "absolute",
@@ -83,7 +82,6 @@ const HeroSlider = () => {
                   }}
                 />
 
-                {/* Overlay Gradient */}
                 <div
                   style={{
                     position: "absolute",
@@ -95,7 +93,6 @@ const HeroSlider = () => {
                   }}
                 />
 
-                {/* Content */}
                 <div
                   style={{
                     position: "relative",
@@ -164,7 +161,6 @@ const HeroSlider = () => {
           ))}
         </CarouselContent>
 
-        {/* Navigation Buttons */}
         <CarouselPrevious
           style={{
             position: "absolute",

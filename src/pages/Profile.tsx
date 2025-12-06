@@ -60,7 +60,6 @@ const Profile = () => {
   }, [navigate]);
 
   const loadProfile = async () => {
-    // Проверка авторизации
     const authToken = localStorage.getItem('auth_token');
     const { data: { session } } = await supabase.auth.getSession();
     
@@ -90,7 +89,7 @@ const Profile = () => {
         });
       }
     } catch (error) {
-      console.log('📦 SQLite недоступен, загружаю профиль из Supabase...');
+      
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
@@ -131,7 +130,6 @@ const Profile = () => {
   };
 
   const loadOrderStats = async () => {
-    // Проверка авторизации
     const authToken = localStorage.getItem('auth_token');
     const { data: { session } } = await supabase.auth.getSession();
     
@@ -152,7 +150,7 @@ const Profile = () => {
         setOrderStats(stats);
       }
     } catch (error) {
-      console.log('📦 SQLite недоступен, загружаю статистику из Supabase...');
+      
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
@@ -200,7 +198,7 @@ const Profile = () => {
 
       toast.success("Профиль обновлен");
     } catch (error) {
-      console.log('📦 SQLite недоступен, обновляю через Supabase...');
+      
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {

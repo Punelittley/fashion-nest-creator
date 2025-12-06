@@ -6,7 +6,6 @@ import fs from 'fs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Создаем подключение к SQLite базе данных
 const dbPath = join(__dirname, 'fashion_store.db');
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
@@ -16,10 +15,8 @@ const db = new sqlite3.Database(dbPath, (err) => {
   }
 });
 
-// Включаем поддержку внешних ключей
 db.run('PRAGMA foreign_keys = ON');
 
-// Функция для инициализации базы данных
 export const initDatabase = () => {
   const sqlPath = join(__dirname, 'init-db.sql');
   const sql = fs.readFileSync(sqlPath, 'utf8');
@@ -37,7 +34,6 @@ export const initDatabase = () => {
   });
 };
 
-// Промисифицированные методы для удобной работы
 export const dbRun = (sql, params = []) => {
   return new Promise((resolve, reject) => {
     db.run(sql, params, function(err) {

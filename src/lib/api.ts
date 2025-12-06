@@ -1,5 +1,3 @@
-// API клиент для работы с Express backend
-
 const getApiBaseUrl = () => {
   if (typeof window !== 'undefined') {
     const override = localStorage.getItem('api_base_url');
@@ -11,20 +9,16 @@ const getApiBaseUrl = () => {
 
 const API_URL = getApiBaseUrl();
 
-// Получить токен из localStorage
 const getToken = () => localStorage.getItem('auth_token');
 
-// Сохранить токен
 export const setToken = (token: string) => {
   localStorage.setItem('auth_token', token);
 };
 
-// Удалить токен
 export const removeToken = () => {
   localStorage.removeItem('auth_token');
 };
 
-// Базовый fetch с обработкой ошибок
 const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
   const token = getToken();
   
@@ -50,7 +44,6 @@ const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
   return response.json();
 };
 
-// Auth API
 export const authApi = {
   signup: (email: string, password: string, fullName: string) =>
     apiFetch('/auth/signup', {
@@ -72,7 +65,6 @@ export const authApi = {
   },
 };
 
-// Products API
 export const productsApi = {
   getAll: (category?: string) => {
     const params = category ? `?category=${category}` : '';
@@ -99,7 +91,6 @@ export const productsApi = {
     }),
 };
 
-// Categories API
 export const categoriesApi = {
   getAll: () => apiFetch('/categories'),
 
@@ -110,7 +101,6 @@ export const categoriesApi = {
     }),
 };
 
-// Cart API
 export const cartApi = {
   get: () => apiFetch('/cart'),
 
@@ -137,7 +127,6 @@ export const cartApi = {
     }),
 };
 
-// Orders API
 export const ordersApi = {
   get: () => apiFetch('/orders'),
 
@@ -156,8 +145,6 @@ export const ordersApi = {
     }),
 };
 
-// Favorites API
-// Profile API
 export const profileApi = {
   get: () => apiFetch('/profile'),
 
@@ -168,12 +155,10 @@ export const profileApi = {
     }),
 };
 
-// Role API
 export const roleApi = {
   checkAdmin: () => apiFetch('/role/check-admin'),
 };
 
-// Users API
 export const usersApi = {
   getAll: () => apiFetch('/users'),
 };
@@ -199,7 +184,6 @@ export const uploadApi = {
   }
 };
 
-// Favorites API
 export const favoritesApi = {
   getAll: () => apiFetch('/favorites'),
   
