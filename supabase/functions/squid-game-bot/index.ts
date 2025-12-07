@@ -2075,11 +2075,9 @@ serve(async (req) => {
       } else if (text.startsWith('/sell ')) {
         const args = text.split(' ');
         if (args.length !== 2) {
-          await sendMessage(chat.id, '❌ Формат: /sell [номер]');
+          await sendMessage(chat.id, '❌ Формат: /sell [номер] или /sell all');
           return new Response('OK', { headers: corsHeaders });
         }
-
-        const itemIndex = parseInt(args[1]) - 1;
 
         const { data: player } = await supabaseClient
           .from('squid_players')
@@ -2098,26 +2096,52 @@ serve(async (req) => {
           .eq('player_id', player.id)
           .order('created_at', { ascending: false });
 
-        if (!items || items.length === 0 || itemIndex < 0 || itemIndex >= items.length) {
+        if (!items || items.length === 0) {
+          await sendMessage(chat.id, '❌ У тебя нет предметов для продажи!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        if (args[1] === 'all') {
+          let totalValue = 0;
+          for (const item of items) {
+            totalValue += item.sell_price;
+          }
+
+          await supabaseClient.from('squid_players')
+            .update({ balance: player.balance + totalValue })
+            .eq('id', player.id);
+
+          await supabaseClient
+            .from('squid_player_items')
+            .delete()
+            .eq('player_id', player.id);
+
+          await sendMessage(chat.id, 
+            `✅ <b>Все предметы проданы!</b>\n\n📦 Продано: ${items.length} шт.\n💰 Получено: ${totalValue.toLocaleString()} монет\n💵 Новый баланс: ${(player.balance + totalValue).toLocaleString()} монет`
+          );
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const itemIndex = parseInt(args[1]) - 1;
+
+        if (isNaN(itemIndex) || itemIndex < 0 || itemIndex >= items.length) {
           await sendMessage(chat.id, '❌ Предмет не найден!');
           return new Response('OK', { headers: corsHeaders });
         }
 
         const itemToSell = items[itemIndex];
 
-        // Add money to player
         await supabaseClient.from('squid_players')
           .update({ balance: player.balance + itemToSell.sell_price })
           .eq('id', player.id);
 
-        // Delete item from inventory
         await supabaseClient
           .from('squid_player_items')
           .delete()
           .eq('id', itemToSell.id);
 
         await sendMessage(chat.id, 
-          `✅ <b>Предмет продан!</b>\n\n${itemToSell.item_name}\n💰 Получено: ${itemToSell.sell_price} монет\n💵 Новый баланс: ${player.balance + itemToSell.sell_price} монет`
+          `✅ <b>Предмет продан!</b>\n\n${itemToSell.item_name}\n💰 Получено: ${itemToSell.sell_price.toLocaleString()} монет\n💵 Новый баланс: ${(player.balance + itemToSell.sell_price).toLocaleString()} монет`
         );
       } else if (text === '/business_shop') {
         const { data: player } = await supabaseClient
@@ -2333,6 +2357,166 @@ serve(async (req) => {
           const businessName = businessType === 'mask_factory' ? 'Фабрика масок' : 'VIP Казино';
           await sendMessage(chat.id, `✅ Бизнес "${businessName}" успешно удалён у игрока ${telegramId}!`);
         }
+      } else if (text === '/clan') {
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('id')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!player) {
+          await sendMessage(chat.id, '❌ Игрок не найден.');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const { data: membership } = await supabaseClient
+          .from('squid_clan_members')
+          .select('*, squid_clans(*)')
+          .eq('player_id', player.id)
+          .maybeSingle();
+
+        if (!membership) {
+          await sendMessage(chat.id, '❌ Ты не состоишь в клане!\n\nИспользуй /clans чтобы посмотреть список кланов\nИли /clan_create [название] чтобы создать свой клан (500,000 монет)');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const clan = membership.squid_clans;
+        
+        const { data: owner } = await supabaseClient
+          .from('squid_players')
+          .select('username, first_name, prefix')
+          .eq('id', clan.owner_id)
+          .single();
+
+        const ownerName = owner?.prefix 
+          ? `[${owner.prefix}] ${owner.first_name || owner.username || 'Unknown'}`
+          : owner?.first_name || owner?.username || 'Unknown';
+
+        const roleNames: Record<string, string> = {
+          owner: '👑 Владелец',
+          admin: '⚔️ Админ',
+          member: '👤 Участник'
+        };
+
+        await sendMessage(chat.id, 
+          `🏰 <b>Твой клан</b>\n\n` +
+          `📛 Название: ${clan.name}\n` +
+          `👑 Владелец: ${ownerName}\n` +
+          `👥 Участников: ${clan.member_count}\n` +
+          `💰 Казна: ${clan.balance.toLocaleString()} монет\n` +
+          `📊 Твоя роль: ${roleNames[membership.role] || membership.role}\n\n` +
+          `📅 Создан: ${new Date(clan.created_at).toLocaleDateString('ru-RU')}`
+        );
+      } else if (text === '/clans') {
+        const { data: clans } = await supabaseClient
+          .from('squid_clans')
+          .select('*')
+          .order('member_count', { ascending: false })
+          .limit(10);
+
+        if (!clans || clans.length === 0) {
+          await sendMessage(chat.id, '🏰 <b>Список кланов</b>\n\nПока нет ни одного клана!\n\nСоздай первый: /clan_create [название]');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        let listText = '🏰 <b>Топ кланов</b>\n\n';
+
+        for (let i = 0; i < clans.length; i++) {
+          const clan = clans[i];
+          const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
+          listText += `${medal} <b>${clan.name}</b>\n`;
+          listText += `   👥 ${clan.member_count} | 💰 ${clan.balance.toLocaleString()}\n`;
+        }
+
+        listText += '\n/clan - информация о своём клане\n/clan_create [название] - создать клан (500k)';
+
+        await sendMessage(chat.id, listText);
+      } else if (text.startsWith('/clan_create ')) {
+        const clanName = text.replace('/clan_create ', '').trim();
+        
+        if (!clanName || clanName.length < 2 || clanName.length > 20) {
+          await sendMessage(chat.id, '❌ Название клана должно быть от 2 до 20 символов!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('id, balance')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!player) {
+          await sendMessage(chat.id, '❌ Игрок не найден.');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const { data: existingMembership } = await supabaseClient
+          .from('squid_clan_members')
+          .select('id')
+          .eq('player_id', player.id)
+          .maybeSingle();
+
+        if (existingMembership) {
+          await sendMessage(chat.id, '❌ Ты уже состоишь в клане! Сначала покинь его.');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const clanCost = 500000;
+        if (player.balance < clanCost) {
+          await sendMessage(chat.id, `❌ Недостаточно монет!\n\nСтоимость создания клана: ${clanCost.toLocaleString()} монет\nТвой баланс: ${player.balance.toLocaleString()} монет`);
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const { data: existingClan } = await supabaseClient
+          .from('squid_clans')
+          .select('id')
+          .eq('name', clanName)
+          .maybeSingle();
+
+        if (existingClan) {
+          await sendMessage(chat.id, '❌ Клан с таким названием уже существует!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        await supabaseClient
+          .from('squid_players')
+          .update({ balance: player.balance - clanCost })
+          .eq('id', player.id);
+
+        const { data: newClan, error: clanError } = await supabaseClient
+          .from('squid_clans')
+          .insert({
+            name: clanName,
+            owner_id: player.id,
+            member_count: 1
+          })
+          .select()
+          .single();
+
+        if (clanError || !newClan) {
+          await supabaseClient
+            .from('squid_players')
+            .update({ balance: player.balance })
+            .eq('id', player.id);
+          await sendMessage(chat.id, '❌ Ошибка при создании клана. Попробуй другое название.');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        await supabaseClient
+          .from('squid_clan_members')
+          .insert({
+            clan_id: newClan.id,
+            player_id: player.id,
+            role: 'owner'
+          });
+
+        await sendMessage(chat.id, 
+          `✅ <b>Клан создан!</b>\n\n` +
+          `🏰 Название: ${clanName}\n` +
+          `💰 Потрачено: ${clanCost.toLocaleString()} монет\n` +
+          `💵 Новый баланс: ${(player.balance - clanCost).toLocaleString()} монет\n\n` +
+          `Используй /clan чтобы увидеть информацию о клане`
+        );
       }
     }
 

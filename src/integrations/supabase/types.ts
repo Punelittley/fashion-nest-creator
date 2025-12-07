@@ -431,6 +431,80 @@ export type Database = {
           },
         ]
       }
+      squid_clan_members: {
+        Row: {
+          clan_id: string
+          id: string
+          joined_at: string | null
+          player_id: string
+          role: string
+        }
+        Insert: {
+          clan_id: string
+          id?: string
+          joined_at?: string | null
+          player_id: string
+          role?: string
+        }
+        Update: {
+          clan_id?: string
+          id?: string
+          joined_at?: string | null
+          player_id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "squid_clan_members_clan_id_fkey"
+            columns: ["clan_id"]
+            isOneToOne: false
+            referencedRelation: "squid_clans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "squid_clan_members_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: true
+            referencedRelation: "squid_players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      squid_clans: {
+        Row: {
+          balance: number
+          created_at: string | null
+          id: string
+          member_count: number
+          name: string
+          owner_id: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string | null
+          id?: string
+          member_count?: number
+          name: string
+          owner_id: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string | null
+          id?: string
+          member_count?: number
+          name?: string
+          owner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "squid_clans_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "squid_players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       squid_game_sessions: {
         Row: {
           bet_amount: number
