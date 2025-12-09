@@ -1213,6 +1213,141 @@ serve(async (req) => {
             [{ text: '⬅️ Назад', callback_data: 'main_menu' }]
           ]
         });
+      } else if (data.startsWith('open_case_')) {
+        const caseNum = parseInt(data.split('_')[2]);
+        
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('id, balance, owned_prefixes')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!player) {
+          await answerCallbackQuery(callbackId, '❌ Игрок не найден');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        let caseCost = 0;
+        let rewards: { amount?: number; prefix?: string; chance: number; text: string }[] = [];
+
+        if (caseNum === 1) {
+          caseCost = 100000;
+          rewards = [
+            { amount: 50000, chance: 55, text: '🪙 50,000 монет' },
+            { amount: 150000, chance: 30, text: '🪙 150,000 монет' },
+            { amount: 300000, chance: 10, text: '💰 300,000 монет' },
+            { prefix: 'VIP', chance: 5, text: '👑 VIP префикс' }
+          ];
+        } else if (caseNum === 2) {
+          caseCost = 500000;
+          rewards = [
+            { amount: 200000, chance: 53, text: '🪙 200,000 монет' },
+            { amount: 600000, chance: 30, text: '💰 600,000 монет' },
+            { amount: 1000000, chance: 15, text: '💎 1,000,000 монет' },
+            { prefix: 'VIP', chance: 2, text: '👑 VIP префикс' }
+          ];
+        }
+
+        if (player.balance < caseCost) {
+          await editMessage(chatId, message!.message_id, 
+            `❌ <b>Недостаточно монет!</b>\n\nСтоимость кейса: ${caseCost.toLocaleString()} монет\nТвой баланс: ${player.balance.toLocaleString()} монет`,
+            {
+              inline_keyboard: [
+                [{ text: '⬅️ Назад к кейсам', callback_data: `case_menu_u${from.id}` }]
+              ]
+            }
+          );
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        // Deduct cost
+        await supabaseClient
+          .from('squid_players')
+          .update({ balance: player.balance - caseCost })
+          .eq('id', player.id);
+
+        // Roll for reward
+        const roll = Math.random() * 100;
+        let cumulative = 0;
+        let wonReward = rewards[0];
+
+        for (const reward of rewards) {
+          cumulative += reward.chance;
+          if (roll < cumulative) {
+            wonReward = reward;
+            break;
+          }
+        }
+
+        let resultText = '';
+        let newBalance = player.balance - caseCost;
+
+        if (wonReward.prefix) {
+          // Won VIP prefix
+          const ownedPrefixes = player.owned_prefixes || [];
+          if (ownedPrefixes.includes('VIP')) {
+            // Already has VIP, give coins instead
+            const compensation = caseNum === 1 ? 200000 : 800000;
+            newBalance += compensation;
+            await supabaseClient
+              .from('squid_players')
+              .update({ balance: newBalance })
+              .eq('id', player.id);
+            resultText = `🎁 <b>Кейс #${caseNum} открыт!</b>\n\n👑 Выпал VIP префикс, но он у тебя уже есть!\n💰 Компенсация: ${compensation.toLocaleString()} монет\n\n💵 Новый баланс: ${newBalance.toLocaleString()} монет`;
+          } else {
+            await supabaseClient
+              .from('squid_players')
+              .update({ owned_prefixes: [...ownedPrefixes, 'VIP'] })
+              .eq('id', player.id);
+            resultText = `🎁 <b>Кейс #${caseNum} открыт!</b>\n\n🎉 <b>ДЖЕКПОТ!</b>\n👑 Ты получил VIP префикс!\n\nАктивируй его в /profile\n\n💵 Баланс: ${newBalance.toLocaleString()} монет`;
+          }
+        } else {
+          // Won coins
+          newBalance += wonReward.amount!;
+          await supabaseClient
+            .from('squid_players')
+            .update({ balance: newBalance })
+            .eq('id', player.id);
+
+          const profit = wonReward.amount! - caseCost;
+          const profitText = profit > 0 ? `📈 Профит: +${profit.toLocaleString()} монет` : `📉 Потеря: ${profit.toLocaleString()} монет`;
+          
+          resultText = `🎁 <b>Кейс #${caseNum} открыт!</b>\n\n${wonReward.text}\n${profitText}\n\n💵 Новый баланс: ${newBalance.toLocaleString()} монет`;
+        }
+
+        await editMessage(chatId, message!.message_id, resultText, {
+          inline_keyboard: [
+            [{ text: '🎁 Открыть ещё', callback_data: `case_menu_u${from.id}` }],
+            [{ text: '⬅️ Главное меню', callback_data: 'main_menu' }]
+          ]
+        });
+      } else if (data.startsWith('case_menu_u')) {
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('balance')
+          .eq('telegram_id', from.id)
+          .single();
+
+        await editMessage(chatId, message!.message_id, 
+          `📦 <b>Магазин кейсов</b>\n\n` +
+          `🎁 <b>Кейс #1</b> - 100,000 монет\n` +
+          `   🪙 50,000 монет (55%)\n` +
+          `   🪙 150,000 монет (30%)\n` +
+          `   💰 300,000 монет (10%)\n` +
+          `   👑 VIP префикс (5%)\n\n` +
+          `💎 <b>Кейс #2</b> - 500,000 монет\n` +
+          `   🪙 200,000 монет (53%)\n` +
+          `   🪙 600,000 монет (30%)\n` +
+          `   💎 1,000,000 монет (15%)\n` +
+          `   👑 VIP префикс (2%)\n\n` +
+          `💵 Твой баланс: ${(player?.balance || 0).toLocaleString()} монет`,
+          {
+            inline_keyboard: [
+              [{ text: '🎁 Открыть Кейс #1 (100k)', callback_data: `open_case_1_u${from.id}` }],
+              [{ text: '💎 Открыть Кейс #2 (500k)', callback_data: `open_case_2_u${from.id}` }]
+            ]
+          }
+        );
       }
 
       return new Response('OK', { headers: corsHeaders });
@@ -1274,7 +1409,7 @@ serve(async (req) => {
         );
       } else if (text === '/help') {
         await sendMessage(chat.id, 
-          `📋 <b>Список команд</b>\n\n<b>🎮 Игры:</b>\n🍬 Dalgona Challenge - вырезай фигурки из печенья\n🌉 Стеклянный мост - пройди по опасному мосту\n🦑 Игра в Кальмара (PvP) - бейся с другими игроками\n\n<b>💰 Команды:</b>\n/balance - проверить баланс\n/daily - получить ежедневный бонус\n/promo [код] - использовать промокод\n/pay [ID] [сумма] - перевести монеты игроку\n/top - топ 10 богатых игроков в чате\n/topworld - топ 10 богатых игроков глобально\n/shop - магазин префиксов\n\n<b>🏭 Бизнес:</b>\n/business_shop - магазин бизнесов\n/my_buss - мои бизнесы и улучшения\n/collect - собрать прибыль с бизнесов\n\n<b>📦 Предметы:</b>\n/si - искать предметы (раз в час)\n/items - показать инвентарь\n/sell [номер] - продать предмет\n/sell all - продать все предметы\n\n<b>🏰 Кланы:</b>\n/clan - информация о твоём клане\n/clans - список топ кланов\n/clan_create [название] - создать клан (500k)\n\n<b>🎲 Казино:</b>\n/roulette [цвет] [ставка] - сыграть в рулетку\nЦвета: red, black, green`
+          `📋 <b>Список команд</b>\n\n<b>🎮 Игры:</b>\n🍬 Dalgona Challenge - вырезай фигурки из печенья\n🌉 Стеклянный мост - пройди по опасному мосту\n🦑 Игра в Кальмара (PvP) - бейся с другими игроками\n\n<b>💰 Команды:</b>\n/balance - проверить баланс\n/daily - получить ежедневный бонус\n/promo [код] - использовать промокод\n/pay [ID] [сумма] - перевести монеты игроку\n/top - топ 10 богатых игроков в чате\n/topworld - топ 10 богатых игроков глобально\n/shop - магазин префиксов\n/case - магазин кейсов\n\n<b>🏭 Бизнес:</b>\n/business_shop - магазин бизнесов\n/my_buss - мои бизнесы и улучшения\n/collect - собрать прибыль с бизнесов\n\n<b>📦 Предметы:</b>\n/si - искать предметы (раз в час)\n/items - показать инвентарь\n/sell [номер] - продать предмет\n/sell all - продать все предметы\n\n<b>🏰 Кланы:</b>\n/clan - информация о твоём клане\n/clans - список топ кланов\n/clan_create [название] - создать клан (500k)\n/clan_join [название] - вступить в клан\n/clan_leave - покинуть клан\n\n<b>🎲 Казино:</b>\n/roulette [цвет] [ставка] - сыграть в рулетку\nЦвета: red, black, green`
         );
       } else if (text === '/daily') {
         const { data: player } = await supabaseClient
@@ -2516,6 +2651,159 @@ serve(async (req) => {
           `💰 Потрачено: ${clanCost.toLocaleString()} монет\n` +
           `💵 Новый баланс: ${(player.balance - clanCost).toLocaleString()} монет\n\n` +
           `Используй /clan чтобы увидеть информацию о клане`
+        );
+      } else if (text.startsWith('/clan_join ')) {
+        const clanName = text.replace('/clan_join ', '').trim();
+        
+        if (!clanName) {
+          await sendMessage(chat.id, '❌ Укажи название клана!\nФормат: /clan_join [название]');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('id')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!player) {
+          await sendMessage(chat.id, '❌ Игрок не найден.');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const { data: existingMembership } = await supabaseClient
+          .from('squid_clan_members')
+          .select('id')
+          .eq('player_id', player.id)
+          .maybeSingle();
+
+        if (existingMembership) {
+          await sendMessage(chat.id, '❌ Ты уже состоишь в клане! Сначала покинь его командой /clan_leave');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const { data: clan } = await supabaseClient
+          .from('squid_clans')
+          .select('*')
+          .eq('name', clanName)
+          .maybeSingle();
+
+        if (!clan) {
+          await sendMessage(chat.id, '❌ Клан с таким названием не найден!\n\nПосмотри список кланов: /clans');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        await supabaseClient
+          .from('squid_clan_members')
+          .insert({
+            clan_id: clan.id,
+            player_id: player.id,
+            role: 'member'
+          });
+
+        await supabaseClient
+          .from('squid_clans')
+          .update({ member_count: clan.member_count + 1 })
+          .eq('id', clan.id);
+
+        await sendMessage(chat.id, 
+          `✅ <b>Ты вступил в клан!</b>\n\n` +
+          `🏰 Клан: ${clan.name}\n` +
+          `👥 Участников: ${clan.member_count + 1}\n\n` +
+          `Используй /clan чтобы увидеть информацию о клане`
+        );
+      } else if (text === '/clan_leave') {
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('id')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!player) {
+          await sendMessage(chat.id, '❌ Игрок не найден.');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const { data: membership } = await supabaseClient
+          .from('squid_clan_members')
+          .select('*, squid_clans(*)')
+          .eq('player_id', player.id)
+          .maybeSingle();
+
+        if (!membership) {
+          await sendMessage(chat.id, '❌ Ты не состоишь в клане!');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        const clan = membership.squid_clans;
+
+        if (membership.role === 'owner') {
+          if (clan.member_count > 1) {
+            await sendMessage(chat.id, '❌ Ты владелец клана! Сначала передай владение или расформируй клан (когда в нём только ты).');
+            return new Response('OK', { headers: corsHeaders });
+          }
+          
+          await supabaseClient
+            .from('squid_clan_members')
+            .delete()
+            .eq('id', membership.id);
+
+          await supabaseClient
+            .from('squid_clans')
+            .delete()
+            .eq('id', clan.id);
+
+          await sendMessage(chat.id, 
+            `✅ <b>Клан расформирован!</b>\n\n` +
+            `🏰 Клан "${clan.name}" был удалён.`
+          );
+        } else {
+          await supabaseClient
+            .from('squid_clan_members')
+            .delete()
+            .eq('id', membership.id);
+
+          await supabaseClient
+            .from('squid_clans')
+            .update({ member_count: clan.member_count - 1 })
+            .eq('id', clan.id);
+
+          await sendMessage(chat.id, 
+            `✅ <b>Ты покинул клан!</b>\n\n` +
+            `🏰 Клан: ${clan.name}`
+          );
+        }
+      } else if (text === '/case') {
+        const { data: player } = await supabaseClient
+          .from('squid_players')
+          .select('id, balance')
+          .eq('telegram_id', from.id)
+          .single();
+
+        if (!player) {
+          await sendMessage(chat.id, '❌ Игрок не найден.');
+          return new Response('OK', { headers: corsHeaders });
+        }
+
+        await sendMessage(chat.id, 
+          `📦 <b>Магазин кейсов</b>\n\n` +
+          `🎁 <b>Кейс #1</b> - 100,000 монет\n` +
+          `   🪙 50,000 монет (55%)\n` +
+          `   🪙 150,000 монет (30%)\n` +
+          `   🪙 300,000 монет (10%)\n` +
+          `   👑 VIP префикс (5%)\n\n` +
+          `💎 <b>Кейс #2</b> - 500,000 монет\n` +
+          `   🪙 200,000 монет (53%)\n` +
+          `   🪙 600,000 монет (30%)\n` +
+          `   🪙 1,000,000 монет (15%)\n` +
+          `   👑 VIP префикс (2%)\n\n` +
+          `💵 Твой баланс: ${player.balance.toLocaleString()} монет`,
+          {
+            inline_keyboard: [
+              [{ text: '🎁 Открыть Кейс #1 (100k)', callback_data: `open_case_1_u${from.id}` }],
+              [{ text: '💎 Открыть Кейс #2 (500k)', callback_data: `open_case_2_u${from.id}` }]
+            ]
+          }
         );
       }
     }
