@@ -854,12 +854,13 @@ serve(async (req) => {
       } else if (data.startsWith("buy_prefix_")) {
         const prefixName = data.split("_u")[0].replace("buy_prefix_", "");
 
-        const prefixes: Record<string, { price: number; name: string }> = {
-          absolute: { price: 2000000, name: "absolute" },
-          emperror: { price: 3000000, name: "emperror" },
-        };
+        // Get prefix from database
+        const { data: prefixData } = await supabaseClient
+          .from("squid_prefixes")
+          .select("*")
+          .eq("name", prefixName)
+          .maybeSingle();
 
-        const prefixData = prefixes[prefixName];
         if (!prefixData) {
           await answerCallbackQuery(callbackId, "Префикс не найден");
           return new Response("OK", { headers: corsHeaders });
@@ -930,34 +931,34 @@ serve(async (req) => {
           .eq("telegram_id", from.id)
           .single();
 
+        // Get all prefixes from database
+        const { data: allPrefixes } = await supabaseClient
+          .from("squid_prefixes")
+          .select("*")
+          .order("price", { ascending: true });
+
         const ownedPrefixes = player?.owned_prefixes || [];
         const currentPrefix = player?.prefix;
 
-        const prefixButtons = [];
+        const prefixButtons: any[] = [];
 
-        // Show owned prefixes with toggle functionality
-        if (ownedPrefixes.includes("absolute")) {
-          prefixButtons.push([
-            {
-              text: currentPrefix === "absolute" ? "✅ absolute (активен)" : "absolute",
-              callback_data:
-                currentPrefix === "absolute" ? `remove_prefix_u${from.id}` : `activate_prefix_absolute_u${from.id}`,
-            },
-          ]);
-        } else {
-          prefixButtons.push([{ text: "absolute - 2,000,000 💰", callback_data: `buy_prefix_absolute_u${from.id}` }]);
-        }
-
-        if (ownedPrefixes.includes("emperror")) {
-          prefixButtons.push([
-            {
-              text: currentPrefix === "emperror" ? "✅ emperror (активен)" : "emperror",
-              callback_data:
-                currentPrefix === "emperror" ? `remove_prefix_u${from.id}` : `activate_prefix_emperror_u${from.id}`,
-            },
-          ]);
-        } else {
-          prefixButtons.push([{ text: "emperror - 3,000,000 💰", callback_data: `buy_prefix_emperror_u${from.id}` }]);
+        // Show all prefixes from database
+        if (allPrefixes) {
+          for (const prefix of allPrefixes) {
+            if (ownedPrefixes.includes(prefix.name)) {
+              prefixButtons.push([
+                {
+                  text: currentPrefix === prefix.name ? `✅ ${prefix.name} (активен)` : prefix.name,
+                  callback_data:
+                    currentPrefix === prefix.name ? `remove_prefix_u${from.id}` : `activate_prefix_${prefix.name}_u${from.id}`,
+                },
+              ]);
+            } else {
+              prefixButtons.push([
+                { text: `${prefix.name} - ${prefix.price.toLocaleString()} 💰`, callback_data: `buy_prefix_${prefix.name}_u${from.id}` }
+              ]);
+            }
+          }
         }
 
         prefixButtons.push([{ text: "⬅️ Назад", callback_data: "profile" }]);
@@ -1559,7 +1560,7 @@ serve(async (req) => {
       } else if (text === "/help") {
         await sendMessage(
           chat.id,
-          `📋 <b>Список команд</b>\n\n<b>🎮 Игры:</b>\n🍬 Dalgona Challenge - вырезай фигурки из печенья\n🌉 Стеклянный мост - пройди по опасному мосту\n🦑 Игра в Кальмара (PvP) - бейся с другими игроками\n\n<b>💰 Команды:</b>\n/balance - проверить баланс\n/daily - получить ежедневный бонус\n/promo [код] - использовать промокод\n/pay [ID] [сумма] - перевести монеты игроку\n/rob - ограбить игрока (ответь на сообщение)\n/top - топ 10 богатых игроков в чате\n/topworld - топ 10 богатых игроков глобально\n/shop - магазин префиксов\n/case - магазин кейсов\n\n<b>🏭 Бизнес:</b>\n/business_shop - магазин бизнесов\n/my_buss - мои бизнесы и улучшения\n/collect - собрать прибыль (макс. 1 час)\n\n<b>📦 Предметы:</b>\n/si - искать предметы (раз в час)\n/items - показать инвентарь\n/sell [номер] - продать предмет\n/sell all - продать все предметы\n\n<b>🏰 Кланы:</b>\n/clan - информация о твоём клане\n/clans - список топ кланов\n/clan_create [название] - создать клан (500k)\n/clan_join [название] - вступить в клан\n/clan_leave - покинуть клан\n\n<b>🎲 Казино:</b>\n/roulette [цвет] [ставка] - сыграть в рулетку\nЦвета: red, black, green`,
+          `📋 <b>Список команд</b>\n\n<b>🎮 Игры:</b>\n🍬 Dalgona Challenge - вырезай фигурки из печенья\n🌉 Стеклянный мост - пройди по опасному мосту\n🦑 Игра в Кальмара (PvP) - бейся с другими игроками\n\n<b>💰 Команды:</b>\n/balance - проверить баланс\n/daily - получить ежедневный бонус\n/promo [код] - использовать промокод\n/pay [ID] [сумма] - перевести монеты игроку\n/rob - ограбить игрока (раз в час)\n/top - топ 10 богатых игроков в чате\n/topworld - топ 10 богатых игроков глобально\n/shop - магазин префиксов\n/case - магазин кейсов\n\n<b>🏭 Бизнес:</b>\n/business_shop - магазин бизнесов\n/my_buss - мои бизнесы и улучшения\n/collect - собрать прибыль (макс. 1 час)\n\n<b>📦 Предметы:</b>\n/si - искать предметы (раз в час)\n/items - показать инвентарь\n/sell [номер] - продать предмет\n/sell all - продать все предметы\n\n<b>🏰 Кланы:</b>\n/clan - информация о твоём клане\n/clans - список топ кланов\n/clan_create [название] - создать клан (500k)\n/clan_join [название] - вступить в клан\n/clan_leave - покинуть клан\n\n<b>🎲 Казино:</b>\n/roulette [цвет] [ставка] - сыграть в рулетку\nЦвета: red, black, green`,
         );
       } else if (text === "/daily") {
         const { data: player } = await supabaseClient
@@ -1809,14 +1810,8 @@ serve(async (req) => {
 
         const { data: robber } = await supabaseClient
           .from("squid_players")
-          .select("id, balance, first_name")
+          .select("id, balance, first_name, last_rob_time")
           .eq("telegram_id", from.id)
-          .single();
-
-        const { data: victim } = await supabaseClient
-          .from("squid_players")
-          .select("id, balance, first_name")
-          .eq("telegram_id", targetTelegramId)
           .single();
 
         if (!robber) {
@@ -1824,10 +1819,35 @@ serve(async (req) => {
           return new Response("OK", { headers: corsHeaders });
         }
 
+        // Check 1-hour cooldown
+        const now = new Date();
+        const lastRob = robber.last_rob_time ? new Date(robber.last_rob_time) : null;
+        
+        if (lastRob && now.getTime() - lastRob.getTime() < 60 * 60 * 1000) {
+          const minutesLeft = Math.ceil((60 * 60 * 1000 - (now.getTime() - lastRob.getTime())) / (60 * 1000));
+          await sendMessage(
+            chat.id,
+            `⏰ Ограбление доступно раз в час!\n\nПопробуй через ${minutesLeft} ${minutesLeft === 1 ? "минуту" : minutesLeft < 5 ? "минуты" : "минут"}.`,
+          );
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const { data: victim } = await supabaseClient
+          .from("squid_players")
+          .select("id, balance, first_name")
+          .eq("telegram_id", targetTelegramId)
+          .single();
+
         if (!victim) {
           await sendMessage(chat.id, "❌ Этот игрок не зарегистрирован в боте!");
           return new Response("OK", { headers: corsHeaders });
         }
+
+        // Update last_rob_time
+        await supabaseClient
+          .from("squid_players")
+          .update({ last_rob_time: new Date().toISOString() })
+          .eq("id", robber.id);
 
         const maxAmount = 5000;
         const successChance = 0.3; // 30% success
@@ -2215,7 +2235,7 @@ serve(async (req) => {
 
         await sendMessage(
           chat.id,
-          `👑 <b>Команды администратора</b>\n\n<b>💰 Управление балансом:</b>\n/admin_add_coins [ID] [сумма] - добавить монеты\n/admin_set_balance [ID] [сумма] - установить баланс\n\n<b>✨ Префиксы:</b>\n/create_prefix [название] [цена] - создать префикс\n/get_prefix [название] [ID] - выдать префикс\n\n<b>🎟️ Промокоды:</b>\n/admin_create_promo [код] [сумма] [кол-во]\n/admin_delete_promo [код]\n\n<b>📢 Рассылка:</b>\n/all [текст] - сообщение всем в ЛС\n/dep_all [сумма] [текст] - монеты + сообщение всем\n\n<b>🎰 Казино:</b>\n/casino_admin - режим всегда выигрывать\n\n<b>🏭 Бизнесы:</b>\n/admin_del_bus [ID] [тип] - удалить бизнес\n\n<b>📊 Информация:</b>\n/servers - список чатов\n/admin_search [страница] - список игроков\n/admin_commands - эта справка`,
+          `👑 <b>Команды администратора</b>\n\n<b>💰 Управление балансом:</b>\n/admin_add_coins [ID] [сумма] - добавить монеты\n/admin_set_balance [ID] [сумма] - установить баланс\n\n<b>✨ Префиксы:</b>\n/create_prefix [название] [цена] - создать префикс\n/prefix_delete [название] - удалить префикс\n/get_prefix [название] [ID] - выдать префикс\n\n<b>🎟️ Промокоды:</b>\n/admin_create_promo [код] [сумма] [кол-во]\n/admin_delete_promo [код]\n\n<b>📢 Рассылка:</b>\n/all [текст] - сообщение всем в ЛС\n/dep_all [сумма] [текст] - монеты + сообщение всем\n\n<b>🎰 Казино:</b>\n/casino_admin - режим всегда выигрывать\n\n<b>🏭 Бизнесы:</b>\n/admin_del_bus [ID] [тип] - удалить бизнес\n\n<b>📊 Информация:</b>\n/servers - список чатов\n/admin_search [страница] - список игроков\n/admin_commands - эта справка`,
         );
       } else if (text === "/admin_search" || text.startsWith("/admin_search ")) {
         const { data: admin } = await supabaseClient
@@ -2465,13 +2485,72 @@ serve(async (req) => {
           return new Response("OK", { headers: corsHeaders });
         }
 
+        // Check if prefix already exists
+        const { data: existingPrefix } = await supabaseClient
+          .from("squid_prefixes")
+          .select("*")
+          .eq("name", prefixName)
+          .maybeSingle();
+
+        if (existingPrefix) {
+          await sendMessage(chat.id, `❌ Префикс "${prefixName}" уже существует!`);
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        // Create prefix in database
+        const { error: insertError } = await supabaseClient
+          .from("squid_prefixes")
+          .insert({ name: prefixName, price: price });
+
+        if (insertError) {
+          await sendMessage(chat.id, `❌ Ошибка создания префикса: ${insertError.message}`);
+          return new Response("OK", { headers: corsHeaders });
+        }
+
         await sendMessage(
           chat.id,
           `✅ <b>Префикс создан!</b>\n\n` +
             `📝 Название: ${prefixName}\n` +
             `💰 Цена: ${price.toLocaleString()} монет\n\n` +
-            `⚠️ Префиксы хранятся в коде. Это уведомление о создании.\n` +
-            `Для добавления в магазин нужно обновить код бота.`,
+            `Префикс уже доступен в магазине /shop`,
+        );
+      } else if (text.startsWith("/prefix_delete ")) {
+        const { data: admin } = await supabaseClient
+          .from("squid_admins")
+          .select("*")
+          .eq("telegram_id", from.id)
+          .single();
+
+        if (!admin) {
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const prefixName = text.replace("/prefix_delete ", "").trim().toLowerCase();
+
+        if (!prefixName) {
+          await sendMessage(chat.id, "❌ Формат: /prefix_delete [название]");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const { data: existingPrefix } = await supabaseClient
+          .from("squid_prefixes")
+          .select("*")
+          .eq("name", prefixName)
+          .maybeSingle();
+
+        if (!existingPrefix) {
+          await sendMessage(chat.id, `❌ Префикс "${prefixName}" не найден!`);
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        await supabaseClient
+          .from("squid_prefixes")
+          .delete()
+          .eq("name", prefixName);
+
+        await sendMessage(
+          chat.id,
+          `✅ Префикс "${prefixName}" удалён из магазина!`,
         );
       } else if (text.startsWith("/get_prefix ")) {
         const { data: admin } = await supabaseClient

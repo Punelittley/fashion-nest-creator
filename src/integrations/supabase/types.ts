@@ -676,6 +676,7 @@ export type Database = {
           first_name: string | null
           id: string
           last_daily_claim: string | null
+          last_rob_time: string | null
           last_si_claim: string | null
           owned_prefixes: string[] | null
           prefix: string | null
@@ -692,6 +693,7 @@ export type Database = {
           first_name?: string | null
           id?: string
           last_daily_claim?: string | null
+          last_rob_time?: string | null
           last_si_claim?: string | null
           owned_prefixes?: string[] | null
           prefix?: string | null
@@ -708,6 +710,7 @@ export type Database = {
           first_name?: string | null
           id?: string
           last_daily_claim?: string | null
+          last_rob_time?: string | null
           last_si_claim?: string | null
           owned_prefixes?: string[] | null
           prefix?: string | null
@@ -716,6 +719,27 @@ export type Database = {
           total_wins?: number | null
           updated_at?: string | null
           username?: string | null
+        }
+        Relationships: []
+      }
+      squid_prefixes: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          price: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          price: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          price?: number
         }
         Relationships: []
       }
