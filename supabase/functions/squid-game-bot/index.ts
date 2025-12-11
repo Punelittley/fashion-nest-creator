@@ -1295,18 +1295,18 @@ serve(async (req) => {
         } else {
           const result = Math.random() * 100;
 
-          // Green has only 1.5% chance, red/black biased against player bet
-          if (result < 1.5) {
+          // Green has only 3% chance, heavily biased against player bet
+          if (result < 3) {
             resultColor = "green";
           } else if (color === "red") {
-            // If player bet red, 65% chance black wins, 33.5% red wins
-            resultColor = result < 35 ? "red" : "black";
+            // If player bet red, 75% chance black wins, 22% red wins
+            resultColor = result < 25 ? "red" : "black";
           } else if (color === "black") {
-            // If player bet black, 65% chance red wins, 33.5% black wins
-            resultColor = result < 35 ? "black" : "red";
+            // If player bet black, 75% chance red wins, 22% black wins
+            resultColor = result < 25 ? "black" : "red";
           } else {
             // Player bet green, standard 50/50 for red/black
-            resultColor = result < 50.75 ? "red" : "black";
+            resultColor = result < 51.5 ? "red" : "black";
           }
 
           if (resultColor === color) {
@@ -1368,6 +1368,7 @@ serve(async (req) => {
             { amount: 150000, chance: 11, text: "🪙 150,000 монет" },
             { amount: 300000, chance: 5, text: "💰 300,000 монет" },
             { prefix: "VIP", chance: 1, text: "👑 VIP префикс" },
+            { amount: 0, chance: 13, text: "❌ Пусто" },
           ];
         } else if (caseNum === 2) {
           caseCost = 500000;
@@ -1376,6 +1377,7 @@ serve(async (req) => {
             { amount: 600000, chance: 11, text: "💰 600,000 монет" },
             { amount: 1000000, chance: 5, text: "💎 1,000,000 монет" },
             { prefix: "VIP", chance: 1, text: "👑 VIP префикс" },
+            { amount: 0, chance: 13, text: "❌ Пусто" },
           ];
         }
 
@@ -1400,7 +1402,7 @@ serve(async (req) => {
         // Roll for reward
         const roll = Math.random() * 100;
         let cumulative = 0;
-        let wonReward = rewards[0];
+        let wonReward = rewards[rewards.length - 1]; // Default to last (empty)
 
         for (const reward of rewards) {
           cumulative += reward.chance;
@@ -1429,6 +1431,9 @@ serve(async (req) => {
               .eq("id", player.id);
             resultText = `🎁 <b>Кейс #${caseNum} открыт!</b>\n\n🎉 <b>ДЖЕКПОТ!</b>\n👑 Ты получил VIP префикс!\n\nАктивируй его в /profile\n\n💵 Баланс: ${newBalance.toLocaleString()} монет`;
           }
+        } else if (wonReward.amount === 0) {
+          // Empty - nothing won
+          resultText = `🎁 <b>Кейс #${caseNum} открыт!</b>\n\n❌ Пусто! Ничего не выпало.\n\n💵 Баланс: ${newBalance.toLocaleString()} монет`;
         } else {
           // Won coins
           newBalance += wonReward.amount!;
@@ -1888,18 +1893,18 @@ serve(async (req) => {
         } else {
           const rand = Math.random() * 100;
 
-          // Green has only 1.5% chance, bias against player bet
-          if (rand < 1.5) {
+          // Green has only 3% chance, heavily biased against player bet
+          if (rand < 3) {
             resultColor = "green";
           } else if (color === "red") {
-            // If player bet red, 65% chance black wins, 33.5% red wins
-            resultColor = rand < 35 ? "red" : "black";
+            // If player bet red, 75% chance black wins, 22% red wins
+            resultColor = rand < 25 ? "red" : "black";
           } else if (color === "black") {
-            // If player bet black, 65% chance red wins, 33.5% black wins
-            resultColor = rand < 35 ? "black" : "red";
+            // If player bet black, 75% chance red wins, 22% black wins
+            resultColor = rand < 25 ? "black" : "red";
           } else {
             // Player bet green, standard 50/50 for red/black
-            resultColor = rand < 50.75 ? "red" : "black";
+            resultColor = rand < 51.5 ? "red" : "black";
           }
 
           if (resultColor === color) {
@@ -2123,7 +2128,7 @@ serve(async (req) => {
 
         await sendMessage(
           chat.id,
-          `👑 <b>Команды администратора</b>\n\n<b>💰 Управление балансом:</b>\n/admin_add_coins [ID] [сумма] - добавить монеты\n/admin_set_balance [ID] [сумма] - установить баланс\n\n<b>🎟️ Промокоды:</b>\n/admin_create_promo [код] [сумма] [кол-во]\n/admin_delete_promo [код]\n\n<b>📢 Рассылка:</b>\n/all [текст] - сообщение всем в ЛС\n/dep_all [сумма] [текст] - монеты + сообщение всем\n\n<b>🎰 Казино:</b>\n/casino_admin - режим всегда выигрывать\n\n<b>📊 Информация:</b>\n/servers - список чатов\n/admin_search [страница] - список игроков\n/admin_commands - эта справка`,
+          `👑 <b>Команды администратора</b>\n\n<b>💰 Управление балансом:</b>\n/admin_add_coins [ID] [сумма] - добавить монеты\n/admin_set_balance [ID] [сумма] - установить баланс\n\n<b>✨ Префиксы:</b>\n/create_prefix [название] [цена] - создать префикс\n/get_prefix [название] [ID] - выдать префикс\n\n<b>🎟️ Промокоды:</b>\n/admin_create_promo [код] [сумма] [кол-во]\n/admin_delete_promo [код]\n\n<b>📢 Рассылка:</b>\n/all [текст] - сообщение всем в ЛС\n/dep_all [сумма] [текст] - монеты + сообщение всем\n\n<b>🎰 Казино:</b>\n/casino_admin - режим всегда выигрывать\n\n<b>📊 Информация:</b>\n/servers - список чатов\n/admin_search [страница] - список игроков\n/admin_commands - эта справка`,
         );
       } else if (text === "/admin_search" || text.startsWith("/admin_search ")) {
         const { data: admin } = await supabaseClient
@@ -2347,6 +2352,94 @@ serve(async (req) => {
         await sendMessage(
           chat.id,
           `✅ Баланс игрока ${target.first_name} изменён с ${target.balance} на ${newBalance} монет`,
+        );
+      } else if (text.startsWith("/create_prefix ")) {
+        const { data: admin } = await supabaseClient
+          .from("squid_admins")
+          .select("*")
+          .eq("telegram_id", from.id)
+          .single();
+
+        if (!admin) {
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const args = text.split(" ");
+        if (args.length !== 3) {
+          await sendMessage(chat.id, "❌ Формат: /create_prefix [название] [цена]");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const prefixName = args[1].toLowerCase();
+        const price = parseInt(args[2]);
+
+        if (isNaN(price) || price <= 0) {
+          await sendMessage(chat.id, "❌ Цена должна быть положительным числом!");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        await sendMessage(
+          chat.id,
+          `✅ <b>Префикс создан!</b>\n\n` +
+            `📝 Название: ${prefixName}\n` +
+            `💰 Цена: ${price.toLocaleString()} монет\n\n` +
+            `⚠️ Префиксы хранятся в коде. Это уведомление о создании.\n` +
+            `Для добавления в магазин нужно обновить код бота.`,
+        );
+      } else if (text.startsWith("/get_prefix ")) {
+        const { data: admin } = await supabaseClient
+          .from("squid_admins")
+          .select("*")
+          .eq("telegram_id", from.id)
+          .single();
+
+        if (!admin) {
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const args = text.split(" ");
+        if (args.length !== 3) {
+          await sendMessage(chat.id, "❌ Формат: /get_prefix [название] [ID игрока]");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const prefixName = args[1];
+        const targetId = parseInt(args[2]);
+
+        if (isNaN(targetId)) {
+          await sendMessage(chat.id, "❌ ID игрока должен быть числом!");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const { data: targetPlayer } = await supabaseClient
+          .from("squid_players")
+          .select("id, first_name, owned_prefixes")
+          .eq("telegram_id", targetId)
+          .single();
+
+        if (!targetPlayer) {
+          await sendMessage(chat.id, "❌ Игрок не найден!");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const ownedPrefixes = targetPlayer.owned_prefixes || [];
+        
+        if (ownedPrefixes.includes(prefixName)) {
+          await sendMessage(chat.id, `❌ У игрока ${targetPlayer.first_name} уже есть префикс "${prefixName}"!`);
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        await supabaseClient
+          .from("squid_players")
+          .update({ owned_prefixes: [...ownedPrefixes, prefixName] })
+          .eq("id", targetPlayer.id);
+
+        await sendMessage(
+          chat.id,
+          `✅ <b>Префикс выдан!</b>\n\n` +
+            `👤 Игрок: ${targetPlayer.first_name} (${targetId})\n` +
+            `✨ Префикс: ${prefixName}\n\n` +
+            `Игрок может активировать его в /profile`,
         );
       } else if (text.startsWith("/admin_edit ")) {
         const { data: admin } = await supabaseClient
