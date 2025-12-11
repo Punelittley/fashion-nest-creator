@@ -20,6 +20,9 @@ interface TelegramUpdate {
     };
     from?: { id: number; username?: string; first_name?: string };
     text?: string;
+    reply_to_message?: {
+      from?: { id: number; username?: string; first_name?: string };
+    };
   };
   callback_query?: {
     id: string;
@@ -371,8 +374,8 @@ serve(async (req) => {
           vip_casino: [600000, 700000, 800000],
         };
         const incomes = {
-          mask_factory: [3000, 6000, 9000, 12000],
-          vip_casino: [20000, 25000, 30000, 40000],
+          mask_factory: [1500, 3000, 4500, 6000],
+          vip_casino: [10000, 12500, 15000, 20000],
         };
         const names = {
           mask_factory: "🏭 Фабрика масок",
@@ -431,7 +434,7 @@ serve(async (req) => {
 
         const businessInfo = (type: string, level: number) => {
           if (type === "mask_factory") {
-            const incomes = [3000, 6000, 9000, 12000];
+            const incomes = [1500, 3000, 4500, 6000];
             const upgradeCosts = [100000, 200000, 300000];
             return {
               name: "🏭 Фабрика масок",
@@ -439,7 +442,7 @@ serve(async (req) => {
               upgradeCost: level < 3 ? upgradeCosts[level] : null,
             };
           } else {
-            const incomes = [20000, 25000, 30000, 40000];
+            const incomes = [10000, 12500, 15000, 20000];
             const upgradeCosts = [600000, 700000, 800000];
             return {
               name: "🎰 VIP Казино",
@@ -1556,7 +1559,7 @@ serve(async (req) => {
       } else if (text === "/help") {
         await sendMessage(
           chat.id,
-          `📋 <b>Список команд</b>\n\n<b>🎮 Игры:</b>\n🍬 Dalgona Challenge - вырезай фигурки из печенья\n🌉 Стеклянный мост - пройди по опасному мосту\n🦑 Игра в Кальмара (PvP) - бейся с другими игроками\n\n<b>💰 Команды:</b>\n/balance - проверить баланс\n/daily - получить ежедневный бонус\n/promo [код] - использовать промокод\n/pay [ID] [сумма] - перевести монеты игроку\n/top - топ 10 богатых игроков в чате\n/topworld - топ 10 богатых игроков глобально\n/shop - магазин префиксов\n/case - магазин кейсов\n\n<b>🏭 Бизнес:</b>\n/business_shop - магазин бизнесов\n/my_buss - мои бизнесы и улучшения\n/collect - собрать прибыль с бизнесов\n\n<b>📦 Предметы:</b>\n/si - искать предметы (раз в час)\n/items - показать инвентарь\n/sell [номер] - продать предмет\n/sell all - продать все предметы\n\n<b>🏰 Кланы:</b>\n/clan - информация о твоём клане\n/clans - список топ кланов\n/clan_create [название] - создать клан (500k)\n/clan_join [название] - вступить в клан\n/clan_leave - покинуть клан\n\n<b>🎲 Казино:</b>\n/roulette [цвет] [ставка] - сыграть в рулетку\nЦвета: red, black, green`,
+          `📋 <b>Список команд</b>\n\n<b>🎮 Игры:</b>\n🍬 Dalgona Challenge - вырезай фигурки из печенья\n🌉 Стеклянный мост - пройди по опасному мосту\n🦑 Игра в Кальмара (PvP) - бейся с другими игроками\n\n<b>💰 Команды:</b>\n/balance - проверить баланс\n/daily - получить ежедневный бонус\n/promo [код] - использовать промокод\n/pay [ID] [сумма] - перевести монеты игроку\n/rob - ограбить игрока (ответь на сообщение)\n/top - топ 10 богатых игроков в чате\n/topworld - топ 10 богатых игроков глобально\n/shop - магазин префиксов\n/case - магазин кейсов\n\n<b>🏭 Бизнес:</b>\n/business_shop - магазин бизнесов\n/my_buss - мои бизнесы и улучшения\n/collect - собрать прибыль (макс. 1 час)\n\n<b>📦 Предметы:</b>\n/si - искать предметы (раз в час)\n/items - показать инвентарь\n/sell [номер] - продать предмет\n/sell all - продать все предметы\n\n<b>🏰 Кланы:</b>\n/clan - информация о твоём клане\n/clans - список топ кланов\n/clan_create [название] - создать клан (500k)\n/clan_join [название] - вступить в клан\n/clan_leave - покинуть клан\n\n<b>🎲 Казино:</b>\n/roulette [цвет] [ставка] - сыграть в рулетку\nЦвета: red, black, green`,
         );
       } else if (text === "/daily") {
         const { data: player } = await supabaseClient
@@ -1788,6 +1791,90 @@ serve(async (req) => {
 
         await sendMessage(chat.id, `✅ Успешно переведено ${amount} монет игроку ${target.first_name}!`);
         await sendMessage(targetId, `💰 ${sender.first_name} перевёл тебе ${amount} монет!`);
+      } else if (text === "/rob") {
+        // Check if user is replying to a message
+        const replyTo = update.message?.reply_to_message;
+        
+        if (!replyTo || !replyTo.from) {
+          await sendMessage(chat.id, "❌ Чтобы ограбить игрока, ответь на его сообщение командой /rob");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const targetTelegramId = replyTo.from.id;
+        
+        if (targetTelegramId === from.id) {
+          await sendMessage(chat.id, "❌ Ты не можешь ограбить сам себя!");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const { data: robber } = await supabaseClient
+          .from("squid_players")
+          .select("id, balance, first_name")
+          .eq("telegram_id", from.id)
+          .single();
+
+        const { data: victim } = await supabaseClient
+          .from("squid_players")
+          .select("id, balance, first_name")
+          .eq("telegram_id", targetTelegramId)
+          .single();
+
+        if (!robber) {
+          await sendMessage(chat.id, "❌ Ты не зарегистрирован. Используй /start");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        if (!victim) {
+          await sendMessage(chat.id, "❌ Этот игрок не зарегистрирован в боте!");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const maxAmount = 5000;
+        const successChance = 0.3; // 30% success
+        const isSuccess = Math.random() < successChance;
+
+        if (isSuccess) {
+          // Successful robbery - steal up to 5000 coins
+          const stealAmount = Math.min(Math.floor(Math.random() * maxAmount) + 1, victim.balance);
+          
+          if (stealAmount <= 0) {
+            await sendMessage(chat.id, `😅 У ${victim.first_name} нечего красть - баланс пуст!`);
+            return new Response("OK", { headers: corsHeaders });
+          }
+
+          await supabaseClient
+            .from("squid_players")
+            .update({ balance: robber.balance + stealAmount })
+            .eq("id", robber.id);
+
+          await supabaseClient
+            .from("squid_players")
+            .update({ balance: victim.balance - stealAmount })
+            .eq("id", victim.id);
+
+          await sendMessage(
+            chat.id,
+            `🔫 <b>Успешное ограбление!</b>\n\n${robber.first_name} украл у ${victim.first_name} ${stealAmount.toLocaleString()} монет!\n\n💰 Твой баланс: ${(robber.balance + stealAmount).toLocaleString()} монет`,
+          );
+        } else {
+          // Failed robbery - lose up to 5000 coins
+          const loseAmount = Math.min(Math.floor(Math.random() * maxAmount) + 1, robber.balance);
+          
+          if (loseAmount <= 0) {
+            await sendMessage(chat.id, `😅 Ты попался, но у тебя нечего забрать!`);
+            return new Response("OK", { headers: corsHeaders });
+          }
+
+          await supabaseClient
+            .from("squid_players")
+            .update({ balance: robber.balance - loseAmount })
+            .eq("id", robber.id);
+
+          await sendMessage(
+            chat.id,
+            `🚔 <b>Провал!</b>\n\n${robber.first_name} попытался ограбить ${victim.first_name}, но был пойман!\n\n💸 Штраф: ${loseAmount.toLocaleString()} монет\n💰 Твой баланс: ${(robber.balance - loseAmount).toLocaleString()} монет`,
+          );
+        }
       } else if (text === "/top") {
         // Get players from current chat only
         const { data: chatPlayers } = await supabaseClient
@@ -2128,7 +2215,7 @@ serve(async (req) => {
 
         await sendMessage(
           chat.id,
-          `👑 <b>Команды администратора</b>\n\n<b>💰 Управление балансом:</b>\n/admin_add_coins [ID] [сумма] - добавить монеты\n/admin_set_balance [ID] [сумма] - установить баланс\n\n<b>✨ Префиксы:</b>\n/create_prefix [название] [цена] - создать префикс\n/get_prefix [название] [ID] - выдать префикс\n\n<b>🎟️ Промокоды:</b>\n/admin_create_promo [код] [сумма] [кол-во]\n/admin_delete_promo [код]\n\n<b>📢 Рассылка:</b>\n/all [текст] - сообщение всем в ЛС\n/dep_all [сумма] [текст] - монеты + сообщение всем\n\n<b>🎰 Казино:</b>\n/casino_admin - режим всегда выигрывать\n\n<b>📊 Информация:</b>\n/servers - список чатов\n/admin_search [страница] - список игроков\n/admin_commands - эта справка`,
+          `👑 <b>Команды администратора</b>\n\n<b>💰 Управление балансом:</b>\n/admin_add_coins [ID] [сумма] - добавить монеты\n/admin_set_balance [ID] [сумма] - установить баланс\n\n<b>✨ Префиксы:</b>\n/create_prefix [название] [цена] - создать префикс\n/get_prefix [название] [ID] - выдать префикс\n\n<b>🎟️ Промокоды:</b>\n/admin_create_promo [код] [сумма] [кол-во]\n/admin_delete_promo [код]\n\n<b>📢 Рассылка:</b>\n/all [текст] - сообщение всем в ЛС\n/dep_all [сумма] [текст] - монеты + сообщение всем\n\n<b>🎰 Казино:</b>\n/casino_admin - режим всегда выигрывать\n\n<b>🏭 Бизнесы:</b>\n/admin_del_bus [ID] [тип] - удалить бизнес\n\n<b>📊 Информация:</b>\n/servers - список чатов\n/admin_search [страница] - список игроков\n/admin_commands - эта справка`,
         );
       } else if (text === "/admin_search" || text.startsWith("/admin_search ")) {
         const { data: admin } = await supabaseClient
@@ -2725,7 +2812,7 @@ serve(async (req) => {
 
         const businessInfo = (type: string, level: number) => {
           if (type === "mask_factory") {
-            const incomes = [3000, 6000, 9000, 12000];
+            const incomes = [1500, 3000, 4500, 6000];
             const upgradeCosts = [100000, 200000, 300000];
             return {
               name: "🏭 Фабрика масок",
@@ -2733,7 +2820,7 @@ serve(async (req) => {
               upgradeCost: level < 3 ? upgradeCosts[level] : null,
             };
           } else {
-            const incomes = [20000, 25000, 30000, 40000];
+            const incomes = [10000, 12500, 15000, 20000];
             const upgradeCosts = [600000, 700000, 800000];
             return {
               name: "🎰 VIP Казино",
@@ -2793,22 +2880,25 @@ serve(async (req) => {
         }
 
         let totalIncome = 0;
+        const now = new Date();
 
         for (const biz of businesses) {
           const lastCollection = new Date(biz.last_collection);
-          const now = new Date();
           const hoursPassed = (now.getTime() - lastCollection.getTime()) / (1000 * 60 * 60);
+          
+          // Cap at 1 hour maximum
+          const cappedHours = Math.min(hoursPassed, 1);
 
           let hourlyIncome = 0;
           if (biz.business_type === "mask_factory") {
-            const incomes = [3000, 6000, 9000, 12000];
+            const incomes = [1500, 3000, 4500, 6000];
             hourlyIncome = incomes[biz.upgrade_level];
           } else {
-            const incomes = [20000, 25000, 30000, 40000];
+            const incomes = [10000, 12500, 15000, 20000];
             hourlyIncome = incomes[biz.upgrade_level];
           }
 
-          const income = Math.floor(hourlyIncome * hoursPassed);
+          const income = Math.floor(hourlyIncome * cappedHours);
           totalIncome += income;
 
           // Update last collection time
@@ -2819,7 +2909,7 @@ serve(async (req) => {
         }
 
         if (totalIncome === 0) {
-          await sendMessage(chat.id, "⏳ Пока нечего собирать. Подожди немного!");
+          await sendMessage(chat.id, "⏳ Пока нечего собирать. Подожди немного!\n\n⚠️ Максимум можно накопить за 1 час.");
           return new Response("OK", { headers: corsHeaders });
         }
 
@@ -2831,7 +2921,7 @@ serve(async (req) => {
 
         await sendMessage(
           chat.id,
-          `💰 <b>Прибыль собрана!</b>\n\n🪙 Получено: ${totalIncome.toLocaleString()} монет\n💵 Новый баланс: ${(player.balance + totalIncome).toLocaleString()} монет`,
+          `💰 <b>Прибыль собрана!</b>\n\n🪙 Получено: ${totalIncome.toLocaleString()} монет\n💵 Новый баланс: ${(player.balance + totalIncome).toLocaleString()} монет\n\n⚠️ Собирай каждый час! Больше не накапливается.`,
         );
       } else if (text.startsWith("/admin_del_bus ")) {
         const args = text.split(" ");
