@@ -374,8 +374,8 @@ serve(async (req) => {
           vip_casino: [600000, 700000, 800000],
         };
         const incomes = {
-          mask_factory: [1500, 3000, 4500, 6000],
-          vip_casino: [10000, 12500, 15000, 20000],
+          mask_factory: [12500, 25000, 37500, 50000],
+          vip_casino: [25000, 50000, 75000, 100000],
         };
         const names = {
           mask_factory: "🏭 Фабрика масок",
@@ -434,7 +434,7 @@ serve(async (req) => {
 
         const businessInfo = (type: string, level: number) => {
           if (type === "mask_factory") {
-            const incomes = [1500, 3000, 4500, 6000];
+            const incomes = [12500, 25000, 37500, 50000];
             const upgradeCosts = [100000, 200000, 300000];
             return {
               name: "🏭 Фабрика масок",
@@ -442,7 +442,7 @@ serve(async (req) => {
               upgradeCost: level < 3 ? upgradeCosts[level] : null,
             };
           } else {
-            const incomes = [10000, 12500, 15000, 20000];
+            const incomes = [25000, 50000, 75000, 100000];
             const upgradeCosts = [600000, 700000, 800000];
             return {
               name: "🎰 VIP Казино",
@@ -1142,12 +1142,25 @@ serve(async (req) => {
           ? `[${player.prefix}] ${player?.first_name || from.first_name || "Игрок"}`
           : player?.first_name || from.first_name || "Игрок";
 
+        const ownedPrefixes = player?.owned_prefixes || [];
+
+        // Build prefix selection buttons
+        const prefixButtons: any[] = [];
+        if (ownedPrefixes.length > 0) {
+          for (const prefixName of ownedPrefixes) {
+            if (prefixName !== player?.prefix) {
+              prefixButtons.push([{ text: `✨ Активировать ${prefixName}`, callback_data: `activate_prefix_${prefixName}_u${from.id}` }]);
+            }
+          }
+        }
+
         await editMessage(
           chatId,
           message!.message_id,
-          `👤 <b>Профиль: ${displayName}</b>\n\n💰 Баланс: ${player?.balance || 0} монет\n🏆 Побед: ${player?.total_wins || 0}\n💀 Поражений: ${player?.total_losses || 0}\n✨ Префикс: ${prefixText}`,
+          `👤 <b>Профиль: ${displayName}</b>\n\n💰 Баланс: ${player?.balance || 0} монет\n🏆 Побед: ${player?.total_wins || 0}\n💀 Поражений: ${player?.total_losses || 0}\n✨ Префикс: ${prefixText}\n📦 Куплено префиксов: ${ownedPrefixes.length}`,
           {
             inline_keyboard: [
+              ...prefixButtons,
               [{ text: "🛍️ Магазин префиксов", callback_data: `shop_prefixes_u${from.id}` }],
               player?.prefix ? [{ text: "❌ Убрать префикс", callback_data: `remove_prefix_u${from.id}` }] : [],
               [{ text: "⬅️ Главное меню", callback_data: "main_menu" }],
@@ -2102,27 +2115,36 @@ serve(async (req) => {
       } else if (text === "/shop") {
         const { data: player } = await supabaseClient
           .from("squid_players")
-          .select("balance, prefix")
+          .select("balance, prefix, owned_prefixes")
           .eq("telegram_id", from.id)
           .single();
 
-        const prefixes = [
-          { name: "absolute", price: 2000000, emoji: "👑" },
-          { name: "emperror", price: 3000000, emoji: "⚔️" },
-        ];
+        // Load prefixes from database
+        const { data: dbPrefixes } = await supabaseClient
+          .from("squid_prefixes")
+          .select("*")
+          .order("price", { ascending: true });
 
-        let shopText = "🛍️ <b>Магазин префиксов</b>\n\n💰 Твой баланс: " + (player?.balance || 0) + " монет\n\n";
+        const ownedPrefixes = player?.owned_prefixes || [];
 
-        prefixes.forEach((prefix) => {
-          const owned = player?.prefix === prefix.name;
-          shopText += `${prefix.emoji} <b>${prefix.name}</b> - ${prefix.price.toLocaleString()} монет ${owned ? "✅ Куплен" : ""}\n`;
-        });
+        let shopText = "🛍️ <b>Магазин префиксов</b>\n\n💰 Твой баланс: " + (player?.balance || 0).toLocaleString() + " монет\n\n";
+
+        const buttons: any[] = [];
+
+        if (dbPrefixes && dbPrefixes.length > 0) {
+          dbPrefixes.forEach((prefix) => {
+            const owned = ownedPrefixes.includes(prefix.name);
+            shopText += `✨ <b>${prefix.name}</b> - ${prefix.price.toLocaleString()} монет ${owned ? "✅ Куплен" : ""}\n`;
+            if (!owned) {
+              buttons.push([{ text: `Купить ${prefix.name} (${prefix.price.toLocaleString()})`, callback_data: `buy_prefix_${prefix.name}_u${from.id}` }]);
+            }
+          });
+        } else {
+          shopText += "❌ Нет доступных префиксов\n";
+        }
 
         await sendMessage(chat.id, shopText, {
-          inline_keyboard: [
-            [{ text: "👑 Купить absolute (2,000,000)", callback_data: `buy_prefix_absolute_u${from.id}` }],
-            [{ text: "⚔️ Купить emperror (3,000,000)", callback_data: `buy_prefix_emperror_u${from.id}` }],
-          ],
+          inline_keyboard: buttons.length > 0 ? buttons : [[{ text: "⬅️ Назад", callback_data: "main_menu" }]],
         });
       } else if (text.startsWith("/admin_create_promo ")) {
         const { data: admin } = await supabaseClient
@@ -2847,12 +2869,12 @@ serve(async (req) => {
 
 💼 <b>Фабрика масок</b>
 🪙 Стоимость: 200,000 монет
-💰 Доход: 3,000 монет/час
+💰 Доход: 12,500 - 50,000 монет/час
 ⬆️ 3 улучшения доступно
 
 🎰 <b>VIP Казино</b>
 🪙 Стоимость: 500,000 монет
-💰 Доход: 20,000 монет/час
+💰 Доход: 25,000 - 100,000 монет/час
 ⬆️ 3 улучшения доступно
 
 💵 Твой баланс: ${player.balance.toLocaleString()} монет`;
@@ -2891,7 +2913,7 @@ serve(async (req) => {
 
         const businessInfo = (type: string, level: number) => {
           if (type === "mask_factory") {
-            const incomes = [1500, 3000, 4500, 6000];
+            const incomes = [12500, 25000, 37500, 50000];
             const upgradeCosts = [100000, 200000, 300000];
             return {
               name: "🏭 Фабрика масок",
@@ -2899,7 +2921,7 @@ serve(async (req) => {
               upgradeCost: level < 3 ? upgradeCosts[level] : null,
             };
           } else {
-            const incomes = [10000, 12500, 15000, 20000];
+            const incomes = [25000, 50000, 75000, 100000];
             const upgradeCosts = [600000, 700000, 800000];
             return {
               name: "🎰 VIP Казино",
@@ -2970,10 +2992,10 @@ serve(async (req) => {
 
           let hourlyIncome = 0;
           if (biz.business_type === "mask_factory") {
-            const incomes = [1500, 3000, 4500, 6000];
+            const incomes = [12500, 25000, 37500, 50000];
             hourlyIncome = incomes[biz.upgrade_level];
           } else {
-            const incomes = [10000, 12500, 15000, 20000];
+            const incomes = [25000, 50000, 75000, 100000];
             hourlyIncome = incomes[biz.upgrade_level];
           }
 
