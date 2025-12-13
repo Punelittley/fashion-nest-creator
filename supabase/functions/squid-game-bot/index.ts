@@ -3548,6 +3548,220 @@ serve(async (req) => {
           chat.id,
           `🎁 <b>Открытие подарка</b>\n\n${rewardText}\n\n💵 Баланс: ${newBalance.toLocaleString()} монет\n🎁 Осталось подарков: ${remainingGifts}`,
         );
+      } else if (text.startsWith("/gift_all ")) {
+        const { data: admin } = await supabaseClient
+          .from("squid_admins")
+          .select("*")
+          .eq("telegram_id", from.id)
+          .single();
+
+        if (!admin) {
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const args = text.replace("/gift_all ", "").trim();
+        const firstSpace = args.indexOf(" ");
+
+        if (firstSpace === -1) {
+          await sendMessage(chat.id, "❌ Формат: /gift_all [количество] [сообщение]");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const amount = parseInt(args.substring(0, firstSpace));
+        const messageText = args.substring(firstSpace + 1).trim();
+
+        if (isNaN(amount) || amount <= 0) {
+          await sendMessage(chat.id, "❌ Количество подарков должно быть положительным числом!");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        if (!messageText) {
+          await sendMessage(chat.id, "❌ Укажи текст сообщения!");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const { data: allPlayers } = await supabaseClient.from("squid_players").select("telegram_id, gift_count, id");
+
+        if (!allPlayers || allPlayers.length === 0) {
+          await sendMessage(chat.id, "❌ Нет игроков для рассылки");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        let sent = 0;
+        let failed = 0;
+
+        for (const player of allPlayers) {
+          try {
+            // Add gifts to player
+            await supabaseClient
+              .from("squid_players")
+              .update({ gift_count: (player.gift_count || 0) + amount })
+              .eq("id", player.id);
+
+            await sendMessage(
+              player.telegram_id,
+              `🎁 <b>Подарок от создателя!</b>\n\n🎁 Тебе начислено: ${amount} ${amount === 1 ? "подарок" : amount < 5 ? "подарка" : "подарков"}\n\n📢 ${messageText}\n\nОткрой подарки: /gift_open`,
+            );
+            sent++;
+            await new Promise((resolve) => setTimeout(resolve, 50));
+          } catch (e) {
+            failed++;
+          }
+        }
+
+        await sendMessage(
+          chat.id,
+          `✅ <b>Рассылка подарков завершена!</b>\n\n` +
+            `🎁 Количество: ${amount} каждому\n` +
+            `📤 Отправлено: ${sent}\n` +
+            `❌ Не доставлено: ${failed}\n` +
+            `🎁 Всего выдано: ${sent * amount} подарков`,
+        );
+      } else if (text.startsWith("/gift ")) {
+        const { data: admin } = await supabaseClient
+          .from("squid_admins")
+          .select("*")
+          .eq("telegram_id", from.id)
+          .single();
+
+        if (!admin) {
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const args = text.split(" ");
+        if (args.length !== 3) {
+          await sendMessage(chat.id, "❌ Формат: /gift [ID игрока] [количество]");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const targetId = parseInt(args[1]);
+        const amount = parseInt(args[2]);
+
+        if (isNaN(targetId)) {
+          await sendMessage(chat.id, "❌ ID игрока должен быть числом!");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        if (isNaN(amount) || amount <= 0) {
+          await sendMessage(chat.id, "❌ Количество подарков должно быть положительным числом!");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const { data: targetPlayer } = await supabaseClient
+          .from("squid_players")
+          .select("id, first_name, gift_count, telegram_id")
+          .eq("telegram_id", targetId)
+          .single();
+
+        if (!targetPlayer) {
+          await sendMessage(chat.id, "❌ Игрок не найден!");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        await supabaseClient
+          .from("squid_players")
+          .update({ gift_count: (targetPlayer.gift_count || 0) + amount })
+          .eq("id", targetPlayer.id);
+
+        // Notify the player
+        try {
+          await sendMessage(
+            targetPlayer.telegram_id,
+            `🎁 <b>Подарок от администратора!</b>\n\n` +
+              `🎁 Тебе начислено: ${amount} ${amount === 1 ? "подарок" : amount < 5 ? "подарка" : "подарков"}\n\n` +
+              `Открой подарки: /gift_open`,
+          );
+        } catch (e) {
+          // Player might have blocked the bot
+        }
+
+        await sendMessage(
+          chat.id,
+          `✅ <b>Подарки выданы!</b>\n\n` +
+            `👤 Игрок: ${targetPlayer.first_name} (${targetId})\n` +
+            `🎁 Выдано: ${amount} ${amount === 1 ? "подарок" : amount < 5 ? "подарка" : "подарков"}\n` +
+            `🎁 Всего подарков у игрока: ${(targetPlayer.gift_count || 0) + amount}`,
+        );
+      } else if (text.startsWith("/prefix_delete_player ")) {
+        const { data: admin } = await supabaseClient
+          .from("squid_admins")
+          .select("*")
+          .eq("telegram_id", from.id)
+          .single();
+
+        if (!admin) {
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const args = text.replace("/prefix_delete_player ", "").trim();
+        const firstSpace = args.indexOf(" ");
+
+        if (firstSpace === -1) {
+          await sendMessage(chat.id, "❌ Формат: /prefix_delete_player [ID игрока] [название префикса]");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const targetId = parseInt(args.substring(0, firstSpace));
+        const prefixToDelete = args.substring(firstSpace + 1).trim();
+
+        if (isNaN(targetId)) {
+          await sendMessage(chat.id, "❌ ID игрока должен быть числом!");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        if (!prefixToDelete) {
+          await sendMessage(chat.id, "❌ Укажи название префикса!");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const { data: targetPlayer } = await supabaseClient
+          .from("squid_players")
+          .select("id, first_name, owned_prefixes, prefix")
+          .eq("telegram_id", targetId)
+          .single();
+
+        if (!targetPlayer) {
+          await sendMessage(chat.id, "❌ Игрок не найден!");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const ownedPrefixes = targetPlayer.owned_prefixes || [];
+        
+        // Find prefix case-insensitive
+        const prefixIndex = ownedPrefixes.findIndex(
+          (p: string) => p.toLowerCase() === prefixToDelete.toLowerCase()
+        );
+
+        if (prefixIndex === -1) {
+          await sendMessage(
+            chat.id,
+            `❌ У игрока ${targetPlayer.first_name} (${targetId}) нет префикса "${prefixToDelete}"!\n\n` +
+              `Имеющиеся префиксы: ${ownedPrefixes.length > 0 ? ownedPrefixes.join(", ") : "нет"}`
+          );
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const deletedPrefix = ownedPrefixes[prefixIndex];
+        const newOwnedPrefixes = ownedPrefixes.filter((_: string, i: number) => i !== prefixIndex);
+        
+        // If active prefix is the one being deleted, remove it
+        const updateData: any = { owned_prefixes: newOwnedPrefixes };
+        if (targetPlayer.prefix && targetPlayer.prefix.toLowerCase() === deletedPrefix.toLowerCase()) {
+          updateData.prefix = null;
+        }
+
+        await supabaseClient
+          .from("squid_players")
+          .update(updateData)
+          .eq("id", targetPlayer.id);
+
+        await sendMessage(
+          chat.id,
+          `✅ <b>Префикс удалён!</b>\n\n` +
+            `👤 Игрок: ${targetPlayer.first_name} (${targetId})\n` +
+            `❌ Удалён: ${deletedPrefix}\n` +
+            `📦 Осталось префиксов: ${newOwnedPrefixes.length > 0 ? newOwnedPrefixes.join(", ") : "нет"}`
+        );
       } else if (text === "/profile") {
         const { data: player } = await supabaseClient
           .from("squid_players")
