@@ -1301,7 +1301,7 @@ serve(async (req) => {
           .update({ balance: player.balance - betAmount })
           .eq("id", player.id);
 
-        // Spin roulette - reduced win chances
+        // Spin roulette - FAIR random chances
         let resultColor: string;
         let winMultiplier = 0;
 
@@ -1312,18 +1312,13 @@ serve(async (req) => {
         } else {
           const result = Math.random() * 100;
 
-          // Green has only 3% chance, heavily biased against player bet
+          // Fair chances: Red 48.5%, Black 48.5%, Green 3%
           if (result < 3) {
             resultColor = "green";
-          } else if (color === "red") {
-            // If player bet red, 75% chance black wins, 22% red wins
-            resultColor = result < 25 ? "red" : "black";
-          } else if (color === "black") {
-            // If player bet black, 75% chance red wins, 22% black wins
-            resultColor = result < 25 ? "black" : "red";
+          } else if (result < 51.5) {
+            resultColor = "red";
           } else {
-            // Player bet green, standard 50/50 for red/black
-            resultColor = result < 51.5 ? "red" : "black";
+            resultColor = "black";
           }
 
           if (resultColor === color) {
@@ -1551,16 +1546,72 @@ serve(async (req) => {
         );
       }
 
-      if (text === "/start") {
+      if (text === "/start" || text.startsWith("/start ")) {
+        // Check for referral code
+        const args = text.split(" ");
+        let referrerTelegramId: number | null = null;
+        
+        if (args.length > 1) {
+          const refCode = args[1];
+          if (refCode.startsWith("ref")) {
+            referrerTelegramId = parseInt(refCode.replace("ref", ""));
+          }
+        }
+
+        const { data: existingPlayer } = await supabaseClient
+          .from("squid_players")
+          .select("id, balance, telegram_id, referrer_id")
+          .eq("telegram_id", from.id)
+          .single();
+
+        // Handle referral for new players only
+        if (!existingPlayer && referrerTelegramId && referrerTelegramId !== from.id) {
+          const { data: referrer } = await supabaseClient
+            .from("squid_players")
+            .select("id, balance, referral_count, gift_count, first_name")
+            .eq("telegram_id", referrerTelegramId)
+            .single();
+
+          if (referrer) {
+            // Create new player with referrer
+            const { data: newPlayer } = await supabaseClient
+              .from("squid_players")
+              .upsert({
+                telegram_id: from.id,
+                username: from.username,
+                first_name: from.first_name,
+                referrer_id: referrer.id,
+              }, { onConflict: "telegram_id" })
+              .select()
+              .single();
+
+            // Give referrer rewards: 100000 coins + 1 gift
+            await supabaseClient
+              .from("squid_players")
+              .update({
+                balance: referrer.balance + 100000,
+                referral_count: (referrer.referral_count || 0) + 1,
+                gift_count: (referrer.gift_count || 0) + 1,
+              })
+              .eq("id", referrer.id);
+
+            // Notify referrer
+            await sendMessage(
+              referrerTelegramId,
+              `🎉 <b>Новый реферал!</b>\n\n${from.first_name} присоединился по твоей ссылке!\n\n💰 +100,000 монет\n🎁 +1 подарок\n\nИспользуй /gift_open чтобы открыть подарок!`,
+            );
+          }
+        }
+
         const { data: player } = await supabaseClient
           .from("squid_players")
-          .select("balance, telegram_id")
+          .select("balance, telegram_id, referral_count, gift_count")
           .eq("telegram_id", from.id)
           .single();
 
         await sendMessage(
           chat.id,
-          `🦑 <b>Добро пожаловать в Squid Game Bot!</b>\n\n💰 Твой баланс: ${player?.balance || 0} монет\n🆔 Твой ID: ${player?.telegram_id}\n\n<b>📋 Команды:</b>\n/help - список всех команд\n/top - топ богатых игроков\n/daily - ежедневный бонус\n/promo [код] - активировать промокод\n/pay [ID] [сумма] - перевести монеты\n\nВыбери игру:`,
+          `🦑 <b>Добро пожаловать в Squid Game Bot!</b>\n\n💰 Твой баланс: ${player?.balance || 0} монет\n🆔 Твой ID: ${player?.telegram_id}\n👥 Рефералов: ${player?.referral_count || 0}\n🎁 Подарков: ${player?.gift_count || 0}\n\n<b>📋 Команды:</b>\n/help - список всех команд\n/ref - твоя реферальная ссылка\n/gift_open - открыть подарок\n/top - топ богатых игроков\n/daily - ежедневный бонус\n\nВыбери игру:`,
           {
             inline_keyboard: [
               [{ text: "🍬 Dalgona Challenge", callback_data: "play_dalgona" }],
@@ -1573,7 +1624,7 @@ serve(async (req) => {
       } else if (text === "/help") {
         await sendMessage(
           chat.id,
-          `📋 <b>Список команд</b>\n\n<b>🎮 Игры:</b>\n🍬 Dalgona Challenge - вырезай фигурки из печенья\n🌉 Стеклянный мост - пройди по опасному мосту\n🦑 Игра в Кальмара (PvP) - бейся с другими игроками\n\n<b>💰 Команды:</b>\n/balance - проверить баланс\n/daily - получить ежедневный бонус\n/promo [код] - использовать промокод\n/pay [ID] [сумма] - перевести монеты игроку\n/rob - ограбить игрока (раз в час)\n/top - топ 10 богатых игроков в чате\n/topworld - топ 10 богатых игроков глобально\n/shop - магазин префиксов\n/case - магазин кейсов\n\n<b>🏭 Бизнес:</b>\n/business_shop - магазин бизнесов\n/my_buss - мои бизнесы и улучшения\n/collect - собрать прибыль (макс. 1 час)\n\n<b>📦 Предметы:</b>\n/si - искать предметы (раз в час)\n/items - показать инвентарь\n/sell [номер] - продать предмет\n/sell all - продать все предметы\n\n<b>🏰 Кланы:</b>\n/clan - информация о твоём клане\n/clans - список топ кланов\n/clan_create [название] - создать клан (500k)\n/clan_join [название] - вступить в клан\n/clan_leave - покинуть клан\n\n<b>🎲 Казино:</b>\n/roulette [цвет] [ставка] - сыграть в рулетку\nЦвета: red, black, green`,
+          `📋 <b>Список команд</b>\n\n<b>🎮 Игры:</b>\n🍬 Dalgona Challenge - вырезай фигурки из печенья\n🌉 Стеклянный мост - пройди по опасному мосту\n🦑 Игра в Кальмара (PvP) - бейся с другими игроками\n\n<b>💰 Команды:</b>\n/balance - проверить баланс\n/profile - твой профиль\n/daily - получить ежедневный бонус\n/promo [код] - использовать промокод\n/pay [ID] [сумма] - перевести монеты игроку\n/rob - ограбить игрока (раз в час)\n/top - топ 10 богатых игроков в чате\n/topworld - топ 10 богатых игроков глобально\n/shop - магазин префиксов\n/case - магазин кейсов\n\n<b>🔗 Рефералы:</b>\n/ref - твоя реферальная ссылка\n/gift_open - открыть подарок\n\n<b>🏭 Бизнес:</b>\n/business_shop - магазин бизнесов\n/my_buss - мои бизнесы и улучшения\n/collect - собрать прибыль (макс. 1 час)\n\n<b>📦 Предметы:</b>\n/si - искать предметы (раз в час)\n/items - показать инвентарь\n/sell [номер] - продать предмет\n/sell all - продать все предметы\n\n<b>🏰 Кланы:</b>\n/clan - информация о твоём клане\n/clans - список топ кланов\n/clan_create [название] - создать клан (500k)\n/clan_join [название] - вступить в клан\n/clan_leave - покинуть клан\n\n<b>🎲 Казино:</b>\n/roulette [цвет] [ставка] - сыграть в рулетку\nЦвета: red, black, green`,
         );
       } else if (text === "/daily") {
         const { data: player } = await supabaseClient
@@ -2003,7 +2054,7 @@ serve(async (req) => {
           .update({ balance: player.balance - betAmount })
           .eq("id", player.id);
 
-        // Spin roulette - reduced win chances
+        // Spin roulette - FAIR random chances
         let resultColor: string;
         let winMultiplier = 0;
 
@@ -2013,18 +2064,13 @@ serve(async (req) => {
         } else {
           const rand = Math.random() * 100;
 
-          // Green has only 3% chance, heavily biased against player bet
+          // Fair chances: Red 48.5%, Black 48.5%, Green 3%
           if (rand < 3) {
             resultColor = "green";
-          } else if (color === "red") {
-            // If player bet red, 75% chance black wins, 22% red wins
-            resultColor = rand < 25 ? "red" : "black";
-          } else if (color === "black") {
-            // If player bet black, 75% chance red wins, 22% black wins
-            resultColor = rand < 25 ? "black" : "red";
+          } else if (rand < 51.5) {
+            resultColor = "red";
           } else {
-            // Player bet green, standard 50/50 for red/black
-            resultColor = rand < 51.5 ? "red" : "black";
+            resultColor = "black";
           }
 
           if (resultColor === color) {
@@ -2547,32 +2593,33 @@ serve(async (req) => {
           return new Response("OK", { headers: corsHeaders });
         }
 
-        const prefixName = text.replace("/prefix_delete ", "").trim().toLowerCase();
+        const prefixName = text.replace("/prefix_delete ", "").trim();
 
         if (!prefixName) {
           await sendMessage(chat.id, "❌ Формат: /prefix_delete [название]");
           return new Response("OK", { headers: corsHeaders });
         }
 
+        // Search case-insensitive
         const { data: existingPrefix } = await supabaseClient
           .from("squid_prefixes")
           .select("*")
-          .eq("name", prefixName)
+          .ilike("name", prefixName)
           .maybeSingle();
 
         if (!existingPrefix) {
-          await sendMessage(chat.id, `❌ Префикс "${prefixName}" не найден!`);
+          await sendMessage(chat.id, `❌ Префикс "${prefixName}" не найден в магазине!`);
           return new Response("OK", { headers: corsHeaders });
         }
 
         await supabaseClient
           .from("squid_prefixes")
           .delete()
-          .eq("name", prefixName);
+          .eq("id", existingPrefix.id);
 
         await sendMessage(
           chat.id,
-          `✅ Префикс "${prefixName}" удалён из магазина!`,
+          `✅ Префикс "${existingPrefix.name}" удалён из магазина!`,
         );
       } else if (text.startsWith("/get_prefix ")) {
         const { data: admin } = await supabaseClient
@@ -2702,29 +2749,30 @@ serve(async (req) => {
           return new Response("OK", { headers: corsHeaders });
         }
 
-        // Random money (0-4000)
-        const moneyFound = Math.floor(Math.random() * 4001);
+        // Random money (0-2000) - reduced
+        const moneyFound = Math.floor(Math.random() * 2001);
 
-        // Item drop chances
+        // Item drop chances - REDUCED
         const itemChance = Math.random() * 100;
         let itemFound: { name: string; rarity: string; sellPrice: number } | null = null;
 
-        if (itemChance < 2) {
-          // 2% - Маска Фронтман (Мифическая)
+        if (itemChance < 0.5) {
+          // 0.5% - Маска Фронтман (Мифическая)
           itemFound = { name: "🎭 Маска Фронтман", rarity: "Мифическая", sellPrice: 25000 };
-        } else if (itemChance < 9) {
-          // 7% - Карта VIP (Эпическая)
+        } else if (itemChance < 2.5) {
+          // 2% - Карта VIP (Эпическая)
           itemFound = { name: "💳 Карта VIP", rarity: "Эпическая", sellPrice: 9000 };
-        } else if (itemChance < 22) {
-          // 13% - Маска квадрат (Раритет)
+        } else if (itemChance < 7.5) {
+          // 5% - Маска квадрат (Раритет)
           itemFound = { name: "🟥 Маска квадрат", rarity: "Раритет", sellPrice: 5000 };
-        } else if (itemChance < 47) {
-          // 25% - Печенька Зонт (Обычная)
+        } else if (itemChance < 17.5) {
+          // 10% - Печенька Зонт (Обычная)
           itemFound = { name: "🍪 Печенька Зонт", rarity: "Обычная", sellPrice: 2000 };
-        } else if (itemChance < 67) {
-          // 20% - Зипка 456 (Обычная)
+        } else if (itemChance < 25) {
+          // 7.5% - Зипка 456 (Обычная)
           itemFound = { name: "🧥 Зипка 456", rarity: "Обычная", sellPrice: 3000 };
         }
+        // 75% - nothing
 
         // Update balance and last claim
         await supabaseClient
@@ -3379,6 +3427,166 @@ serve(async (req) => {
               [{ text: "🎁 Открыть Кейс #1 (100k)", callback_data: `open_case_1_u${from.id}` }],
               [{ text: "💎 Открыть Кейс #2 (500k)", callback_data: `open_case_2_u${from.id}` }],
             ],
+          },
+        );
+      } else if (text === "/ref") {
+        const { data: player } = await supabaseClient
+          .from("squid_players")
+          .select("telegram_id, referral_count, gift_count")
+          .eq("telegram_id", from.id)
+          .single();
+
+        if (!player) {
+          await sendMessage(chat.id, "❌ Игрок не найден. Используй /start");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const botUsername = "squidgame_cash_bot"; // Replace with actual bot username if different
+        const refLink = `https://t.me/${botUsername}?start=ref${player.telegram_id}`;
+
+        await sendMessage(
+          chat.id,
+          `🔗 <b>Реферальная программа</b>\n\n` +
+            `Приглашай друзей и получай награды!\n\n` +
+            `💰 За каждого друга: <b>100,000 монет</b>\n` +
+            `🎁 За каждого друга: <b>1 подарок</b>\n\n` +
+            `👥 Приглашено друзей: ${player.referral_count || 0}\n` +
+            `🎁 Доступно подарков: ${player.gift_count || 0}\n\n` +
+            `📎 <b>Твоя ссылка:</b>\n<code>${refLink}</code>\n\n` +
+            `Используй /gift_open чтобы открыть подарок!`,
+        );
+      } else if (text === "/gift_open") {
+        const { data: player } = await supabaseClient
+          .from("squid_players")
+          .select("id, balance, gift_count, owned_prefixes")
+          .eq("telegram_id", from.id)
+          .single();
+
+        if (!player) {
+          await sendMessage(chat.id, "❌ Игрок не найден. Используй /start");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        if ((player.gift_count || 0) <= 0) {
+          await sendMessage(
+            chat.id,
+            `❌ <b>У тебя нет подарков!</b>\n\n` +
+              `Приглашай друзей по реферальной ссылке /ref чтобы получить подарки!`,
+          );
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        // Deduct gift
+        await supabaseClient
+          .from("squid_players")
+          .update({ gift_count: player.gift_count - 1 })
+          .eq("id", player.id);
+
+        // Gift rewards - the lower the chance, the higher the reward
+        const giftChance = Math.random() * 100;
+        let rewardText = "";
+        let coinsWon = 0;
+        let prefixWon: string | null = null;
+
+        if (giftChance < 0.5) {
+          // 0.5% - GOD prefix
+          prefixWon = "GOD";
+          rewardText = `👑 <b>ЛЕГЕНДАРНЫЙ ВЫИГРЫШ!</b>\n\n✨ Ты получил префикс <b>GOD</b>!\n\nАктивируй его в /profile`;
+
+          const ownedPrefixes = player.owned_prefixes || [];
+          if (!ownedPrefixes.includes("GOD")) {
+            await supabaseClient
+              .from("squid_players")
+              .update({ owned_prefixes: [...ownedPrefixes, "GOD"] })
+              .eq("id", player.id);
+          } else {
+            // Already has GOD, give coins instead
+            coinsWon = 200000;
+            rewardText = `👑 <b>ЛЕГЕНДАРНЫЙ ВЫИГРЫШ!</b>\n\nУ тебя уже есть GOD, поэтому ты получаешь:\n💰 <b>+200,000 монет</b>`;
+            await supabaseClient
+              .from("squid_players")
+              .update({ balance: player.balance + coinsWon })
+              .eq("id", player.id);
+          }
+        } else if (giftChance < 1.5) {
+          // 1% - 200,000 coins
+          coinsWon = 200000;
+          rewardText = `🎉 <b>ОГРОМНЫЙ ВЫИГРЫШ!</b>\n\n💰 <b>+200,000 монет</b>`;
+        } else if (giftChance < 5) {
+          // 3.5% - 100,000 coins
+          coinsWon = 100000;
+          rewardText = `🎉 <b>ОТЛИЧНЫЙ ВЫИГРЫШ!</b>\n\n💰 <b>+100,000 монет</b>`;
+        } else if (giftChance < 15) {
+          // 10% - 50,000 coins
+          coinsWon = 50000;
+          rewardText = `🎁 <b>Хороший выигрыш!</b>\n\n💰 <b>+50,000 монет</b>`;
+        } else if (giftChance < 35) {
+          // 20% - 25,000 coins
+          coinsWon = 25000;
+          rewardText = `🎁 <b>Выигрыш!</b>\n\n💰 <b>+25,000 монет</b>`;
+        } else if (giftChance < 60) {
+          // 25% - 10,000 coins
+          coinsWon = 10000;
+          rewardText = `🎁 Выигрыш\n\n💰 <b>+10,000 монет</b>`;
+        } else {
+          // 40% - 5,000 coins
+          coinsWon = 5000;
+          rewardText = `🎁 Небольшой выигрыш\n\n💰 <b>+5,000 монет</b>`;
+        }
+
+        if (coinsWon > 0 && !prefixWon) {
+          await supabaseClient
+            .from("squid_players")
+            .update({ balance: player.balance + coinsWon })
+            .eq("id", player.id);
+        }
+
+        const newBalance = player.balance + coinsWon;
+        const remainingGifts = player.gift_count - 1;
+
+        await sendMessage(
+          chat.id,
+          `🎁 <b>Открытие подарка</b>\n\n${rewardText}\n\n💵 Баланс: ${newBalance.toLocaleString()} монет\n🎁 Осталось подарков: ${remainingGifts}`,
+        );
+      } else if (text === "/profile") {
+        const { data: player } = await supabaseClient
+          .from("squid_players")
+          .select("*")
+          .eq("telegram_id", from.id)
+          .single();
+
+        if (!player) {
+          await sendMessage(chat.id, "❌ Игрок не найден. Используй /start");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const prefixText = player.prefix ? `${player.prefix}` : "Нет префикса";
+        const displayName = player.prefix
+          ? `[${player.prefix}] ${player.first_name || from.first_name || "Игрок"}`
+          : player.first_name || from.first_name || "Игрок";
+
+        const ownedPrefixes = player.owned_prefixes || [];
+
+        // Build prefix selection buttons
+        const prefixButtons: any[] = [];
+        if (ownedPrefixes.length > 0) {
+          for (const prefixName of ownedPrefixes) {
+            if (prefixName !== player.prefix) {
+              prefixButtons.push([{ text: `✨ Активировать ${prefixName}`, callback_data: `activate_prefix_${prefixName}_u${from.id}` }]);
+            }
+          }
+        }
+
+        await sendMessage(
+          chat.id,
+          `👤 <b>Профиль: ${displayName}</b>\n\n💰 Баланс: ${player.balance || 0} монет\n🏆 Побед: ${player.total_wins || 0}\n💀 Поражений: ${player.total_losses || 0}\n✨ Префикс: ${prefixText}\n📦 Куплено префиксов: ${ownedPrefixes.length}\n👥 Рефералов: ${player.referral_count || 0}\n🎁 Подарков: ${player.gift_count || 0}`,
+          {
+            inline_keyboard: [
+              ...prefixButtons,
+              [{ text: "🛍️ Магазин префиксов", callback_data: `shop_prefixes_u${from.id}` }],
+              player.prefix ? [{ text: "❌ Убрать префикс", callback_data: `remove_prefix_u${from.id}` }] : [],
+              [{ text: "⬅️ Главное меню", callback_data: "main_menu" }],
+            ].filter((row) => row.length > 0),
           },
         );
       }
