@@ -674,12 +674,15 @@ export type Database = {
           casino_admin_mode: boolean | null
           created_at: string | null
           first_name: string | null
+          gift_count: number
           id: string
           last_daily_claim: string | null
           last_rob_time: string | null
           last_si_claim: string | null
           owned_prefixes: string[] | null
           prefix: string | null
+          referral_count: number
+          referrer_id: string | null
           telegram_id: number
           total_losses: number | null
           total_wins: number | null
@@ -691,12 +694,15 @@ export type Database = {
           casino_admin_mode?: boolean | null
           created_at?: string | null
           first_name?: string | null
+          gift_count?: number
           id?: string
           last_daily_claim?: string | null
           last_rob_time?: string | null
           last_si_claim?: string | null
           owned_prefixes?: string[] | null
           prefix?: string | null
+          referral_count?: number
+          referrer_id?: string | null
           telegram_id: number
           total_losses?: number | null
           total_wins?: number | null
@@ -708,19 +714,30 @@ export type Database = {
           casino_admin_mode?: boolean | null
           created_at?: string | null
           first_name?: string | null
+          gift_count?: number
           id?: string
           last_daily_claim?: string | null
           last_rob_time?: string | null
           last_si_claim?: string | null
           owned_prefixes?: string[] | null
           prefix?: string | null
+          referral_count?: number
+          referrer_id?: string | null
           telegram_id?: number
           total_losses?: number | null
           total_wins?: number | null
           updated_at?: string | null
           username?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "squid_players_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "squid_players"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       squid_prefixes: {
         Row: {
