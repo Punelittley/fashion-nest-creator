@@ -1167,6 +1167,114 @@ serve(async (req) => {
             ].filter((row) => row.length > 0),
           },
         );
+      } else if (data.startsWith("donate_premium_u")) {
+        await editMessage(
+          chatId,
+          message!.message_id,
+          `👑 <b>PREMIUM подписка</b>\n\n` +
+            `🎁 <b>Что ты получишь:</b>\n` +
+            `   • 2X множитель ограбления игроков\n` +
+            `   • 2X бонус выигрыша в казино\n` +
+            `   • 2X доход от бизнеса\n\n` +
+            `💰 <b>Стоимость:</b> договорная\n\n` +
+            `📩 Для покупки напишите: @COKPYIIIEHUE\n` +
+            `🎁 Также можно оплатить подарками Telegram!`,
+          {
+            inline_keyboard: [
+              [{ text: "⬅️ Назад", callback_data: `donate_back_u${from.id}` }],
+            ],
+          },
+        );
+      } else if (data.startsWith("donate_coins_100k_u")) {
+        await editMessage(
+          chatId,
+          message!.message_id,
+          `🪙 <b>100,000 монет</b>\n\n` +
+            `💰 Стоимость: <b>15₽</b>\n\n` +
+            `📩 Для покупки напишите: @COKPYIIIEHUE\n` +
+            `🎁 Также можно оплатить подарками Telegram!`,
+          {
+            inline_keyboard: [
+              [{ text: "⬅️ Назад", callback_data: `donate_back_u${from.id}` }],
+            ],
+          },
+        );
+      } else if (data.startsWith("donate_coins_500k_u")) {
+        await editMessage(
+          chatId,
+          message!.message_id,
+          `💰 <b>500,000 монет</b>\n\n` +
+            `💰 Стоимость: <b>35₽</b>\n\n` +
+            `📩 Для покупки напишите: @COKPYIIIEHUE\n` +
+            `🎁 Также можно оплатить подарками Telegram!`,
+          {
+            inline_keyboard: [
+              [{ text: "⬅️ Назад", callback_data: `donate_back_u${from.id}` }],
+            ],
+          },
+        );
+      } else if (data.startsWith("donate_coins_1m_u")) {
+        await editMessage(
+          chatId,
+          message!.message_id,
+          `💎 <b>1,000,000 монет</b>\n\n` +
+            `💰 Стоимость: <b>75₽</b>\n\n` +
+            `📩 Для покупки напишите: @COKPYIIIEHUE\n` +
+            `🎁 Также можно оплатить подарками Telegram!`,
+          {
+            inline_keyboard: [
+              [{ text: "⬅️ Назад", callback_data: `donate_back_u${from.id}` }],
+            ],
+          },
+        );
+      } else if (data.startsWith("donate_prefix_u")) {
+        await editMessage(
+          chatId,
+          message!.message_id,
+          `✨ <b>Кастомный префикс</b>\n\n` +
+            `Получи уникальный префикс, который будет отображаться рядом с твоим именем!\n\n` +
+            `💰 Стоимость: <b>договорная</b>\n\n` +
+            `📩 Для покупки напишите: @COKPYIIIEHUE\n` +
+            `🎁 Также можно оплатить подарками Telegram!`,
+          {
+            inline_keyboard: [
+              [{ text: "⬅️ Назад", callback_data: `donate_back_u${from.id}` }],
+            ],
+          },
+        );
+      } else if (data.startsWith("donate_back_u")) {
+        const { data: player } = await supabaseClient
+          .from("squid_players")
+          .select("id, balance, is_premium, premium_expires_at")
+          .eq("telegram_id", from.id)
+          .single();
+
+        const isPremiumActive = player?.is_premium && player?.premium_expires_at && new Date(player.premium_expires_at) > new Date();
+        const premiumStatus = isPremiumActive 
+          ? `✅ Активен до ${new Date(player.premium_expires_at!).toLocaleDateString("ru-RU")}`
+          : "❌ Не активен";
+
+        await editMessage(
+          chatId,
+          message!.message_id,
+          `💎 <b>Донат магазин</b>\n\n` +
+            `👑 <b>PREMIUM статус:</b> ${premiumStatus}\n\n` +
+            `🎁 <b>Преимущества PREMIUM:</b>\n` +
+            `   • 2X множитель ограбления игроков\n` +
+            `   • 2X бонус выигрыша в казино\n` +
+            `   • 2X доход от бизнеса\n\n` +
+            `💵 Твой баланс: ${(player?.balance || 0).toLocaleString()} монет`,
+          {
+            inline_keyboard: [
+              [{ text: "👑 PREMIUM (1 месяц)", callback_data: `donate_premium_u${from.id}` }],
+              [{ text: "🪙 100,000 монет - 15₽", callback_data: `donate_coins_100k_u${from.id}` }],
+              [{ text: "💰 500,000 монет - 35₽", callback_data: `donate_coins_500k_u${from.id}` }],
+              [{ text: "💎 1,000,000 монет - 75₽", callback_data: `donate_coins_1m_u${from.id}` }],
+              [{ text: "✨ Кастомный префикс", callback_data: `donate_prefix_u${from.id}` }],
+              [{ text: "⬅️ Назад", callback_data: "main_menu" }],
+            ],
+          },
+        );
       } else if (data.startsWith("admin_set_prefix_absolute_")) {
         const { data: admin } = await supabaseClient
           .from("squid_admins")
@@ -2039,7 +2147,7 @@ serve(async (req) => {
 
         const { data: player } = await supabaseClient
           .from("squid_players")
-          .select("id, balance, casino_admin_mode")
+          .select("id, balance, casino_admin_mode, is_premium, premium_expires_at")
           .eq("telegram_id", from.id)
           .single();
 
@@ -2047,6 +2155,8 @@ serve(async (req) => {
           await sendMessage(chat.id, "❌ Недостаточно монет!");
           return new Response("OK", { headers: corsHeaders });
         }
+
+        const isPremiumActive = player.is_premium && player.premium_expires_at && new Date(player.premium_expires_at) > new Date();
 
         // Deduct bet
         await supabaseClient
@@ -2078,7 +2188,13 @@ serve(async (req) => {
           }
         }
 
-        const winAmount = betAmount * winMultiplier;
+        let winAmount = betAmount * winMultiplier;
+        
+        // Apply premium bonus (2x)
+        if (isPremiumActive && winAmount > 0) {
+          winAmount = winAmount * 2;
+        }
+        
         const profit = winAmount - betAmount;
 
         if (winAmount > 0) {
@@ -2102,10 +2218,12 @@ serve(async (req) => {
           green: "🟢",
         };
 
+        const premiumBonus = isPremiumActive ? " 👑 (x2 PREMIUM)" : "";
+
         if (winAmount > 0) {
           await sendMessage(
             chat.id,
-            `🎉 <b>ВЫИГРЫШ!</b>\n\n🎡 Рулетка: ${colorEmoji[resultColor]} ${resultColor}\n💰 Ставка: ${betAmount} монет на ${colorEmoji[color]} ${color}\n🎁 Выигрыш: ${profit} монет (x${winMultiplier})\n💵 Новый баланс: ${player.balance - betAmount + winAmount} монет`,
+            `🎉 <b>ВЫИГРЫШ!</b>${premiumBonus}\n\n🎡 Рулетка: ${colorEmoji[resultColor]} ${resultColor}\n💰 Ставка: ${betAmount} монет на ${colorEmoji[color]} ${color}\n🎁 Выигрыш: ${profit} монет (x${winMultiplier}${isPremiumActive ? " x2" : ""})\n💵 Новый баланс: ${player.balance - betAmount + winAmount} монет`,
           );
         } else {
           await sendMessage(
@@ -3762,6 +3880,43 @@ serve(async (req) => {
             `❌ Удалён: ${deletedPrefix}\n` +
             `📦 Осталось префиксов: ${newOwnedPrefixes.length > 0 ? newOwnedPrefixes.join(", ") : "нет"}`
         );
+      } else if (text === "/donate") {
+        const { data: player } = await supabaseClient
+          .from("squid_players")
+          .select("id, balance, is_premium, premium_expires_at")
+          .eq("telegram_id", from.id)
+          .single();
+
+        if (!player) {
+          await sendMessage(chat.id, "❌ Игрок не найден. Используй /start");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const isPremiumActive = player.is_premium && player.premium_expires_at && new Date(player.premium_expires_at) > new Date();
+        const premiumStatus = isPremiumActive 
+          ? `✅ Активен до ${new Date(player.premium_expires_at!).toLocaleDateString("ru-RU")}`
+          : "❌ Не активен";
+
+        await sendMessage(
+          chat.id,
+          `💎 <b>Донат магазин</b>\n\n` +
+            `👑 <b>PREMIUM статус:</b> ${premiumStatus}\n\n` +
+            `🎁 <b>Преимущества PREMIUM:</b>\n` +
+            `   • 2X множитель ограбления игроков\n` +
+            `   • 2X бонус выигрыша в казино\n` +
+            `   • 2X доход от бизнеса\n\n` +
+            `💵 Твой баланс: ${(player.balance || 0).toLocaleString()} монет`,
+          {
+            inline_keyboard: [
+              [{ text: "👑 PREMIUM (1 месяц)", callback_data: `donate_premium_u${from.id}` }],
+              [{ text: "🪙 100,000 монет - 15₽", callback_data: `donate_coins_100k_u${from.id}` }],
+              [{ text: "💰 500,000 монет - 35₽", callback_data: `donate_coins_500k_u${from.id}` }],
+              [{ text: "💎 1,000,000 монет - 75₽", callback_data: `donate_coins_1m_u${from.id}` }],
+              [{ text: "✨ Кастомный префикс", callback_data: `donate_prefix_u${from.id}` }],
+              [{ text: "⬅️ Назад", callback_data: "main_menu" }],
+            ],
+          },
+        );
       } else if (text === "/profile") {
         const { data: player } = await supabaseClient
           .from("squid_players")
@@ -3780,6 +3935,7 @@ serve(async (req) => {
           : player.first_name || from.first_name || "Игрок";
 
         const ownedPrefixes = player.owned_prefixes || [];
+        const isPremiumActive = player.is_premium && player.premium_expires_at && new Date(player.premium_expires_at) > new Date();
 
         // Build prefix selection buttons
         const prefixButtons: any[] = [];
@@ -3793,7 +3949,15 @@ serve(async (req) => {
 
         await sendMessage(
           chat.id,
-          `👤 <b>Профиль: ${displayName}</b>\n\n💰 Баланс: ${player.balance || 0} монет\n🏆 Побед: ${player.total_wins || 0}\n💀 Поражений: ${player.total_losses || 0}\n✨ Префикс: ${prefixText}\n📦 Куплено префиксов: ${ownedPrefixes.length}\n👥 Рефералов: ${player.referral_count || 0}\n🎁 Подарков: ${player.gift_count || 0}`,
+          `👤 <b>Профиль: ${displayName}</b>\n\n` +
+            `💰 Баланс: ${(player.balance || 0).toLocaleString()} монет\n` +
+            `👑 Premium: ${isPremiumActive ? "✅ Активен" : "❌ Нет"}\n` +
+            `🏆 Побед: ${player.total_wins || 0}\n` +
+            `💀 Поражений: ${player.total_losses || 0}\n` +
+            `✨ Префикс: ${prefixText}\n` +
+            `📦 Куплено префиксов: ${ownedPrefixes.length}\n` +
+            `👥 Рефералов: ${player.referral_count || 0}\n` +
+            `🎁 Подарков: ${player.gift_count || 0}`,
           {
             inline_keyboard: [
               ...prefixButtons,
