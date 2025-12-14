@@ -18,6 +18,7 @@ import Contacts from "./pages/Contacts";
 import Delivery from "./pages/Delivery";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
+import SquidGame from "./pages/SquidGame";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ const App = () => (
           <Route path="/contacts" element={<Contacts />} />
           <Route path="/delivery" element={<Delivery />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/squid-game" element={<SquidGame />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

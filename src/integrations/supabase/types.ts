@@ -676,11 +676,13 @@ export type Database = {
           first_name: string | null
           gift_count: number
           id: string
+          is_premium: boolean | null
           last_daily_claim: string | null
           last_rob_time: string | null
           last_si_claim: string | null
           owned_prefixes: string[] | null
           prefix: string | null
+          premium_expires_at: string | null
           referral_count: number
           referrer_id: string | null
           telegram_id: number
@@ -696,11 +698,13 @@ export type Database = {
           first_name?: string | null
           gift_count?: number
           id?: string
+          is_premium?: boolean | null
           last_daily_claim?: string | null
           last_rob_time?: string | null
           last_si_claim?: string | null
           owned_prefixes?: string[] | null
           prefix?: string | null
+          premium_expires_at?: string | null
           referral_count?: number
           referrer_id?: string | null
           telegram_id: number
@@ -716,11 +720,13 @@ export type Database = {
           first_name?: string | null
           gift_count?: number
           id?: string
+          is_premium?: boolean | null
           last_daily_claim?: string | null
           last_rob_time?: string | null
           last_si_claim?: string | null
           owned_prefixes?: string[] | null
           prefix?: string | null
+          premium_expires_at?: string | null
           referral_count?: number
           referrer_id?: string | null
           telegram_id?: number
