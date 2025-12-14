@@ -3441,7 +3441,7 @@ serve(async (req) => {
           return new Response("OK", { headers: corsHeaders });
         }
 
-        const botUsername = "squidgame_cash_bot"; // Replace with actual bot username if different
+        const botUsername = "squid_game_russia_bot";
         const refLink = `https://t.me/${botUsername}?start=ref${player.telegram_id}`;
 
         await sendMessage(
