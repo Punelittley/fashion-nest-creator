@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🦑 Squid Game Casino</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #db2777 0%, #dc2626 50%, #ea580c 100%);
+      min-height: 100vh;
+      color: white;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .card {
+      background: rgba(0, 0, 0, 0.85);
+      border: 2px solid #ec4899;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 24px;
+      font-weight: bold;
+      color: #ec4899;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .card-subtitle {
+      color: #9ca3af;
+      text-align: center;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+
+    input[type="text"], input[type="number"] {
+      width: 100%;
+      padding: 16px;
+      background: #1f2937;
+      border: 1px solid #ec4899;
+      border-radius: 8px;
+      color: white;
+      font-size: 18px;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    input::placeholder {
+      color: #6b7280;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: #db2777;
+      color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #be185d;
+    }
+
+    .btn-red {
+      background: #dc2626;
+      color: white;
+    }
+
+    .btn-red:hover:not(:disabled) {
+      background: #b91c1c;
+    }
+
+    .btn-green {
+      background: #16a34a;
+      color: white;
+    }
+
+    .btn-green:hover:not(:disabled) {
+      background: #15803d;
+    }
+
+    .btn-black {
+      background: #374151;
+      color: white;
+    }
+
+    .btn-black:hover:not(:disabled) {
+      background: #4b5563;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid #ec4899;
+      color: #ec4899;
+    }
+
+    .btn-outline:hover:not(:disabled) {
+      background: rgba(236, 72, 153, 0.1);
+    }
+
+    .btn-outline-yellow {
+      border-color: #eab308;
+      color: #eab308;
+    }
+
+    .btn-selected {
+      box-shadow: 0 0 0 2px #facc15;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .header-title {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .header-subtitle {
+      color: #fbcfe8;
+      font-size: 14px;
+    }
+
+    .balance-box {
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 8px;
+      padding: 8px 16px;
+      text-align: right;
+    }
+
+    .balance-label {
+      font-size: 12px;
+      color: #9ca3af;
+    }
+
+    .balance-value {
+      font-size: 20px;
+      font-weight: bold;
+      color: #facc15;
+    }
+
+    .tabs {
+      display: flex;
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 8px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      background: transparent;
+      color: white;
+      font-size: 14px;
+    }
+
+    .tab.active {
+      background: #db2777;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Roulette Wheel */
+    .wheel-container {
+      position: relative;
+      width: 280px;
+      height: 280px;
+      margin: 0 auto 20px;
+    }
+
+    .wheel-pointer {
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 12px solid transparent;
+      border-right: 12px solid transparent;
+      border-top: 20px solid #facc15;
+      z-index: 10;
+    }
+
+    .wheel {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .wheel-slice {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    .wheel-slice-inner {
+      width: 24px;
+      height: 140px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 8px;
+      color: white;
+      font-size: 10px;
+      font-weight: bold;
+      clip-path: polygon(30% 0, 70% 0, 100% 100%, 0 100%);
+    }
+
+    .wheel-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60px;
+      height: 60px;
+      background: #1f2937;
+      border: 4px solid #facc15;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .result-display {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .result-label {
+      color: #9ca3af;
+      font-size: 14px;
+    }
+
+    .result-value {
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .grid-5 {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    /* Ladder Game */
+    .ladder-visual {
+      height: 256px;
+      background: linear-gradient(to top, #14532d, #713f12, #7f1d1d);
+      border-radius: 8px;
+      position: relative;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+
+    .ladder-levels {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 16px;
+    }
+
+    .ladder-level {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+
+    .ladder-level.active {
+      background: rgba(219, 39, 119, 0.5);
+    }
+
+    .ladder-level-chance {
+      font-weight: bold;
+    }
+
+    .ladder-level-mult {
+      color: #facc15;
+      font-weight: bold;
+    }
+
+    .ladder-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+    .ladder-result {
+      font-size: 64px;
+    }
+
+    .ladder-playing {
+      width: 64px;
+      height: 64px;
+      border: 4px solid #ec4899;
+      border-radius: 50%;
+      animation: ping 1s infinite;
+    }
+
+    @keyframes ping {
+      0% { transform: scale(1); opacity: 1; }
+      75%, 100% { transform: scale(2); opacity: 0; }
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+
+    .bounce {
+      animation: bounce 0.5s ease-in-out infinite;
+    }
+
+    .range-slider {
+      width: 100%;
+      height: 12px;
+      background: #374151;
+      border-radius: 8px;
+      appearance: none;
+      cursor: pointer;
+      margin: 8px 0;
+    }
+
+    .range-slider::-webkit-slider-thumb {
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      background: #ec4899;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .range-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    .quick-bets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 16px;
+    }
+
+    .quick-bet-btn {
+      padding: 8px 12px;
+      font-size: 12px;
+    }
+
+    .premium-note {
+      text-align: center;
+      color: #fbcfe8;
+      font-size: 12px;
+      margin-top: 16px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: bold;
+      z-index: 1000;
+      animation: slideUp 0.3s ease-out;
+    }
+
+    .toast-success {
+      background: #16a34a;
+      color: white;
+    }
+
+    .toast-error {
+      background: #dc2626;
+      color: white;
+    }
+
+    @keyframes slideUp {
+      from { transform: translate(-50%, 100%); opacity: 0; }
+      to { transform: translate(-50%, 0); opacity: 1; }
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .label {
+      color: #9ca3af;
+      font-size: 14px;
+      margin-bottom: 8px;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <!-- Login Screen -->
+  <div id="loginScreen" class="container">
+    <div class="card" style="margin-top: 20vh;">
+      <h1 class="card-title">🦑 Squid Game Casino</h1>
+      <p class="card-subtitle">Введите ваш Telegram ID для входа</p>
+      <input type="number" id="telegramIdInput" placeholder="Telegram ID">
+      <button class="btn btn-primary" id="loginBtn">Войти</button>
+      <p class="card-subtitle" style="margin-top: 12px;">
+        Узнать Telegram ID можно написав /start боту @squid_game_russia_bot
+      </p>
+    </div>
+  </div>
+
+  <!-- Main Game Screen -->
+  <div id="gameScreen" class="container hidden">
+    <div class="header">
+      <div>
+        <div class="header-title">🦑 Squid Game Casino</div>
+        <div class="header-subtitle" id="playerName">Игрок</div>
+      </div>
+      <div class="balance-box">
+        <div class="balance-label">Баланс</div>
+        <div class="balance-value">💰 <span id="balanceDisplay">0</span></div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="roulette">🎰 Рулетка</button>
+      <button class="tab" data-tab="ladder">📈 Лесенка</button>
+    </div>
+
+    <!-- Roulette Tab -->
+    <div id="rouletteTab" class="tab-content active">
+      <div class="card">
+        <div class="wheel-container">
+          <div class="wheel-pointer"></div>
+          <div class="wheel" id="rouletteWheel"></div>
+          <div class="wheel-center">🎰</div>
+        </div>
+
+        <div class="result-display" id="rouletteResult" style="display: none;">
+          <div class="result-label">Последний результат:</div>
+          <div class="result-value" id="resultValue"></div>
+        </div>
+
+        <input type="number" id="rouletteBetInput" placeholder="Сумма ставки">
+
+        <div class="grid-3">
+          <button class="btn btn-red btn-selected" id="betRed">🔴 Красное (x2)</button>
+          <button class="btn btn-green" id="betGreen">🟢 Зелёное (x14)</button>
+          <button class="btn btn-black" id="betBlack">⚫ Чёрное (x2)</button>
+        </div>
+
+        <button class="btn btn-primary" id="spinBtn">🎲 Крутить!</button>
+      </div>
+    </div>
+
+    <!-- Ladder Tab -->
+    <div id="ladderTab" class="tab-content">
+      <div class="card">
+        <div class="ladder-visual">
+          <div class="ladder-levels">
+            <div class="ladder-level" data-chance="90">
+              <span class="ladder-level-chance">90%</span>
+              <span class="ladder-level-mult">x1.06</span>
+            </div>
+            <div class="ladder-level" data-chance="70">
+              <span class="ladder-level-chance">70%</span>
+              <span class="ladder-level-mult">x1.36</span>
+            </div>
+            <div class="ladder-level active" data-chance="50">
+              <span class="ladder-level-chance">50%</span>
+              <span class="ladder-level-mult">x1.90</span>
+            </div>
+            <div class="ladder-level" data-chance="30">
+              <span class="ladder-level-chance">30%</span>
+              <span class="ladder-level-mult">x3.17</span>
+            </div>
+            <div class="ladder-level" data-chance="10">
+              <span class="ladder-level-chance">10%</span>
+              <span class="ladder-level-mult">x9.50</span>
+            </div>
+          </div>
+          <div id="ladderOverlay" class="ladder-overlay hidden"></div>
+        </div>
+
+        <label class="label">Ставка</label>
+        <input type="number" id="ladderBetInput" placeholder="Сумма ставки">
+
+        <label class="label" id="ladderChanceLabel">Шанс: 50% | Множитель: x1.90</label>
+        <input type="range" class="range-slider" id="ladderChanceSlider" min="5" max="95" value="50">
+        <div class="range-info">
+          <span>5% (x19.00)</span>
+          <span>95% (x1.00)</span>
+        </div>
+
+        <div class="grid-5" style="margin-top: 12px;">
+          <button class="btn btn-outline quick-chance" data-chance="10">10%</button>
+          <button class="btn btn-outline quick-chance" data-chance="25">25%</button>
+          <button class="btn btn-outline btn-selected quick-chance" data-chance="50">50%</button>
+          <button class="btn btn-outline quick-chance" data-chance="75">75%</button>
+          <button class="btn btn-outline quick-chance" data-chance="90">90%</button>
+        </div>
+
+        <button class="btn btn-primary" id="ladderPlayBtn">🎲 Играть (x1.90)</button>
+      </div>
+    </div>
+
+    <!-- Quick Bets -->
+    <div class="quick-bets">
+      <button class="btn btn-outline quick-bet-btn" data-amount="1000">1K</button>
+      <button class="btn btn-outline quick-bet-btn" data-amount="5000">5K</button>
+      <button class="btn btn-outline quick-bet-btn" data-amount="10000">10K</button>
+      <button class="btn btn-outline quick-bet-btn" data-amount="50000">50K</button>
+      <button class="btn btn-outline quick-bet-btn" data-amount="100000">100K</button>
+      <button class="btn btn-outline btn-outline-yellow quick-bet-btn" id="allInBtn">ALL IN</button>
+    </div>
+
+    <div class="premium-note" id="premiumNote"></div>
+  </div>
+
+  <script>
+    // Supabase Configuration - REPLACE WITH YOUR VALUES
+    const SUPABASE_URL = 'https://qvfhieihrshgcljngpcq.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2ZmhpZWlocnNoZ2Nsam5ncGNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMwNDAyMjMsImV4cCI6MjA3ODYxNjIyM30.vR1PHx7ZxHibt06jWzowzSZjbXliz15cCknnTZpLxpo';
+
+    // Roulette Numbers
+    const ROULETTE_NUMBERS = [
+      { num: 0, color: 'green' },
+      { num: 32, color: 'red' }, { num: 15, color: 'black' }, { num: 19, color: 'red' }, { num: 4, color: 'black' },
+      { num: 21, color: 'red' }, { num: 2, color: 'black' }, { num: 25, color: 'red' }, { num: 17, color: 'black' },
+      { num: 34, color: 'red' }, { num: 6, color: 'black' }, { num: 27, color: 'red' }, { num: 13, color: 'black' },
+      { num: 36, color: 'red' }, { num: 11, color: 'black' }, { num: 30, color: 'red' }, { num: 8, color: 'black' },
+      { num: 23, color: 'red' }, { num: 10, color: 'black' }, { num: 5, color: 'red' }, { num: 24, color: 'black' },
+      { num: 16, color: 'red' }, { num: 33, color: 'black' }, { num: 1, color: 'red' }, { num: 20, color: 'black' },
+      { num: 14, color: 'red' }, { num: 31, color: 'black' }, { num: 9, color: 'red' }, { num: 22, color: 'black' },
+      { num: 18, color: 'red' }, { num: 29, color: 'black' }, { num: 7, color: 'red' }, { num: 28, color: 'black' },
+      { num: 12, color: 'red' }, { num: 35, color: 'black' }, { num: 3, color: 'red' }, { num: 26, color: 'black' },
+    ];
+
+    // State
+    let player = null;
+    let currentBetType = 'red';
+    let currentRotation = 0;
+    let isSpinning = false;
+    let ladderChance = 50;
+    let ladderMultiplier = 1.9;
+    let ladderPlaying = false;
+    let activeTab = 'roulette';
+
+    // DOM Elements
+    const loginScreen = document.getElementById('loginScreen');
+    const gameScreen = document.getElementById('gameScreen');
+    const telegramIdInput = document.getElementById('telegramIdInput');
+    const loginBtn = document.getElementById('loginBtn');
+    const playerNameEl = document.getElementById('playerName');
+    const balanceDisplay = document.getElementById('balanceDisplay');
+    const rouletteWheel = document.getElementById('rouletteWheel');
+    const rouletteBetInput = document.getElementById('rouletteBetInput');
+    const spinBtn = document.getElementById('spinBtn');
+    const rouletteResult = document.getElementById('rouletteResult');
+    const resultValue = document.getElementById('resultValue');
+    const ladderBetInput = document.getElementById('ladderBetInput');
+    const ladderChanceSlider = document.getElementById('ladderChanceSlider');
+    const ladderChanceLabel = document.getElementById('ladderChanceLabel');
+    const ladderPlayBtn = document.getElementById('ladderPlayBtn');
+    const ladderOverlay = document.getElementById('ladderOverlay');
+    const premiumNote = document.getElementById('premiumNote');
+
+    // Toast notification
+    function showToast(message, type = 'success') {
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    // Supabase API helper
+    async function supabaseRequest(table, method = 'GET', body = null, query = '') {
+      const url = `${SUPABASE_URL}/rest/v1/${table}${query}`;
+      const options = {
+        method,
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': method === 'PATCH' ? 'return=representation' : 'return=minimal'
+        }
+      };
+      if (body) options.body = JSON.stringify(body);
+      
+      const response = await fetch(url, options);
+      if (!response.ok) throw new Error('API Error');
+      if (method === 'GET' || method === 'PATCH') {
+        return response.json();
+      }
+      return null;
+    }
+
+    // Initialize roulette wheel
+    function initWheel() {
+      rouletteWheel.innerHTML = '';
+      ROULETTE_NUMBERS.forEach((slot, index) => {
+        const angle = (360 / ROULETTE_NUMBERS.length) * index;
+        const bgColor = slot.color === 'red' ? '#dc2626' : slot.color === 'black' ? '#1f2937' : '#16a34a';
+        
+        const slice = document.createElement('div');
+        slice.className = 'wheel-slice';
+        slice.style.transform = `rotate(${angle}deg)`;
+        
+        const inner = document.createElement('div');
+        inner.className = 'wheel-slice-inner';
+        inner.style.background = bgColor;
+        inner.textContent = slot.num;
+        
+        slice.appendChild(inner);
+        rouletteWheel.appendChild(slice);
+      });
+    }
+
+    // Login
+    loginBtn.addEventListener('click', async () => {
+      const telegramId = telegramIdInput.value.trim();
+      if (!telegramId) {
+        showToast('Введите ваш Telegram ID', 'error');
+        return;
+      }
+
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'Загрузка...';
+
+      try {
+        const data = await supabaseRequest('squid_players', 'GET', null, `?telegram_id=eq.${telegramId}&select=id,telegram_id,balance,username,first_name,is_premium`);
+        
+        if (!data || data.length === 0) {
+          showToast('Игрок не найден. Сначала напишите /start боту.', 'error');
+          return;
+        }
+
+        player = data[0];
+        loginScreen.classList.add('hidden');
+        gameScreen.classList.remove('hidden');
+        updateUI();
+        showToast(`Добро пожаловать, ${player.first_name || player.username || 'Игрок'}!`);
+      } catch (error) {
+        console.error(error);
+        showToast('Ошибка входа', 'error');
+      } finally {
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Войти';
+      }
+    });
+
+    // Update UI
+    function updateUI() {
+      playerNameEl.textContent = (player.first_name || player.username || 'Игрок') + (player.is_premium ? ' 👑' : '');
+      balanceDisplay.textContent = player.balance.toLocaleString();
+      premiumNote.textContent = player.is_premium ? '👑 Premium активен - x2 ко всем выигрышам!' : '';
+    }
+
+    // Refresh balance
+    async function refreshBalance() {
+      try {
+        const data = await supabaseRequest('squid_players', 'GET', null, `?id=eq.${player.id}&select=balance`);
+        if (data && data.length > 0) {
+          player.balance = data[0].balance;
+          updateUI();
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        activeTab = tab.dataset.tab;
+        document.getElementById(`${activeTab}Tab`).classList.add('active');
+      });
+    });
+
+    // Roulette bet type selection
+    ['betRed', 'betGreen', 'betBlack'].forEach(id => {
+      document.getElementById(id).addEventListener('click', (e) => {
+        document.querySelectorAll('.grid-3 .btn').forEach(b => b.classList.remove('btn-selected'));
+        e.target.classList.add('btn-selected');
+        currentBetType = id.replace('bet', '').toLowerCase();
+      });
+    });
+
+    // Spin roulette
+    spinBtn.addEventListener('click', async () => {
+      if (isSpinning) return;
+      
+      const bet = parseInt(rouletteBetInput.value);
+      if (isNaN(bet) || bet <= 0) {
+        showToast('Введите корректную ставку', 'error');
+        return;
+      }
+      if (bet > player.balance) {
+        showToast('Недостаточно монет', 'error');
+        return;
+      }
+
+      isSpinning = true;
+      spinBtn.disabled = true;
+      spinBtn.textContent = '🎰 Крутится...';
+
+      // Deduct bet
+      try {
+        await supabaseRequest('squid_players', 'PATCH', { balance: player.balance - bet }, `?id=eq.${player.id}`);
+        player.balance -= bet;
+        updateUI();
+      } catch (e) {
+        showToast('Ошибка обновления баланса', 'error');
+        isSpinning = false;
+        spinBtn.disabled = false;
+        spinBtn.textContent = '🎲 Крутить!';
+        return;
+      }
+
+      // Determine result (fair odds: red 48.5%, black 48.5%, green 3%)
+      const rand = Math.random() * 100;
+      let resultColor;
+      if (rand < 3) {
+        resultColor = 'green';
+      } else if (rand < 51.5) {
+        resultColor = 'red';
+      } else {
+        resultColor = 'black';
+      }
+
+      const possibleNumbers = ROULETTE_NUMBERS.filter(n => n.color === resultColor);
+      const resultNumber = possibleNumbers[Math.floor(Math.random() * possibleNumbers.length)];
+      const resultIndex = ROULETTE_NUMBERS.findIndex(n => n.num === resultNumber.num);
+
+      // Calculate rotation
+      const sliceAngle = 360 / ROULETTE_NUMBERS.length;
+      const targetAngle = resultIndex * sliceAngle;
+      const spins = 5 + Math.floor(Math.random() * 3);
+      currentRotation += (360 * spins) + (360 - targetAngle) + sliceAngle / 2;
+
+      rouletteWheel.style.transition = 'transform 5s cubic-bezier(0.17, 0.67, 0.12, 0.99)';
+      rouletteWheel.style.transform = `rotate(${currentRotation}deg)`;
+
+      // Wait for animation
+      setTimeout(async () => {
+        rouletteResult.style.display = 'block';
+        const colorEmoji = resultNumber.color === 'red' ? '🔴' : resultNumber.color === 'black' ? '⚫' : '🟢';
+        const colorClass = resultNumber.color === 'red' ? 'color: #ef4444;' : resultNumber.color === 'black' ? 'color: #d1d5db;' : 'color: #22c55e;';
+        resultValue.innerHTML = `<span style="${colorClass}">${resultNumber.num} ${colorEmoji}</span>`;
+
+        const won = currentBetType === resultNumber.color;
+        let winAmount = 0;
+
+        if (won) {
+          winAmount = resultNumber.color === 'green' ? bet * 14 : bet * 2;
+          if (player.is_premium) winAmount = Math.floor(winAmount * 2);
+
+          try {
+            await supabaseRequest('squid_players', 'PATCH', { balance: player.balance + winAmount }, `?id=eq.${player.id}`);
+            showToast(`🎉 Выигрыш! +${winAmount.toLocaleString()} монет`);
+          } catch (e) {
+            console.error(e);
+          }
+        } else {
+          showToast(`💀 Проигрыш! Выпало: ${resultNumber.num} (${colorEmoji})`, 'error');
+        }
+
+        await refreshBalance();
+        isSpinning = false;
+        spinBtn.disabled = false;
+        spinBtn.textContent = '🎲 Крутить!';
+      }, 5000);
+    });
+
+    // Ladder chance slider
+    ladderChanceSlider.addEventListener('input', (e) => {
+      ladderChance = parseInt(e.target.value);
+      ladderMultiplier = (95 / ladderChance).toFixed(2);
+      ladderChanceLabel.textContent = `Шанс: ${ladderChance}% | Множитель: x${ladderMultiplier}`;
+      ladderPlayBtn.textContent = `🎲 Играть (x${ladderMultiplier})`;
+      
+      document.querySelectorAll('.ladder-level').forEach(level => {
+        level.classList.remove('active');
+      });
+      document.querySelectorAll('.quick-chance').forEach(btn => {
+        btn.classList.remove('btn-selected');
+        if (parseInt(btn.dataset.chance) === ladderChance) {
+          btn.classList.add('btn-selected');
+        }
+      });
+    });
+
+    // Quick chance buttons
+    document.querySelectorAll('.quick-chance').forEach(btn => {
+      btn.addEventListener('click', () => {
+        ladderChanceSlider.value = btn.dataset.chance;
+        ladderChanceSlider.dispatchEvent(new Event('input'));
+      });
+    });
+
+    // Play ladder
+    ladderPlayBtn.addEventListener('click', async () => {
+      if (ladderPlaying) return;
+
+      const bet = parseInt(ladderBetInput.value);
+      if (isNaN(bet) || bet <= 0) {
+        showToast('Введите корректную ставку', 'error');
+        return;
+      }
+      if (bet > player.balance) {
+        showToast('Недостаточно монет', 'error');
+        return;
+      }
+
+      ladderPlaying = true;
+      ladderPlayBtn.disabled = true;
+      ladderPlayBtn.textContent = '⏳ Игра...';
+
+      // Deduct bet
+      try {
+        await supabaseRequest('squid_players', 'PATCH', { balance: player.balance - bet }, `?id=eq.${player.id}`);
+        player.balance -= bet;
+        updateUI();
+      } catch (e) {
+        showToast('Ошибка', 'error');
+        ladderPlaying = false;
+        ladderPlayBtn.disabled = false;
+        ladderPlayBtn.textContent = `🎲 Играть (x${ladderMultiplier})`;
+        return;
+      }
+
+      // Show playing animation
+      ladderOverlay.classList.remove('hidden');
+      ladderOverlay.innerHTML = '<div class="ladder-playing"></div>';
+
+      // Determine result
+      const rand = Math.random() * 100;
+      const won = rand < ladderChance;
+
+      setTimeout(async () => {
+        if (won) {
+          let winAmount = Math.floor(bet * parseFloat(ladderMultiplier));
+          if (player.is_premium) winAmount = Math.floor(winAmount * 2);
+
+          ladderOverlay.innerHTML = '<span class="ladder-result bounce">🎉</span>';
+
+          try {
+            await supabaseRequest('squid_players', 'PATCH', { balance: player.balance + winAmount }, `?id=eq.${player.id}`);
+            showToast(`🎉 Выигрыш! +${winAmount.toLocaleString()} монет (x${ladderMultiplier})`);
+          } catch (e) {
+            console.error(e);
+          }
+        } else {
+          ladderOverlay.innerHTML = '<span class="ladder-result">💀</span>';
+          showToast(`💀 Проигрыш! Шанс был ${ladderChance}%`, 'error');
+        }
+
+        await refreshBalance();
+
+        setTimeout(() => {
+          ladderOverlay.classList.add('hidden');
+          ladderPlaying = false;
+          ladderPlayBtn.disabled = false;
+          ladderPlayBtn.textContent = `🎲 Играть (x${ladderMultiplier})`;
+        }, 1500);
+      }, 1500);
+    });
+
+    // Quick bet buttons
+    document.querySelectorAll('.quick-bet-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const amount = btn.dataset.amount;
+        if (activeTab === 'roulette') {
+          rouletteBetInput.value = amount || player.balance;
+        } else {
+          ladderBetInput.value = amount || player.balance;
+        }
+      });
+    });
+
+    document.getElementById('allInBtn').addEventListener('click', () => {
+      if (activeTab === 'roulette') {
+        rouletteBetInput.value = player.balance;
+      } else {
+        ladderBetInput.value = player.balance;
+      }
+    });
+
+    // Initialize
+    initWheel();
+  </script>
+</body>
+</html>
