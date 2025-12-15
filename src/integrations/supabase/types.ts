@@ -393,6 +393,27 @@ export type Database = {
         }
         Relationships: []
       }
+      squid_bot_settings: {
+        Row: {
+          id: string
+          key: string
+          updated_at: string | null
+          value: string
+        }
+        Insert: {
+          id?: string
+          key: string
+          updated_at?: string | null
+          value: string
+        }
+        Update: {
+          id?: string
+          key?: string
+          updated_at?: string | null
+          value?: string
+        }
+        Relationships: []
+      }
       squid_casino_history: {
         Row: {
           bet_amount: number

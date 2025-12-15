@@ -118,6 +118,32 @@ serve(async (req) => {
     const update: TelegramUpdate = await req.json();
     console.log("Received update:", JSON.stringify(update));
 
+    // Get user telegram ID for admin check
+    const telegramUserId = update.message?.from?.id || update.callback_query?.from?.id;
+
+    // Check if user is admin
+    const { data: adminData } = await supabaseClient
+      .from("squid_admins")
+      .select("*")
+      .eq("telegram_id", telegramUserId || 0)
+      .single();
+    
+    const isAdmin = !!adminData;
+
+    // Check bot enabled state (skip for admins)
+    if (!isAdmin) {
+      const { data: botSettings } = await supabaseClient
+        .from("squid_bot_settings")
+        .select("value")
+        .eq("key", "bot_enabled")
+        .single();
+
+      if (botSettings?.value === "false") {
+        // Bot is disabled, ignore all messages except from admin
+        return new Response("OK", { headers: corsHeaders });
+      }
+    }
+
     // Handle callback queries (button clicks)
     if (update.callback_query) {
       const { id: callbackId, from, message, data } = update.callback_query;
@@ -3966,6 +3992,64 @@ serve(async (req) => {
               [{ text: "⬅️ Главное меню", callback_data: "main_menu" }],
             ].filter((row) => row.length > 0),
           },
+        );
+      } else if (text === "/off") {
+        // Admin only - disable bot for all users
+        const { data: admin } = await supabaseClient
+          .from("squid_admins")
+          .select("*")
+          .eq("telegram_id", from.id)
+          .single();
+
+        if (!admin) {
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        await supabaseClient
+          .from("squid_bot_settings")
+          .update({ value: "false", updated_at: new Date().toISOString() })
+          .eq("key", "bot_enabled");
+
+        await sendMessage(
+          chat.id,
+          "🔴 <b>Бот выключен!</b>\n\nБот теперь недоступен для всех пользователей кроме админа.\nИспользуй /on чтобы включить бот."
+        );
+      } else if (text === "/on") {
+        // Admin only - enable bot for all users
+        const { data: admin } = await supabaseClient
+          .from("squid_admins")
+          .select("*")
+          .eq("telegram_id", from.id)
+          .single();
+
+        if (!admin) {
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        await supabaseClient
+          .from("squid_bot_settings")
+          .update({ value: "true", updated_at: new Date().toISOString() })
+          .eq("key", "bot_enabled");
+
+        await sendMessage(
+          chat.id,
+          "🟢 <b>Бот включён!</b>\n\nБот теперь доступен для всех пользователей."
+        );
+      } else if (text === "/casino") {
+        const webAppUrl = "https://qvfhieihrshgcljngpcq.lovableproject.com/squid-game";
+        
+        await sendMessage(
+          chat.id,
+          "🎰 <b>Казино Squid Game</b>\n\n" +
+            "🎲 Играй в рулетку и лесенку прямо в веб-приложении!\n" +
+            "💰 Все выигрыши начисляются на твой баланс в боте.\n\n" +
+            "Нажми кнопку ниже чтобы открыть казино:",
+          {
+            inline_keyboard: [
+              [{ text: "🎰 Открыть Казино", web_app: { url: webAppUrl } }],
+              [{ text: "⬅️ Назад", callback_data: "main_menu" }],
+            ],
+          }
         );
       }
     }
