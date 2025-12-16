@@ -1758,10 +1758,10 @@ serve(async (req) => {
       } else if (text === "/casino") {
         await sendMessage(
           chat.id,
-          `🎰 <b>Веб-казино</b>\n\n🎡 Рулетка и 🪜 Лестница доступны в веб-версии!\n\n🔗 <a href="https://punelittley.github.io/fashion-nest-creator/casino/">Открыть казино</a>`,
+          `🎰 <b>Веб-казино</b>\n\n🎡 Рулетка и 🪜 Лестница доступны в веб-приложении!\n\nНажми кнопку ниже чтобы открыть:`,
           {
             inline_keyboard: [
-              [{ text: "🎰 Открыть казино", url: "https://punelittley.github.io/fashion-nest-creator/casino/" }],
+              [{ text: "🎮 Открыть казино", web_app: { url: "https://punelittley.github.io/fashion-nest-creator/casino/" } }],
             ],
           },
         );

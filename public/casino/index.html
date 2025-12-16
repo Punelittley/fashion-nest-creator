@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>🦑 Squid Game Casino</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     * {
       margin: 0;
@@ -456,19 +457,44 @@
       margin-bottom: 8px;
       display: block;
     }
+
+    .loading-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 80vh;
+      text-align: center;
+    }
+
+    .loading-spinner {
+      width: 64px;
+      height: 64px;
+      border: 4px solid #ec4899;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .error-message {
+      color: #ef4444;
+      font-size: 16px;
+      margin-top: 16px;
+    }
   </style>
 </head>
 <body>
-  <!-- Login Screen -->
-  <div id="loginScreen" class="container">
-    <div class="card" style="margin-top: 20vh;">
-      <h1 class="card-title">🦑 Squid Game Casino</h1>
-      <p class="card-subtitle">Введите ваш Telegram ID для входа</p>
-      <input type="number" id="telegramIdInput" placeholder="Telegram ID">
-      <button class="btn btn-primary" id="loginBtn">Войти</button>
-      <p class="card-subtitle" style="margin-top: 12px;">
-        Узнать Telegram ID можно написав /start боту @squid_game_russia_bot
-      </p>
+  <!-- Loading Screen -->
+  <div id="loadingScreen" class="container">
+    <div class="loading-screen">
+      <div class="loading-spinner"></div>
+      <h2>🦑 Загрузка казино...</h2>
+      <p id="loadingError" class="error-message hidden"></p>
     </div>
   </div>
 
@@ -581,9 +607,19 @@
   </div>
 
   <script>
-    // Supabase Configuration - REPLACE WITH YOUR VALUES
+    // Supabase Configuration
     const SUPABASE_URL = 'https://qvfhieihrshgcljngpcq.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2ZmhpZWlocnNoZ2Nsam5ncGNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMwNDAyMjMsImV4cCI6MjA3ODYxNjIyM30.vR1PHx7ZxHibt06jWzowzSZjbXliz15cCknnTZpLxpo';
+
+    // Telegram WebApp
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+
+    // Set theme colors based on Telegram
+    if (tg.colorScheme === 'dark') {
+      document.body.style.background = 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)';
+    }
 
     // Roulette Numbers
     const ROULETTE_NUMBERS = [
@@ -610,10 +646,9 @@
     let activeTab = 'roulette';
 
     // DOM Elements
-    const loginScreen = document.getElementById('loginScreen');
+    const loadingScreen = document.getElementById('loadingScreen');
+    const loadingError = document.getElementById('loadingError');
     const gameScreen = document.getElementById('gameScreen');
-    const telegramIdInput = document.getElementById('telegramIdInput');
-    const loginBtn = document.getElementById('loginBtn');
     const playerNameEl = document.getElementById('playerName');
     const balanceDisplay = document.getElementById('balanceDisplay');
     const rouletteWheel = document.getElementById('rouletteWheel');
@@ -680,38 +715,38 @@
       });
     }
 
-    // Login
-    loginBtn.addEventListener('click', async () => {
-      const telegramId = telegramIdInput.value.trim();
-      if (!telegramId) {
-        showToast('Введите ваш Telegram ID', 'error');
+    // Auto-login via Telegram WebApp
+    async function autoLogin() {
+      const user = tg.initDataUnsafe?.user;
+      
+      if (!user || !user.id) {
+        loadingError.textContent = 'Откройте казино через Telegram бота @squid_game_russia_bot';
+        loadingError.classList.remove('hidden');
         return;
       }
 
-      loginBtn.disabled = true;
-      loginBtn.textContent = 'Загрузка...';
+      console.log('Telegram user:', user);
 
       try {
-        const data = await supabaseRequest('squid_players', 'GET', null, `?telegram_id=eq.${telegramId}&select=id,telegram_id,balance,username,first_name,is_premium`);
+        const data = await supabaseRequest('squid_players', 'GET', null, `?telegram_id=eq.${user.id}&select=id,telegram_id,balance,username,first_name,is_premium`);
         
         if (!data || data.length === 0) {
-          showToast('Игрок не найден. Сначала напишите /start боту.', 'error');
+          loadingError.textContent = 'Игрок не найден. Сначала напишите /start боту @squid_game_russia_bot';
+          loadingError.classList.remove('hidden');
           return;
         }
 
         player = data[0];
-        loginScreen.classList.add('hidden');
+        loadingScreen.classList.add('hidden');
         gameScreen.classList.remove('hidden');
         updateUI();
         showToast(`Добро пожаловать, ${player.first_name || player.username || 'Игрок'}!`);
       } catch (error) {
         console.error(error);
-        showToast('Ошибка входа', 'error');
-      } finally {
-        loginBtn.disabled = false;
-        loginBtn.textContent = 'Войти';
+        loadingError.textContent = 'Ошибка загрузки данных. Попробуйте позже.';
+        loadingError.classList.remove('hidden');
       }
-    });
+    }
 
     // Update UI
     function updateUI() {
@@ -955,6 +990,7 @@
 
     // Initialize
     initWheel();
+    autoLogin();
   </script>
 </body>
 </html>
