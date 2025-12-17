@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>🦑 Squid Casino</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -12,12 +13,59 @@
             box-sizing: border-box;
         }
         
+        :root {
+            --primary: #ff0066;
+            --primary-glow: #ff0066;
+            --secondary: #00ff88;
+            --dark: #0a0a0f;
+            --darker: #050508;
+            --card-bg: rgba(20, 20, 30, 0.9);
+            --gold: #ffd700;
+        }
+        
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--darker);
             min-height: 100vh;
             color: #fff;
             overflow-x: hidden;
+            position: relative;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(255, 0, 102, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(0, 255, 136, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(255, 0, 102, 0.05) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        /* Animated grid background */
+        .grid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(rgba(255, 0, 102, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 0, 102, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: gridMove 20s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
         }
         
         .container {
@@ -25,94 +73,208 @@
             margin: 0 auto;
             padding: 20px;
             min-height: 100vh;
+            position: relative;
+            z-index: 1;
         }
         
         .header {
             text-align: center;
-            padding: 20px 0;
-            border-bottom: 2px solid rgba(255, 107, 157, 0.3);
+            padding: 25px 0;
+            margin-bottom: 25px;
+            position: relative;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
             margin-bottom: 20px;
         }
         
-        .header h1 {
+        .squid-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary), #cc0052);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-size: 2rem;
-            background: linear-gradient(45deg, #ff6b9d, #c44569);
+            box-shadow: 
+                0 0 30px rgba(255, 0, 102, 0.6),
+                inset 0 0 20px rgba(255, 255, 255, 0.2);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 30px rgba(255, 0, 102, 0.6), inset 0 0 20px rgba(255, 255, 255, 0.2); }
+            50% { box-shadow: 0 0 50px rgba(255, 0, 102, 0.8), inset 0 0 20px rgba(255, 255, 255, 0.3); }
+        }
+        
+        .header h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary), #ff3388);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 30px rgba(255, 0, 102, 0.5);
         }
         
-        .balance-display {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 15px 25px;
+        .balance-card {
+            background: linear-gradient(135deg, rgba(255, 0, 102, 0.1), rgba(20, 20, 30, 0.95));
+            border: 2px solid rgba(255, 0, 102, 0.3);
+            border-radius: 20px;
+            padding: 20px 30px;
             display: inline-block;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(20px);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .balance-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 0, 102, 0.2), transparent);
+            animation: shine 3s ease-in-out infinite;
+        }
+        
+        @keyframes shine {
+            0% { left: -100%; }
+            50%, 100% { left: 100%; }
         }
         
         .balance-label {
-            font-size: 0.9rem;
-            color: #aaa;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 2px;
             margin-bottom: 5px;
         }
         
         .balance-amount {
+            font-family: 'Orbitron', sans-serif;
             font-size: 1.8rem;
-            font-weight: bold;
-            color: #ffd700;
+            font-weight: 700;
+            color: var(--gold);
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
         }
         
         .user-info {
             text-align: center;
-            margin-bottom: 20px;
-            color: #aaa;
-            font-size: 0.9rem;
+            margin-bottom: 25px;
+            padding: 10px 20px;
+            background: rgba(255, 0, 102, 0.1);
+            border-radius: 30px;
+            display: inline-block;
+            font-weight: 600;
+            color: var(--primary);
+            border: 1px solid rgba(255, 0, 102, 0.2);
         }
         
-        .games-section {
-            margin-top: 30px;
-        }
-        
-        .section-title {
-            font-size: 1.3rem;
-            margin-bottom: 20px;
-            color: #ff6b9d;
+        .user-wrapper {
             text-align: center;
         }
         
-        .game-card {
-            background: rgba(255, 255, 255, 0.08);
+        .premium-badge {
+            background: linear-gradient(135deg, var(--gold), #ffaa00);
+            color: #000;
+            padding: 3px 10px;
             border-radius: 20px;
-            padding: 25px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            margin-left: 8px;
+            text-transform: uppercase;
+        }
+        
+        .games-section {
+            margin-top: 20px;
+        }
+        
+        .section-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
             margin-bottom: 20px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: transform 0.3s, box-shadow 0.3s;
+            color: #fff;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .section-title::before,
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+        }
+        
+        .game-card {
+            background: var(--card-bg);
+            border-radius: 25px;
+            padding: 25px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 0, 102, 0.2);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--primary));
         }
         
         .game-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(255, 107, 157, 0.2);
+            border-color: rgba(255, 0, 102, 0.4);
+            box-shadow: 0 10px 40px rgba(255, 0, 102, 0.2);
         }
         
         .game-title {
-            font-size: 1.4rem;
-            margin-bottom: 15px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.3rem;
+            margin-bottom: 20px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+            color: #fff;
         }
         
         .game-icon {
-            font-size: 2rem;
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, var(--primary), rgba(255, 0, 102, 0.5));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
         }
         
         /* Roulette Styles */
         .roulette-wheel {
-            width: 200px;
-            height: 200px;
-            margin: 20px auto;
+            width: 220px;
+            height: 220px;
+            margin: 25px auto;
             position: relative;
         }
         
@@ -122,47 +284,67 @@
             border-radius: 50%;
             background: conic-gradient(
                 #e74c3c 0deg 17.14deg,
-                #2c3e50 17.14deg 34.28deg,
+                #1a1a2e 17.14deg 34.28deg,
                 #e74c3c 34.28deg 51.42deg,
-                #2c3e50 51.42deg 68.56deg,
+                #1a1a2e 51.42deg 68.56deg,
                 #e74c3c 68.56deg 85.7deg,
-                #2c3e50 85.7deg 102.84deg,
+                #1a1a2e 85.7deg 102.84deg,
                 #e74c3c 102.84deg 119.98deg,
-                #27ae60 119.98deg 137.12deg,
+                #00ff88 119.98deg 137.12deg,
                 #e74c3c 137.12deg 154.26deg,
-                #2c3e50 154.26deg 171.4deg,
+                #1a1a2e 154.26deg 171.4deg,
                 #e74c3c 171.4deg 188.54deg,
-                #2c3e50 188.54deg 205.68deg,
+                #1a1a2e 188.54deg 205.68deg,
                 #e74c3c 205.68deg 222.82deg,
-                #2c3e50 222.82deg 239.96deg,
+                #1a1a2e 222.82deg 239.96deg,
                 #e74c3c 239.96deg 257.1deg,
-                #2c3e50 257.1deg 274.24deg,
+                #1a1a2e 257.1deg 274.24deg,
                 #e74c3c 274.24deg 291.38deg,
-                #2c3e50 291.38deg 308.52deg,
+                #1a1a2e 291.38deg 308.52deg,
                 #e74c3c 308.52deg 325.66deg,
-                #2c3e50 325.66deg 342.8deg,
+                #1a1a2e 325.66deg 342.8deg,
                 #e74c3c 342.8deg 360deg
             );
-            border: 5px solid #ffd700;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+            border: 4px solid var(--primary);
+            box-shadow: 
+                0 0 30px rgba(255, 0, 102, 0.5),
+                inset 0 0 30px rgba(0, 0, 0, 0.5);
             transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+        }
+        
+        .wheel-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--dark), #1a1a2e);
+            border-radius: 50%;
+            border: 3px solid var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: 0 0 20px rgba(255, 0, 102, 0.5);
         }
         
         .wheel-pointer {
             position: absolute;
-            top: -15px;
+            top: -18px;
             left: 50%;
             transform: translateX(-50%);
             width: 0;
             height: 0;
-            border-left: 15px solid transparent;
-            border-right: 15px solid transparent;
-            border-top: 25px solid #ffd700;
+            border-left: 18px solid transparent;
+            border-right: 18px solid transparent;
+            border-top: 30px solid var(--primary);
             z-index: 10;
+            filter: drop-shadow(0 0 10px rgba(255, 0, 102, 0.8));
         }
         
         .bet-controls {
-            margin-top: 20px;
+            margin-top: 25px;
         }
         
         .bet-input-group {
@@ -173,42 +355,59 @@
         
         .bet-input {
             flex: 1;
-            padding: 12px 15px;
-            border: none;
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.1);
+            padding: 15px 20px;
+            border: 2px solid rgba(255, 0, 102, 0.3);
+            border-radius: 15px;
+            background: rgba(10, 10, 15, 0.8);
             color: #fff;
+            font-family: 'Orbitron', sans-serif;
             font-size: 1rem;
             outline: none;
+            transition: all 0.3s;
         }
         
         .bet-input:focus {
-            box-shadow: 0 0 10px rgba(255, 107, 157, 0.5);
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(255, 0, 102, 0.3);
+        }
+        
+        .bet-input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
         }
         
         .color-buttons {
             display: flex;
             gap: 10px;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
         
         .color-btn {
             flex: 1;
-            padding: 15px;
-            border: none;
-            border-radius: 10px;
+            padding: 18px 10px;
+            border: 2px solid transparent;
+            border-radius: 15px;
+            font-family: 'Rajdhani', sans-serif;
             font-size: 1rem;
-            font-weight: bold;
+            font-weight: 700;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
         }
         
-        .color-btn:hover {
-            transform: scale(1.05);
+        .color-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
         }
         
-        .color-btn:active {
-            transform: scale(0.95);
+        .color-btn:hover::before {
+            left: 100%;
         }
         
         .color-btn.red {
@@ -222,34 +421,55 @@
         }
         
         .color-btn.green {
-            background: linear-gradient(135deg, #27ae60, #1e8449);
-            color: #fff;
+            background: linear-gradient(135deg, #00ff88, #00cc6a);
+            color: #000;
         }
         
         .color-btn.selected {
-            box-shadow: 0 0 20px currentColor;
+            border-color: #fff;
+            transform: scale(1.05);
+            box-shadow: 0 0 30px currentColor;
+        }
+        
+        .spin-btn, .play-btn {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 15px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            overflow: hidden;
         }
         
         .spin-btn {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 15px;
-            background: linear-gradient(135deg, #ff6b9d, #c44569);
+            background: linear-gradient(135deg, var(--primary), #cc0052);
             color: #fff;
-            font-size: 1.2rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 5px 30px rgba(255, 0, 102, 0.4);
         }
         
-        .spin-btn:hover {
-            transform: scale(1.02);
-            box-shadow: 0 5px 20px rgba(255, 107, 157, 0.5);
+        .play-btn {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            color: #fff;
+            box-shadow: 0 5px 30px rgba(155, 89, 182, 0.4);
         }
         
-        .spin-btn:disabled {
-            background: #555;
+        .spin-btn:hover, .play-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 40px rgba(255, 0, 102, 0.5);
+        }
+        
+        .spin-btn:active, .play-btn:active {
+            transform: translateY(0);
+        }
+        
+        .spin-btn:disabled, .play-btn:disabled {
+            background: #333;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
@@ -260,32 +480,37 @@
             padding: 20px;
             margin-top: 20px;
             border-radius: 15px;
-            font-size: 1.3rem;
-            font-weight: bold;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
             display: none;
+            animation: resultPop 0.5s ease;
+        }
+        
+        @keyframes resultPop {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
         }
         
         .result-display.win {
-            background: rgba(39, 174, 96, 0.3);
-            border: 2px solid #27ae60;
-            color: #2ecc71;
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(0, 200, 100, 0.1));
+            border: 2px solid var(--secondary);
+            color: var(--secondary);
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
         }
         
         .result-display.lose {
-            background: rgba(231, 76, 60, 0.3);
-            border: 2px solid #e74c3c;
-            color: #e74c3c;
+            background: linear-gradient(135deg, rgba(255, 0, 102, 0.2), rgba(200, 0, 80, 0.1));
+            border: 2px solid var(--primary);
+            color: var(--primary);
         }
         
         /* Ladder Game Styles */
-        .ladder-game {
-            text-align: center;
-        }
-        
         .ladder-display {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
             margin: 20px 0;
         }
         
@@ -294,81 +519,70 @@
             justify-content: space-between;
             align-items: center;
             padding: 15px 20px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
             cursor: pointer;
             transition: all 0.3s;
             border: 2px solid transparent;
         }
         
         .ladder-step:hover {
-            background: rgba(255, 107, 157, 0.2);
-            border-color: rgba(255, 107, 157, 0.5);
+            background: rgba(255, 0, 102, 0.1);
+            border-color: rgba(255, 0, 102, 0.3);
         }
         
         .ladder-step.selected {
-            background: rgba(255, 107, 157, 0.3);
-            border-color: #ff6b9d;
+            background: rgba(255, 0, 102, 0.2);
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(255, 0, 102, 0.3);
         }
         
         .ladder-step.success {
-            background: rgba(39, 174, 96, 0.3);
-            border-color: #27ae60;
+            background: rgba(0, 255, 136, 0.2);
+            border-color: var(--secondary);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
         }
         
         .ladder-step.fail {
-            background: rgba(231, 76, 60, 0.3);
-            border-color: #e74c3c;
+            background: rgba(255, 0, 102, 0.2);
+            border-color: var(--primary);
         }
         
         .ladder-chance {
-            font-weight: bold;
-            color: #ff6b9d;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            color: var(--primary);
         }
         
         .ladder-multiplier {
-            font-weight: bold;
-            color: #ffd700;
-        }
-        
-        .play-btn {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 15px;
-            background: linear-gradient(135deg, #9b59b6, #8e44ad);
-            color: #fff;
-            font-size: 1.2rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            margin-top: 15px;
-        }
-        
-        .play-btn:hover {
-            transform: scale(1.02);
-            box-shadow: 0 5px 20px rgba(155, 89, 182, 0.5);
-        }
-        
-        .play-btn:disabled {
-            background: #555;
-            cursor: not-allowed;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            color: var(--gold);
         }
         
         /* Loading */
         .loading {
             text-align: center;
-            padding: 50px;
+            padding: 100px 20px;
         }
         
         .loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid rgba(255, 107, 157, 0.3);
-            border-top-color: #ff6b9d;
+            width: 80px;
+            height: 80px;
+            border: 4px solid rgba(255, 0, 102, 0.2);
+            border-top-color: var(--primary);
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
+            margin: 0 auto 30px;
+            box-shadow: 0 0 30px rgba(255, 0, 102, 0.3);
+        }
+        
+        .loading p {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 3px;
         }
         
         @keyframes spin {
@@ -376,12 +590,14 @@
         }
         
         .error-message {
-            background: rgba(231, 76, 60, 0.2);
-            border: 1px solid #e74c3c;
-            border-radius: 10px;
-            padding: 15px;
+            background: rgba(255, 0, 102, 0.1);
+            border: 2px solid var(--primary);
+            border-radius: 15px;
+            padding: 25px;
             text-align: center;
-            color: #e74c3c;
+            color: var(--primary);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.1rem;
         }
         
         /* Quick bet buttons */
@@ -394,29 +610,66 @@
         
         .quick-bet-btn {
             flex: 1;
-            min-width: 60px;
-            padding: 10px;
-            border: none;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.1);
+            min-width: 55px;
+            padding: 12px 8px;
+            border: 1px solid rgba(255, 0, 102, 0.3);
+            border-radius: 10px;
+            background: rgba(255, 0, 102, 0.1);
             color: #fff;
-            font-size: 0.9rem;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s;
         }
         
         .quick-bet-btn:hover {
-            background: rgba(255, 107, 157, 0.3);
+            background: rgba(255, 0, 102, 0.3);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+        
+        .quick-bet-btn:active {
+            transform: translateY(0);
+        }
+        
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--card-bg);
+            border: 2px solid var(--primary);
+            border-radius: 15px;
+            padding: 15px 30px;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        
+        .toast.error {
+            border-color: #e74c3c;
+            color: #e74c3c;
         }
     </style>
 </head>
 <body>
+    <div class="grid-bg"></div>
     <div class="container" id="app">
         <div class="loading" id="loading">
             <div class="loading-spinner"></div>
-            <p>Загрузка...</p>
+            <p>Подключение...</p>
         </div>
     </div>
+    <div class="toast" id="toast"></div>
 
     <script>
         const SUPABASE_URL = 'https://qvfhieihrshgcljngpcq.supabase.co';
@@ -435,20 +688,24 @@
             if (tg) {
                 tg.ready();
                 tg.expand();
+                tg.setHeaderColor('#0a0a0f');
+                tg.setBackgroundColor('#0a0a0f');
                 
                 const user = tg.initDataUnsafe?.user;
                 if (user) {
-                    await loadPlayer(user.id, user.first_name, user.username);
+                    await loadOrCreatePlayer(user.id, user.first_name, user.username);
                 } else {
-                    showError('Не удалось получить данные пользователя Telegram');
+                    showError('Не удалось получить данные пользователя');
                 }
             } else {
-                showError('Откройте приложение через Telegram бота');
+                // Dev mode - test with fake user
+                showError('Откройте через Telegram бота');
             }
         }
         
-        async function loadPlayer(telegramId, firstName, username) {
+        async function loadOrCreatePlayer(telegramId, firstName, username) {
             try {
+                // First try to find existing player
                 const response = await fetch(`${SUPABASE_URL}/rest/v1/squid_players?telegram_id=eq.${telegramId}`, {
                     headers: {
                         'apikey': SUPABASE_ANON_KEY,
@@ -460,14 +717,65 @@
                 
                 if (data && data.length > 0) {
                     player = data[0];
+                    // Update player info if changed
+                    if (player.first_name !== firstName || player.username !== username) {
+                        await fetch(`${SUPABASE_URL}/rest/v1/squid_players?telegram_id=eq.${telegramId}`, {
+                            method: 'PATCH',
+                            headers: {
+                                'apikey': SUPABASE_ANON_KEY,
+                                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                                'Content-Type': 'application/json',
+                                'Prefer': 'return=representation'
+                            },
+                            body: JSON.stringify({ 
+                                first_name: firstName, 
+                                username: username,
+                                updated_at: new Date().toISOString()
+                            })
+                        });
+                        player.first_name = firstName;
+                        player.username = username;
+                    }
                     renderApp();
                 } else {
-                    showError('Игрок не найден. Сначала напишите /start боту.');
+                    // Create new player
+                    const createResponse = await fetch(`${SUPABASE_URL}/rest/v1/squid_players`, {
+                        method: 'POST',
+                        headers: {
+                            'apikey': SUPABASE_ANON_KEY,
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                            'Content-Type': 'application/json',
+                            'Prefer': 'return=representation'
+                        },
+                        body: JSON.stringify({
+                            telegram_id: telegramId,
+                            first_name: firstName,
+                            username: username,
+                            balance: 1000
+                        })
+                    });
+                    
+                    const newPlayer = await createResponse.json();
+                    if (newPlayer && newPlayer.length > 0) {
+                        player = newPlayer[0];
+                        showToast('🎮 Добро пожаловать! +1000 монет');
+                        renderApp();
+                    } else {
+                        showError('Ошибка создания аккаунта');
+                    }
                 }
             } catch (error) {
-                console.error('Error loading player:', error);
-                showError('Ошибка загрузки данных игрока');
+                console.error('Error:', error);
+                showError('Ошибка подключения к серверу');
             }
+        }
+        
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast' + (isError ? ' error' : '');
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
         }
         
         async function updateBalance(newBalance) {
@@ -503,7 +811,10 @@
         function showError(message) {
             document.getElementById('app').innerHTML = `
                 <div class="header">
-                    <h1>🦑 Squid Casino</h1>
+                    <div class="logo">
+                        <div class="squid-icon">🦑</div>
+                        <h1>Casino</h1>
+                    </div>
                 </div>
                 <div class="error-message">${message}</div>
             `;
@@ -512,37 +823,45 @@
         function renderApp() {
             const displayName = player.first_name || player.username || 'Игрок';
             const prefix = player.prefix ? `[${player.prefix}] ` : '';
+            const isPremium = player.is_premium;
             
             document.getElementById('app').innerHTML = `
                 <div class="header">
-                    <h1>🦑 Squid Casino</h1>
-                    <div class="balance-display">
-                        <div class="balance-label">Ваш баланс</div>
+                    <div class="logo">
+                        <div class="squid-icon">🦑</div>
+                        <h1>Casino</h1>
+                    </div>
+                    <div class="balance-card">
+                        <div class="balance-label">Баланс</div>
                         <div class="balance-amount" id="balance-amount">${formatNumber(player.balance)} 🪙</div>
                     </div>
                 </div>
-                <div class="user-info">
-                    ${prefix}${displayName}
+                <div class="user-wrapper">
+                    <div class="user-info">
+                        ${prefix}${displayName}
+                        ${isPremium ? '<span class="premium-badge">Premium</span>' : ''}
+                    </div>
                 </div>
                 
                 <div class="games-section">
-                    <h2 class="section-title">🎮 Игры</h2>
+                    <h2 class="section-title">Игры</h2>
                     
                     <!-- Roulette -->
                     <div class="game-card">
                         <div class="game-title">
-                            <span class="game-icon">🎰</span>
+                            <div class="game-icon">🎰</div>
                             Рулетка
                         </div>
                         
                         <div class="roulette-wheel">
                             <div class="wheel-pointer"></div>
                             <div class="wheel" id="wheel"></div>
+                            <div class="wheel-center">🦑</div>
                         </div>
                         
                         <div class="bet-controls">
                             <div class="bet-input-group">
-                                <input type="number" class="bet-input" id="roulette-bet" placeholder="Сумма ставки" min="1">
+                                <input type="number" class="bet-input" id="roulette-bet" placeholder="Ставка" min="1">
                             </div>
                             
                             <div class="quick-bets">
@@ -550,7 +869,7 @@
                                 <button class="quick-bet-btn" onclick="setRouletteBet(5000)">5K</button>
                                 <button class="quick-bet-btn" onclick="setRouletteBet(10000)">10K</button>
                                 <button class="quick-bet-btn" onclick="setRouletteBet(50000)">50K</button>
-                                <button class="quick-bet-btn" onclick="setRouletteAll()">ВСЕ</button>
+                                <button class="quick-bet-btn" onclick="setRouletteAll()">ALL</button>
                             </div>
                             
                             <div class="color-buttons">
@@ -559,7 +878,7 @@
                                 <button class="color-btn black" onclick="selectColor('black')">⚫ x2</button>
                             </div>
                             
-                            <button class="spin-btn" id="spin-btn" onclick="spinRoulette()">🎲 КРУТИТЬ</button>
+                            <button class="spin-btn" id="spin-btn" onclick="spinRoulette()">Крутить</button>
                         </div>
                         
                         <div class="result-display" id="roulette-result"></div>
@@ -568,12 +887,12 @@
                     <!-- Ladder -->
                     <div class="game-card">
                         <div class="game-title">
-                            <span class="game-icon">🪜</span>
+                            <div class="game-icon">🪜</div>
                             Лестница
                         </div>
                         
                         <div class="bet-input-group">
-                            <input type="number" class="bet-input" id="ladder-bet" placeholder="Сумма ставки" min="1">
+                            <input type="number" class="bet-input" id="ladder-bet" placeholder="Ставка" min="1">
                         </div>
                         
                         <div class="quick-bets">
@@ -581,7 +900,7 @@
                             <button class="quick-bet-btn" onclick="setLadderBet(5000)">5K</button>
                             <button class="quick-bet-btn" onclick="setLadderBet(10000)">10K</button>
                             <button class="quick-bet-btn" onclick="setLadderBet(50000)">50K</button>
-                            <button class="quick-bet-btn" onclick="setLadderAll()">ВСЕ</button>
+                            <button class="quick-bet-btn" onclick="setLadderAll()">ALL</button>
                         </div>
                         
                         <div class="ladder-display" id="ladder-display">
@@ -619,7 +938,7 @@
                             </div>
                         </div>
                         
-                        <button class="play-btn" id="ladder-btn" onclick="playLadder()">🎯 ИГРАТЬ</button>
+                        <button class="play-btn" id="ladder-btn" onclick="playLadder()">Играть</button>
                         
                         <div class="result-display" id="ladder-result"></div>
                     </div>
@@ -667,17 +986,17 @@
             const bet = parseInt(betInput.value);
             
             if (!bet || bet <= 0) {
-                alert('Введите сумму ставки!');
+                showToast('Введите ставку!', true);
                 return;
             }
             
             if (!selectedColor) {
-                alert('Выберите цвет!');
+                showToast('Выберите цвет!', true);
                 return;
             }
             
             if (bet > player.balance) {
-                alert('Недостаточно средств!');
+                showToast('Недостаточно монет!', true);
                 return;
             }
             
@@ -718,10 +1037,10 @@
                     const winAmount = Math.floor(bet * multiplier * premiumMultiplier);
                     await updateBalance(player.balance + winAmount);
                     resultDisplay.className = 'result-display win';
-                    resultDisplay.innerHTML = `🎉 ПОБЕДА! +${formatNumber(winAmount)} 🪙`;
+                    resultDisplay.innerHTML = `🎉 +${formatNumber(winAmount)} 🪙`;
                 } else {
                     resultDisplay.className = 'result-display lose';
-                    resultDisplay.innerHTML = `😔 Проигрыш. Выпало: ${result === 'red' ? '🔴' : result === 'black' ? '⚫' : '🟢'}`;
+                    resultDisplay.innerHTML = `Выпало: ${result === 'red' ? '🔴 Красное' : result === 'black' ? '⚫ Чёрное' : '🟢 Зелёное'}`;
                 }
                 
                 resultDisplay.style.display = 'block';
@@ -737,17 +1056,17 @@
             const bet = parseInt(betInput.value);
             
             if (!bet || bet <= 0) {
-                alert('Введите сумму ставки!');
+                showToast('Введите ставку!', true);
                 return;
             }
             
             if (!selectedLadderStep) {
-                alert('Выберите уровень риска!');
+                showToast('Выберите шанс!', true);
                 return;
             }
             
             if (bet > player.balance) {
-                alert('Недостаточно средств!');
+                showToast('Недостаточно монет!', true);
                 return;
             }
             
@@ -773,11 +1092,11 @@
                     await updateBalance(player.balance + winAmount);
                     selectedLadderStep.element.classList.add('success');
                     resultDisplay.className = 'result-display win';
-                    resultDisplay.innerHTML = `🎉 ПОБЕДА! +${formatNumber(winAmount)} 🪙`;
+                    resultDisplay.innerHTML = `🎉 +${formatNumber(winAmount)} 🪙`;
                 } else {
                     selectedLadderStep.element.classList.add('fail');
                     resultDisplay.className = 'result-display lose';
-                    resultDisplay.innerHTML = `😔 Проигрыш. Не повезло!`;
+                    resultDisplay.innerHTML = `Не повезло!`;
                 }
                 
                 resultDisplay.style.display = 'block';
