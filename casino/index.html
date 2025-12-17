@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🦑 Squid Casino</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 2px solid rgba(255, 107, 157, 0.3);
+            margin-bottom: 20px;
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            background: linear-gradient(45deg, #ff6b9d, #c44569);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+        
+        .balance-display {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 15px 25px;
+            display: inline-block;
+            backdrop-filter: blur(10px);
+        }
+        
+        .balance-label {
+            font-size: 0.9rem;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+        
+        .balance-amount {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #ffd700;
+        }
+        
+        .user-info {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+        
+        .games-section {
+            margin-top: 30px;
+        }
+        
+        .section-title {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: #ff6b9d;
+            text-align: center;
+        }
+        
+        .game-card {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .game-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(255, 107, 157, 0.2);
+        }
+        
+        .game-title {
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .game-icon {
+            font-size: 2rem;
+        }
+        
+        /* Roulette Styles */
+        .roulette-wheel {
+            width: 200px;
+            height: 200px;
+            margin: 20px auto;
+            position: relative;
+        }
+        
+        .wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: conic-gradient(
+                #e74c3c 0deg 17.14deg,
+                #2c3e50 17.14deg 34.28deg,
+                #e74c3c 34.28deg 51.42deg,
+                #2c3e50 51.42deg 68.56deg,
+                #e74c3c 68.56deg 85.7deg,
+                #2c3e50 85.7deg 102.84deg,
+                #e74c3c 102.84deg 119.98deg,
+                #27ae60 119.98deg 137.12deg,
+                #e74c3c 137.12deg 154.26deg,
+                #2c3e50 154.26deg 171.4deg,
+                #e74c3c 171.4deg 188.54deg,
+                #2c3e50 188.54deg 205.68deg,
+                #e74c3c 205.68deg 222.82deg,
+                #2c3e50 222.82deg 239.96deg,
+                #e74c3c 239.96deg 257.1deg,
+                #2c3e50 257.1deg 274.24deg,
+                #e74c3c 274.24deg 291.38deg,
+                #2c3e50 291.38deg 308.52deg,
+                #e74c3c 308.52deg 325.66deg,
+                #2c3e50 325.66deg 342.8deg,
+                #e74c3c 342.8deg 360deg
+            );
+            border: 5px solid #ffd700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+            transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+        }
+        
+        .wheel-pointer {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 25px solid #ffd700;
+            z-index: 10;
+        }
+        
+        .bet-controls {
+            margin-top: 20px;
+        }
+        
+        .bet-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .bet-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+        }
+        
+        .bet-input:focus {
+            box-shadow: 0 0 10px rgba(255, 107, 157, 0.5);
+        }
+        
+        .color-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .color-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .color-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .color-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .color-btn.red {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: #fff;
+        }
+        
+        .color-btn.black {
+            background: linear-gradient(135deg, #2c3e50, #1a252f);
+            color: #fff;
+        }
+        
+        .color-btn.green {
+            background: linear-gradient(135deg, #27ae60, #1e8449);
+            color: #fff;
+        }
+        
+        .color-btn.selected {
+            box-shadow: 0 0 20px currentColor;
+        }
+        
+        .spin-btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 15px;
+            background: linear-gradient(135deg, #ff6b9d, #c44569);
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .spin-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 5px 20px rgba(255, 107, 157, 0.5);
+        }
+        
+        .spin-btn:disabled {
+            background: #555;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .result-display {
+            text-align: center;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 15px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            display: none;
+        }
+        
+        .result-display.win {
+            background: rgba(39, 174, 96, 0.3);
+            border: 2px solid #27ae60;
+            color: #2ecc71;
+        }
+        
+        .result-display.lose {
+            background: rgba(231, 76, 60, 0.3);
+            border: 2px solid #e74c3c;
+            color: #e74c3c;
+        }
+        
+        /* Ladder Game Styles */
+        .ladder-game {
+            text-align: center;
+        }
+        
+        .ladder-display {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .ladder-step {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        
+        .ladder-step:hover {
+            background: rgba(255, 107, 157, 0.2);
+            border-color: rgba(255, 107, 157, 0.5);
+        }
+        
+        .ladder-step.selected {
+            background: rgba(255, 107, 157, 0.3);
+            border-color: #ff6b9d;
+        }
+        
+        .ladder-step.success {
+            background: rgba(39, 174, 96, 0.3);
+            border-color: #27ae60;
+        }
+        
+        .ladder-step.fail {
+            background: rgba(231, 76, 60, 0.3);
+            border-color: #e74c3c;
+        }
+        
+        .ladder-chance {
+            font-weight: bold;
+            color: #ff6b9d;
+        }
+        
+        .ladder-multiplier {
+            font-weight: bold;
+            color: #ffd700;
+        }
+        
+        .play-btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 15px;
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 15px;
+        }
+        
+        .play-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 5px 20px rgba(155, 89, 182, 0.5);
+        }
+        
+        .play-btn:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
+        
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 50px;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 107, 157, 0.3);
+            border-top-color: #ff6b9d;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .error-message {
+            background: rgba(231, 76, 60, 0.2);
+            border: 1px solid #e74c3c;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            color: #e74c3c;
+        }
+        
+        /* Quick bet buttons */
+        .quick-bets {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .quick-bet-btn {
+            flex: 1;
+            min-width: 60px;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .quick-bet-btn:hover {
+            background: rgba(255, 107, 157, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="app">
+        <div class="loading" id="loading">
+            <div class="loading-spinner"></div>
+            <p>Загрузка...</p>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://qvfhieihrshgcljngpcq.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2ZmhpZWlocnNoZ2Nsam5ncGNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMwNDAyMjMsImV4cCI6MjA3ODYxNjIyM30.vR1PHx7ZxHibt06jWzowzSZjbXliz15cCknnTZpLxpo';
+        
+        let player = null;
+        let selectedColor = null;
+        let selectedLadderStep = null;
+        let isSpinning = false;
+        let isPlaying = false;
+
+        // Initialize Telegram WebApp
+        const tg = window.Telegram?.WebApp;
+        
+        async function init() {
+            if (tg) {
+                tg.ready();
+                tg.expand();
+                
+                const user = tg.initDataUnsafe?.user;
+                if (user) {
+                    await loadPlayer(user.id, user.first_name, user.username);
+                } else {
+                    showError('Не удалось получить данные пользователя Telegram');
+                }
+            } else {
+                showError('Откройте приложение через Telegram бота');
+            }
+        }
+        
+        async function loadPlayer(telegramId, firstName, username) {
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/squid_players?telegram_id=eq.${telegramId}`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data && data.length > 0) {
+                    player = data[0];
+                    renderApp();
+                } else {
+                    showError('Игрок не найден. Сначала напишите /start боту.');
+                }
+            } catch (error) {
+                console.error('Error loading player:', error);
+                showError('Ошибка загрузки данных игрока');
+            }
+        }
+        
+        async function updateBalance(newBalance) {
+            try {
+                await fetch(`${SUPABASE_URL}/rest/v1/squid_players?id=eq.${player.id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify({ balance: newBalance })
+                });
+                player.balance = newBalance;
+                updateBalanceDisplay();
+            } catch (error) {
+                console.error('Error updating balance:', error);
+            }
+        }
+        
+        function updateBalanceDisplay() {
+            const balanceEl = document.getElementById('balance-amount');
+            if (balanceEl) {
+                balanceEl.textContent = formatNumber(player.balance) + ' 🪙';
+            }
+        }
+        
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+        }
+        
+        function showError(message) {
+            document.getElementById('app').innerHTML = `
+                <div class="header">
+                    <h1>🦑 Squid Casino</h1>
+                </div>
+                <div class="error-message">${message}</div>
+            `;
+        }
+        
+        function renderApp() {
+            const displayName = player.first_name || player.username || 'Игрок';
+            const prefix = player.prefix ? `[${player.prefix}] ` : '';
+            
+            document.getElementById('app').innerHTML = `
+                <div class="header">
+                    <h1>🦑 Squid Casino</h1>
+                    <div class="balance-display">
+                        <div class="balance-label">Ваш баланс</div>
+                        <div class="balance-amount" id="balance-amount">${formatNumber(player.balance)} 🪙</div>
+                    </div>
+                </div>
+                <div class="user-info">
+                    ${prefix}${displayName}
+                </div>
+                
+                <div class="games-section">
+                    <h2 class="section-title">🎮 Игры</h2>
+                    
+                    <!-- Roulette -->
+                    <div class="game-card">
+                        <div class="game-title">
+                            <span class="game-icon">🎰</span>
+                            Рулетка
+                        </div>
+                        
+                        <div class="roulette-wheel">
+                            <div class="wheel-pointer"></div>
+                            <div class="wheel" id="wheel"></div>
+                        </div>
+                        
+                        <div class="bet-controls">
+                            <div class="bet-input-group">
+                                <input type="number" class="bet-input" id="roulette-bet" placeholder="Сумма ставки" min="1">
+                            </div>
+                            
+                            <div class="quick-bets">
+                                <button class="quick-bet-btn" onclick="setRouletteBet(1000)">1K</button>
+                                <button class="quick-bet-btn" onclick="setRouletteBet(5000)">5K</button>
+                                <button class="quick-bet-btn" onclick="setRouletteBet(10000)">10K</button>
+                                <button class="quick-bet-btn" onclick="setRouletteBet(50000)">50K</button>
+                                <button class="quick-bet-btn" onclick="setRouletteAll()">ВСЕ</button>
+                            </div>
+                            
+                            <div class="color-buttons">
+                                <button class="color-btn red" onclick="selectColor('red')">🔴 x2</button>
+                                <button class="color-btn green" onclick="selectColor('green')">🟢 x14</button>
+                                <button class="color-btn black" onclick="selectColor('black')">⚫ x2</button>
+                            </div>
+                            
+                            <button class="spin-btn" id="spin-btn" onclick="spinRoulette()">🎲 КРУТИТЬ</button>
+                        </div>
+                        
+                        <div class="result-display" id="roulette-result"></div>
+                    </div>
+                    
+                    <!-- Ladder -->
+                    <div class="game-card">
+                        <div class="game-title">
+                            <span class="game-icon">🪜</span>
+                            Лестница
+                        </div>
+                        
+                        <div class="bet-input-group">
+                            <input type="number" class="bet-input" id="ladder-bet" placeholder="Сумма ставки" min="1">
+                        </div>
+                        
+                        <div class="quick-bets">
+                            <button class="quick-bet-btn" onclick="setLadderBet(1000)">1K</button>
+                            <button class="quick-bet-btn" onclick="setLadderBet(5000)">5K</button>
+                            <button class="quick-bet-btn" onclick="setLadderBet(10000)">10K</button>
+                            <button class="quick-bet-btn" onclick="setLadderBet(50000)">50K</button>
+                            <button class="quick-bet-btn" onclick="setLadderAll()">ВСЕ</button>
+                        </div>
+                        
+                        <div class="ladder-display" id="ladder-display">
+                            <div class="ladder-step" data-chance="10" data-multiplier="9.5" onclick="selectLadderStep(this)">
+                                <span class="ladder-chance">10%</span>
+                                <span class="ladder-multiplier">x9.5</span>
+                            </div>
+                            <div class="ladder-step" data-chance="20" data-multiplier="4.5" onclick="selectLadderStep(this)">
+                                <span class="ladder-chance">20%</span>
+                                <span class="ladder-multiplier">x4.5</span>
+                            </div>
+                            <div class="ladder-step" data-chance="30" data-multiplier="3.0" onclick="selectLadderStep(this)">
+                                <span class="ladder-chance">30%</span>
+                                <span class="ladder-multiplier">x3.0</span>
+                            </div>
+                            <div class="ladder-step" data-chance="40" data-multiplier="2.25" onclick="selectLadderStep(this)">
+                                <span class="ladder-chance">40%</span>
+                                <span class="ladder-multiplier">x2.25</span>
+                            </div>
+                            <div class="ladder-step" data-chance="50" data-multiplier="1.8" onclick="selectLadderStep(this)">
+                                <span class="ladder-chance">50%</span>
+                                <span class="ladder-multiplier">x1.8</span>
+                            </div>
+                            <div class="ladder-step" data-chance="60" data-multiplier="1.5" onclick="selectLadderStep(this)">
+                                <span class="ladder-chance">60%</span>
+                                <span class="ladder-multiplier">x1.5</span>
+                            </div>
+                            <div class="ladder-step" data-chance="70" data-multiplier="1.3" onclick="selectLadderStep(this)">
+                                <span class="ladder-chance">70%</span>
+                                <span class="ladder-multiplier">x1.3</span>
+                            </div>
+                            <div class="ladder-step" data-chance="80" data-multiplier="1.15" onclick="selectLadderStep(this)">
+                                <span class="ladder-chance">80%</span>
+                                <span class="ladder-multiplier">x1.15</span>
+                            </div>
+                        </div>
+                        
+                        <button class="play-btn" id="ladder-btn" onclick="playLadder()">🎯 ИГРАТЬ</button>
+                        
+                        <div class="result-display" id="ladder-result"></div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function setRouletteBet(amount) {
+            document.getElementById('roulette-bet').value = amount;
+        }
+        
+        function setRouletteAll() {
+            document.getElementById('roulette-bet').value = player.balance;
+        }
+        
+        function setLadderBet(amount) {
+            document.getElementById('ladder-bet').value = amount;
+        }
+        
+        function setLadderAll() {
+            document.getElementById('ladder-bet').value = player.balance;
+        }
+        
+        function selectColor(color) {
+            selectedColor = color;
+            document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('selected'));
+            document.querySelector(`.color-btn.${color}`).classList.add('selected');
+        }
+        
+        function selectLadderStep(element) {
+            if (isPlaying) return;
+            document.querySelectorAll('.ladder-step').forEach(step => step.classList.remove('selected'));
+            element.classList.add('selected');
+            selectedLadderStep = {
+                chance: parseInt(element.dataset.chance),
+                multiplier: parseFloat(element.dataset.multiplier),
+                element: element
+            };
+        }
+        
+        async function spinRoulette() {
+            if (isSpinning) return;
+            
+            const betInput = document.getElementById('roulette-bet');
+            const bet = parseInt(betInput.value);
+            
+            if (!bet || bet <= 0) {
+                alert('Введите сумму ставки!');
+                return;
+            }
+            
+            if (!selectedColor) {
+                alert('Выберите цвет!');
+                return;
+            }
+            
+            if (bet > player.balance) {
+                alert('Недостаточно средств!');
+                return;
+            }
+            
+            isSpinning = true;
+            document.getElementById('spin-btn').disabled = true;
+            document.getElementById('roulette-result').style.display = 'none';
+            
+            // Deduct bet
+            await updateBalance(player.balance - bet);
+            
+            // Determine result (48.5% red, 48.5% black, 3% green)
+            const random = Math.random() * 100;
+            let result;
+            if (random < 48.5) {
+                result = 'red';
+            } else if (random < 97) {
+                result = 'black';
+            } else {
+                result = 'green';
+            }
+            
+            // Spin animation
+            const wheel = document.getElementById('wheel');
+            const spins = 5 + Math.random() * 3;
+            const resultAngle = result === 'red' ? 0 : result === 'black' ? 17.14 : 120;
+            const finalRotation = spins * 360 + resultAngle + Math.random() * 17;
+            
+            wheel.style.transform = `rotate(${finalRotation}deg)`;
+            
+            setTimeout(async () => {
+                const resultDisplay = document.getElementById('roulette-result');
+                
+                // Apply premium multiplier
+                const premiumMultiplier = player.is_premium ? 2 : 1;
+                
+                if (result === selectedColor) {
+                    const multiplier = result === 'green' ? 14 : 2;
+                    const winAmount = Math.floor(bet * multiplier * premiumMultiplier);
+                    await updateBalance(player.balance + winAmount);
+                    resultDisplay.className = 'result-display win';
+                    resultDisplay.innerHTML = `🎉 ПОБЕДА! +${formatNumber(winAmount)} 🪙`;
+                } else {
+                    resultDisplay.className = 'result-display lose';
+                    resultDisplay.innerHTML = `😔 Проигрыш. Выпало: ${result === 'red' ? '🔴' : result === 'black' ? '⚫' : '🟢'}`;
+                }
+                
+                resultDisplay.style.display = 'block';
+                isSpinning = false;
+                document.getElementById('spin-btn').disabled = false;
+            }, 4000);
+        }
+        
+        async function playLadder() {
+            if (isPlaying) return;
+            
+            const betInput = document.getElementById('ladder-bet');
+            const bet = parseInt(betInput.value);
+            
+            if (!bet || bet <= 0) {
+                alert('Введите сумму ставки!');
+                return;
+            }
+            
+            if (!selectedLadderStep) {
+                alert('Выберите уровень риска!');
+                return;
+            }
+            
+            if (bet > player.balance) {
+                alert('Недостаточно средств!');
+                return;
+            }
+            
+            isPlaying = true;
+            document.getElementById('ladder-btn').disabled = true;
+            document.getElementById('ladder-result').style.display = 'none';
+            
+            // Deduct bet
+            await updateBalance(player.balance - bet);
+            
+            // Determine result
+            const random = Math.random() * 100;
+            const won = random < selectedLadderStep.chance;
+            
+            setTimeout(async () => {
+                const resultDisplay = document.getElementById('ladder-result');
+                
+                // Apply premium multiplier
+                const premiumMultiplier = player.is_premium ? 2 : 1;
+                
+                if (won) {
+                    const winAmount = Math.floor(bet * selectedLadderStep.multiplier * premiumMultiplier);
+                    await updateBalance(player.balance + winAmount);
+                    selectedLadderStep.element.classList.add('success');
+                    resultDisplay.className = 'result-display win';
+                    resultDisplay.innerHTML = `🎉 ПОБЕДА! +${formatNumber(winAmount)} 🪙`;
+                } else {
+                    selectedLadderStep.element.classList.add('fail');
+                    resultDisplay.className = 'result-display lose';
+                    resultDisplay.innerHTML = `😔 Проигрыш. Не повезло!`;
+                }
+                
+                resultDisplay.style.display = 'block';
+                
+                setTimeout(() => {
+                    selectedLadderStep.element.classList.remove('success', 'fail');
+                    isPlaying = false;
+                    document.getElementById('ladder-btn').disabled = false;
+                }, 1500);
+            }, 1000);
+        }
+        
+        // Initialize app
+        init();
+    </script>
+</body>
+</html>
