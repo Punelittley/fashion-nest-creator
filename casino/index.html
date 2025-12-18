@@ -672,8 +672,7 @@
     <div class="toast" id="toast"></div>
 
     <script>
-        const SUPABASE_URL = 'https://qvfhieihrshgcljngpcq.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2ZmhpZWlocnNoZ2Nsam5ncGNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMwNDAyMjMsImV4cCI6MjA3ODYxNjIyM30.vR1PHx7ZxHibt06jWzowzSZjbXliz15cCknnTZpLxpo';
+        const API_URL = 'https://qvfhieihrshgcljngpcq.supabase.co/functions/v1/casino-auth';
         
         let player = null;
         let selectedColor = null;
@@ -705,64 +704,27 @@
         
         async function loadOrCreatePlayer(telegramId, firstName, username) {
             try {
-                // First try to find existing player
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/squid_players?telegram_id=eq.${telegramId}`, {
+                const response = await fetch(`${API_URL}?action=auth`, {
+                    method: 'POST',
                     headers: {
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-                    }
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        telegram_id: telegramId,
+                        first_name: firstName,
+                        username: username
+                    })
                 });
                 
                 const data = await response.json();
                 
-                if (data && data.length > 0) {
-                    player = data[0];
-                    // Update player info if changed
-                    if (player.first_name !== firstName || player.username !== username) {
-                        await fetch(`${SUPABASE_URL}/rest/v1/squid_players?telegram_id=eq.${telegramId}`, {
-                            method: 'PATCH',
-                            headers: {
-                                'apikey': SUPABASE_ANON_KEY,
-                                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                                'Content-Type': 'application/json',
-                                'Prefer': 'return=representation'
-                            },
-                            body: JSON.stringify({ 
-                                first_name: firstName, 
-                                username: username,
-                                updated_at: new Date().toISOString()
-                            })
-                        });
-                        player.first_name = firstName;
-                        player.username = username;
-                    }
+                if (data.success && data.player) {
+                    player = data.player;
+                    showToast('🎮 Добро пожаловать!');
                     renderApp();
                 } else {
-                    // Create new player
-                    const createResponse = await fetch(`${SUPABASE_URL}/rest/v1/squid_players`, {
-                        method: 'POST',
-                        headers: {
-                            'apikey': SUPABASE_ANON_KEY,
-                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                            'Content-Type': 'application/json',
-                            'Prefer': 'return=representation'
-                        },
-                        body: JSON.stringify({
-                            telegram_id: telegramId,
-                            first_name: firstName,
-                            username: username,
-                            balance: 1000
-                        })
-                    });
-                    
-                    const newPlayer = await createResponse.json();
-                    if (newPlayer && newPlayer.length > 0) {
-                        player = newPlayer[0];
-                        showToast('🎮 Добро пожаловать! +1000 монет');
-                        renderApp();
-                    } else {
-                        showError('Ошибка создания аккаунта');
-                    }
+                    console.error('Auth error:', data.error);
+                    showError('Ошибка авторизации: ' + (data.error || 'Unknown error'));
                 }
             } catch (error) {
                 console.error('Error:', error);
@@ -778,17 +740,20 @@
             setTimeout(() => toast.classList.remove('show'), 3000);
         }
         
-        async function updateBalance(newBalance) {
+        async function updateBalance(newBalance, gameType, betAmount, winAmount) {
             try {
-                await fetch(`${SUPABASE_URL}/rest/v1/squid_players?id=eq.${player.id}`, {
-                    method: 'PATCH',
+                await fetch(`${API_URL}?action=balance`, {
+                    method: 'POST',
                     headers: {
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                        'Content-Type': 'application/json',
-                        'Prefer': 'return=minimal'
+                        'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ balance: newBalance })
+                    body: JSON.stringify({ 
+                        player_id: player.id, 
+                        balance: newBalance,
+                        game_type: gameType,
+                        bet_amount: betAmount,
+                        win_amount: winAmount
+                    })
                 });
                 player.balance = newBalance;
                 updateBalanceDisplay();
@@ -1004,8 +969,10 @@
             document.getElementById('spin-btn').disabled = true;
             document.getElementById('roulette-result').style.display = 'none';
             
-            // Deduct bet
-            await updateBalance(player.balance - bet);
+            // Deduct bet first (locally)
+            const balanceAfterBet = player.balance - bet;
+            player.balance = balanceAfterBet;
+            updateBalanceDisplay();
             
             // Determine result (48.5% red, 48.5% black, 3% green)
             const random = Math.random() * 100;
@@ -1035,10 +1002,12 @@
                 if (result === selectedColor) {
                     const multiplier = result === 'green' ? 14 : 2;
                     const winAmount = Math.floor(bet * multiplier * premiumMultiplier);
-                    await updateBalance(player.balance + winAmount);
+                    const newBalance = balanceAfterBet + winAmount;
+                    await updateBalance(newBalance, 'web_roulette', bet, winAmount);
                     resultDisplay.className = 'result-display win';
                     resultDisplay.innerHTML = `🎉 +${formatNumber(winAmount)} 🪙`;
                 } else {
+                    await updateBalance(balanceAfterBet, 'web_roulette', bet, 0);
                     resultDisplay.className = 'result-display lose';
                     resultDisplay.innerHTML = `Выпало: ${result === 'red' ? '🔴 Красное' : result === 'black' ? '⚫ Чёрное' : '🟢 Зелёное'}`;
                 }
@@ -1074,8 +1043,10 @@
             document.getElementById('ladder-btn').disabled = true;
             document.getElementById('ladder-result').style.display = 'none';
             
-            // Deduct bet
-            await updateBalance(player.balance - bet);
+            // Deduct bet first (locally)
+            const balanceAfterBet = player.balance - bet;
+            player.balance = balanceAfterBet;
+            updateBalanceDisplay();
             
             // Determine result
             const random = Math.random() * 100;
@@ -1089,11 +1060,13 @@
                 
                 if (won) {
                     const winAmount = Math.floor(bet * selectedLadderStep.multiplier * premiumMultiplier);
-                    await updateBalance(player.balance + winAmount);
+                    const newBalance = balanceAfterBet + winAmount;
+                    await updateBalance(newBalance, 'web_ladder', bet, winAmount);
                     selectedLadderStep.element.classList.add('success');
                     resultDisplay.className = 'result-display win';
                     resultDisplay.innerHTML = `🎉 +${formatNumber(winAmount)} 🪙`;
                 } else {
+                    await updateBalance(balanceAfterBet, 'web_ladder', bet, 0);
                     selectedLadderStep.element.classList.add('fail');
                     resultDisplay.className = 'result-display lose';
                     resultDisplay.innerHTML = `Не повезло!`;
