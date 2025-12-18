@@ -3752,13 +3752,16 @@ serve(async (req) => {
               .update({ gift_count: (player.gift_count || 0) + amount })
               .eq("id", player.id);
 
+            // Convert telegram_id to number (might be BigInt from DB)
+            const telegramId = Number(player.telegram_id);
             await sendMessage(
-              player.telegram_id,
+              telegramId,
               `🎁 <b>Подарок от создателя!</b>\n\n🎁 Тебе начислено: ${amount} ${amount === 1 ? "подарок" : amount < 5 ? "подарка" : "подарков"}\n\n📢 ${messageText}\n\nОткрой подарки: /gift_open`,
             );
             sent++;
             await new Promise((resolve) => setTimeout(resolve, 50));
           } catch (e) {
+            console.error(`Failed to send gift to player ${player.id}:`, e);
             failed++;
           }
         }
