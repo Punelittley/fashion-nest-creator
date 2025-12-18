@@ -47,7 +47,6 @@
             z-index: 0;
         }
         
-        /* Animated grid background */
         .grid-bg {
             position: fixed;
             top: 0;
@@ -81,7 +80,6 @@
             text-align: center;
             padding: 25px 0;
             margin-bottom: 25px;
-            position: relative;
         }
         
         .logo {
@@ -101,9 +99,7 @@
             align-items: center;
             justify-content: center;
             font-size: 2rem;
-            box-shadow: 
-                0 0 30px rgba(255, 0, 102, 0.6),
-                inset 0 0 20px rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 30px rgba(255, 0, 102, 0.6), inset 0 0 20px rgba(255, 255, 255, 0.2);
             animation: pulse 2s ease-in-out infinite;
         }
         
@@ -122,7 +118,6 @@
             background-clip: text;
             text-transform: uppercase;
             letter-spacing: 3px;
-            text-shadow: 0 0 30px rgba(255, 0, 102, 0.5);
         }
         
         .balance-card {
@@ -180,9 +175,7 @@
             border: 1px solid rgba(255, 0, 102, 0.2);
         }
         
-        .user-wrapper {
-            text-align: center;
-        }
+        .user-wrapper { text-align: center; }
         
         .premium-badge {
             background: linear-gradient(135deg, var(--gold), #ffaa00);
@@ -195,9 +188,7 @@
             text-transform: uppercase;
         }
         
-        .games-section {
-            margin-top: 20px;
-        }
+        .games-section { margin-top: 20px; }
         
         .section-title {
             font-family: 'Orbitron', sans-serif;
@@ -207,7 +198,6 @@
             text-align: center;
             text-transform: uppercase;
             letter-spacing: 3px;
-            position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -244,11 +234,6 @@
             background: linear-gradient(90deg, var(--primary), var(--secondary), var(--primary));
         }
         
-        .game-card:hover {
-            border-color: rgba(255, 0, 102, 0.4);
-            box-shadow: 0 10px 40px rgba(255, 0, 102, 0.2);
-        }
-        
         .game-title {
             font-family: 'Orbitron', sans-serif;
             font-size: 1.3rem;
@@ -270,82 +255,68 @@
             font-size: 1.5rem;
         }
         
-        /* Roulette Styles */
-        .roulette-wheel {
-            width: 220px;
-            height: 220px;
-            margin: 25px auto;
+        /* ROULETTE */
+        .roulette-container {
             position: relative;
+            margin: 20px auto;
         }
         
-        .wheel {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            background: conic-gradient(
-                #e74c3c 0deg 17.14deg,
-                #1a1a2e 17.14deg 34.28deg,
-                #e74c3c 34.28deg 51.42deg,
-                #1a1a2e 51.42deg 68.56deg,
-                #e74c3c 68.56deg 85.7deg,
-                #1a1a2e 85.7deg 102.84deg,
-                #e74c3c 102.84deg 119.98deg,
-                #00ff88 119.98deg 137.12deg,
-                #e74c3c 137.12deg 154.26deg,
-                #1a1a2e 154.26deg 171.4deg,
-                #e74c3c 171.4deg 188.54deg,
-                #1a1a2e 188.54deg 205.68deg,
-                #e74c3c 205.68deg 222.82deg,
-                #1a1a2e 222.82deg 239.96deg,
-                #e74c3c 239.96deg 257.1deg,
-                #1a1a2e 257.1deg 274.24deg,
-                #e74c3c 274.24deg 291.38deg,
-                #1a1a2e 291.38deg 308.52deg,
-                #e74c3c 308.52deg 325.66deg,
-                #1a1a2e 325.66deg 342.8deg,
-                #e74c3c 342.8deg 360deg
-            );
-            border: 4px solid var(--primary);
-            box-shadow: 
-                0 0 30px rgba(255, 0, 102, 0.5),
-                inset 0 0 30px rgba(0, 0, 0, 0.5);
-            transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+        .roulette-numbers {
+            display: flex;
+            overflow: hidden;
+            position: relative;
+            height: 80px;
+            border-radius: 15px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(255, 0, 102, 0.3);
         }
         
-        .wheel-center {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+        .roulette-strip {
+            display: flex;
+            transition: transform 4s cubic-bezier(0.15, 0.6, 0.2, 1);
+        }
+        
+        .roulette-number {
             width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, var(--dark), #1a1a2e);
-            border-radius: 50%;
-            border: 3px solid var(--primary);
+            height: 76px;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-family: 'Orbitron', sans-serif;
             font-size: 1.5rem;
-            box-shadow: 0 0 20px rgba(255, 0, 102, 0.5);
+            font-weight: 700;
+            flex-shrink: 0;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
         }
         
-        .wheel-pointer {
+        .roulette-number.red { background: linear-gradient(135deg, #e74c3c, #c0392b); color: #fff; }
+        .roulette-number.black { background: linear-gradient(135deg, #2c3e50, #1a252f); color: #fff; }
+        .roulette-number.green { background: linear-gradient(135deg, #00ff88, #00cc6a); color: #000; }
+        
+        .roulette-pointer {
             position: absolute;
-            top: -18px;
+            top: 0;
             left: 50%;
             transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 18px solid transparent;
-            border-right: 18px solid transparent;
-            border-top: 30px solid var(--primary);
+            width: 4px;
+            height: 100%;
+            background: var(--gold);
             z-index: 10;
-            filter: drop-shadow(0 0 10px rgba(255, 0, 102, 0.8));
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
         }
         
-        .bet-controls {
-            margin-top: 25px;
+        .roulette-pointer::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 12px solid transparent;
+            border-right: 12px solid transparent;
+            border-top: 15px solid var(--gold);
         }
+        
+        .bet-controls { margin-top: 25px; }
         
         .bet-input-group {
             display: flex;
@@ -371,9 +342,7 @@
             box-shadow: 0 0 20px rgba(255, 0, 102, 0.3);
         }
         
-        .bet-input::placeholder {
-            color: rgba(255, 255, 255, 0.3);
-        }
+        .bet-input::placeholder { color: rgba(255, 255, 255, 0.3); }
         
         .color-buttons {
             display: flex;
@@ -395,35 +364,9 @@
             overflow: hidden;
         }
         
-        .color-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.5s;
-        }
-        
-        .color-btn:hover::before {
-            left: 100%;
-        }
-        
-        .color-btn.red {
-            background: linear-gradient(135deg, #e74c3c, #c0392b);
-            color: #fff;
-        }
-        
-        .color-btn.black {
-            background: linear-gradient(135deg, #2c3e50, #1a252f);
-            color: #fff;
-        }
-        
-        .color-btn.green {
-            background: linear-gradient(135deg, #00ff88, #00cc6a);
-            color: #000;
-        }
+        .color-btn.red { background: linear-gradient(135deg, #e74c3c, #c0392b); color: #fff; }
+        .color-btn.black { background: linear-gradient(135deg, #2c3e50, #1a252f); color: #fff; }
+        .color-btn.green { background: linear-gradient(135deg, #00ff88, #00cc6a); color: #000; }
         
         .color-btn.selected {
             border-color: #fff;
@@ -431,7 +374,7 @@
             box-shadow: 0 0 30px currentColor;
         }
         
-        .spin-btn, .play-btn {
+        .spin-btn, .play-btn, .withdraw-btn {
             width: 100%;
             padding: 18px;
             border: none;
@@ -443,8 +386,6 @@
             transition: all 0.3s;
             text-transform: uppercase;
             letter-spacing: 2px;
-            position: relative;
-            overflow: hidden;
         }
         
         .spin-btn {
@@ -454,21 +395,23 @@
         }
         
         .play-btn {
-            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            background: linear-gradient(135deg, #00bcd4, #0097a7);
             color: #fff;
-            box-shadow: 0 5px 30px rgba(155, 89, 182, 0.4);
+            box-shadow: 0 5px 30px rgba(0, 188, 212, 0.4);
         }
         
-        .spin-btn:hover, .play-btn:hover {
+        .withdraw-btn {
+            background: linear-gradient(135deg, var(--secondary), #00cc6a);
+            color: #000;
+            box-shadow: 0 5px 30px rgba(0, 255, 136, 0.4);
+            margin-top: 15px;
+        }
+        
+        .spin-btn:hover, .play-btn:hover, .withdraw-btn:hover {
             transform: translateY(-3px);
-            box-shadow: 0 10px 40px rgba(255, 0, 102, 0.5);
         }
         
-        .spin-btn:active, .play-btn:active {
-            transform: translateY(0);
-        }
-        
-        .spin-btn:disabled, .play-btn:disabled {
+        .spin-btn:disabled, .play-btn:disabled, .withdraw-btn:disabled {
             background: #333;
             cursor: not-allowed;
             transform: none;
@@ -497,7 +440,6 @@
             background: linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(0, 200, 100, 0.1));
             border: 2px solid var(--secondary);
             color: var(--secondary);
-            box-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
         }
         
         .result-display.lose {
@@ -506,101 +448,162 @@
             color: var(--primary);
         }
         
-        /* Ladder Game Styles */
-        .ladder-display {
+        /* LADDER GAME - MINES STYLE */
+        .ladder-game {
+            margin: 20px 0;
+        }
+        
+        .stones-selector {
+            margin-bottom: 20px;
+        }
+        
+        .stones-label {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .stones-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .stone-btn {
+            padding: 12px 18px;
+            border: 2px solid rgba(255, 0, 102, 0.3);
+            border-radius: 10px;
+            background: rgba(255, 0, 102, 0.1);
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .stone-btn:hover {
+            background: rgba(255, 0, 102, 0.3);
+            border-color: var(--primary);
+        }
+        
+        .stone-btn.selected {
+            background: var(--primary);
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(255, 0, 102, 0.5);
+        }
+        
+        .ladder-tower {
             display: flex;
             flex-direction: column;
             gap: 8px;
             margin: 20px 0;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
         }
         
-        .ladder-step {
+        .ladder-row {
             display: flex;
-            justify-content: space-between;
+            gap: 8px;
+            justify-content: center;
             align-items: center;
-            padding: 15px 20px;
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: 2px solid transparent;
         }
         
-        .ladder-step:hover {
-            background: rgba(255, 0, 102, 0.1);
-            border-color: rgba(255, 0, 102, 0.3);
-        }
-        
-        .ladder-step.selected {
-            background: rgba(255, 0, 102, 0.2);
-            border-color: var(--primary);
-            box-shadow: 0 0 20px rgba(255, 0, 102, 0.3);
-        }
-        
-        .ladder-step.success {
-            background: rgba(0, 255, 136, 0.2);
-            border-color: var(--secondary);
-            box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
-        }
-        
-        .ladder-step.fail {
-            background: rgba(255, 0, 102, 0.2);
-            border-color: var(--primary);
-        }
-        
-        .ladder-chance {
+        .ladder-multiplier-label {
+            min-width: 70px;
             font-family: 'Orbitron', sans-serif;
-            font-weight: 700;
-            color: var(--primary);
-        }
-        
-        .ladder-multiplier {
-            font-family: 'Orbitron', sans-serif;
+            font-size: 0.85rem;
             font-weight: 700;
             color: var(--gold);
+            text-align: right;
+            padding-right: 10px;
         }
         
-        /* Loading */
-        .loading {
+        .ladder-cells {
+            display: flex;
+            gap: 6px;
+        }
+        
+        .ladder-cell {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, #2a3a50, #1e2a3a);
+            border: 2px solid rgba(100, 150, 200, 0.3);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1.2rem;
+        }
+        
+        .ladder-cell:hover:not(.disabled):not(.revealed) {
+            background: linear-gradient(135deg, #3a4a60, #2e3a4a);
+            border-color: rgba(100, 200, 255, 0.5);
+            transform: scale(1.05);
+        }
+        
+        .ladder-cell.safe {
+            background: linear-gradient(135deg, var(--secondary), #00cc6a);
+            border-color: var(--secondary);
+            animation: cellWin 0.5s ease;
+        }
+        
+        .ladder-cell.mine {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            border-color: #e74c3c;
+            animation: cellLose 0.5s ease;
+        }
+        
+        .ladder-cell.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        
+        .ladder-cell.current-row {
+            border-color: var(--gold);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+        }
+        
+        @keyframes cellWin {
+            0% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes cellLose {
+            0%, 20%, 40%, 60%, 80%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+        }
+        
+        .current-win {
             text-align: center;
-            padding: 100px 20px;
-        }
-        
-        .loading-spinner {
-            width: 80px;
-            height: 80px;
-            border: 4px solid rgba(255, 0, 102, 0.2);
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 30px;
-            box-shadow: 0 0 30px rgba(255, 0, 102, 0.3);
-        }
-        
-        .loading p {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.1rem;
-            color: var(--primary);
-            text-transform: uppercase;
-            letter-spacing: 3px;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        .error-message {
-            background: rgba(255, 0, 102, 0.1);
-            border: 2px solid var(--primary);
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
             border-radius: 15px;
-            padding: 25px;
-            text-align: center;
-            color: var(--primary);
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 1.1rem;
         }
         
-        /* Quick bet buttons */
+        .current-win-label {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .current-win-amount {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--secondary);
+        }
+        
         .quick-bets {
             display: flex;
             gap: 8px;
@@ -626,14 +629,42 @@
         .quick-bet-btn:hover {
             background: rgba(255, 0, 102, 0.3);
             border-color: var(--primary);
-            transform: translateY(-2px);
         }
         
-        .quick-bet-btn:active {
-            transform: translateY(0);
+        .loading {
+            text-align: center;
+            padding: 100px 20px;
         }
         
-        /* Toast notification */
+        .loading-spinner {
+            width: 80px;
+            height: 80px;
+            border: 4px solid rgba(255, 0, 102, 0.2);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 30px;
+        }
+        
+        .loading p {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .error-message {
+            background: rgba(255, 0, 102, 0.1);
+            border: 2px solid var(--primary);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            color: var(--primary);
+        }
+        
         .toast {
             position: fixed;
             bottom: 30px;
@@ -674,13 +705,26 @@
     <script>
         const API_URL = 'https://qvfhieihrshgcljngpcq.supabase.co/functions/v1/casino-auth';
         
+        // Roulette numbers in order (European roulette)
+        const ROULETTE_SEQUENCE = [
+            0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10,
+            5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26
+        ];
+        
+        const RED_NUMBERS = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
+        
         let player = null;
         let selectedColor = null;
-        let selectedLadderStep = null;
         let isSpinning = false;
-        let isPlaying = false;
-
-        // Initialize Telegram WebApp
+        
+        // Ladder game state
+        let ladderStones = 3;
+        let ladderBet = 0;
+        let ladderLevel = 0;
+        let ladderCurrentWin = 0;
+        let ladderPlaying = false;
+        let ladderRows = [];
+        
         const tg = window.Telegram?.WebApp;
         
         async function init() {
@@ -697,7 +741,6 @@
                     showError('Не удалось получить данные пользователя');
                 }
             } else {
-                // Dev mode - test with fake user
                 showError('Откройте через Telegram бота');
             }
         }
@@ -706,14 +749,8 @@
             try {
                 const response = await fetch(`${API_URL}?action=auth`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        telegram_id: telegramId,
-                        first_name: firstName,
-                        username: username
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ telegram_id: telegramId, first_name: firstName, username: username })
                 });
                 
                 const data = await response.json();
@@ -723,11 +760,9 @@
                     showToast('🎮 Добро пожаловать!');
                     renderApp();
                 } else {
-                    console.error('Auth error:', data.error);
                     showError('Ошибка авторизации: ' + (data.error || 'Unknown error'));
                 }
             } catch (error) {
-                console.error('Error:', error);
                 showError('Ошибка подключения к серверу');
             }
         }
@@ -744,9 +779,7 @@
             try {
                 await fetch(`${API_URL}?action=balance`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         player_id: player.id, 
                         balance: newBalance,
@@ -764,9 +797,7 @@
         
         function updateBalanceDisplay() {
             const balanceEl = document.getElementById('balance-amount');
-            if (balanceEl) {
-                balanceEl.textContent = formatNumber(player.balance) + ' 🪙';
-            }
+            if (balanceEl) balanceEl.textContent = formatNumber(player.balance) + ' 🪙';
         }
         
         function formatNumber(num) {
@@ -783,6 +814,23 @@
                 </div>
                 <div class="error-message">${message}</div>
             `;
+        }
+        
+        function getNumberColor(num) {
+            if (num === 0) return 'green';
+            return RED_NUMBERS.includes(num) ? 'red' : 'black';
+        }
+        
+        function generateRouletteStrip() {
+            let html = '';
+            // Generate multiple cycles for smooth animation
+            for (let cycle = 0; cycle < 10; cycle++) {
+                for (const num of ROULETTE_SEQUENCE) {
+                    const color = getNumberColor(num);
+                    html += `<div class="roulette-number ${color}">${num}</div>`;
+                }
+            }
+            return html;
         }
         
         function renderApp() {
@@ -818,10 +866,13 @@
                             Рулетка
                         </div>
                         
-                        <div class="roulette-wheel">
-                            <div class="wheel-pointer"></div>
-                            <div class="wheel" id="wheel"></div>
-                            <div class="wheel-center">🦑</div>
+                        <div class="roulette-container">
+                            <div class="roulette-pointer"></div>
+                            <div class="roulette-numbers">
+                                <div class="roulette-strip" id="roulette-strip">
+                                    ${generateRouletteStrip()}
+                                </div>
+                            </div>
                         </div>
                         
                         <div class="bet-controls">
@@ -849,7 +900,7 @@
                         <div class="result-display" id="roulette-result"></div>
                     </div>
                     
-                    <!-- Ladder -->
+                    <!-- Ladder (Tower Climb) -->
                     <div class="game-card">
                         <div class="game-title">
                             <div class="game-icon">🪜</div>
@@ -868,42 +919,20 @@
                             <button class="quick-bet-btn" onclick="setLadderAll()">ALL</button>
                         </div>
                         
-                        <div class="ladder-display" id="ladder-display">
-                            <div class="ladder-step" data-chance="10" data-multiplier="9.5" onclick="selectLadderStep(this)">
-                                <span class="ladder-chance">10%</span>
-                                <span class="ladder-multiplier">x9.5</span>
-                            </div>
-                            <div class="ladder-step" data-chance="20" data-multiplier="4.5" onclick="selectLadderStep(this)">
-                                <span class="ladder-chance">20%</span>
-                                <span class="ladder-multiplier">x4.5</span>
-                            </div>
-                            <div class="ladder-step" data-chance="30" data-multiplier="3.0" onclick="selectLadderStep(this)">
-                                <span class="ladder-chance">30%</span>
-                                <span class="ladder-multiplier">x3.0</span>
-                            </div>
-                            <div class="ladder-step" data-chance="40" data-multiplier="2.25" onclick="selectLadderStep(this)">
-                                <span class="ladder-chance">40%</span>
-                                <span class="ladder-multiplier">x2.25</span>
-                            </div>
-                            <div class="ladder-step" data-chance="50" data-multiplier="1.8" onclick="selectLadderStep(this)">
-                                <span class="ladder-chance">50%</span>
-                                <span class="ladder-multiplier">x1.8</span>
-                            </div>
-                            <div class="ladder-step" data-chance="60" data-multiplier="1.5" onclick="selectLadderStep(this)">
-                                <span class="ladder-chance">60%</span>
-                                <span class="ladder-multiplier">x1.5</span>
-                            </div>
-                            <div class="ladder-step" data-chance="70" data-multiplier="1.3" onclick="selectLadderStep(this)">
-                                <span class="ladder-chance">70%</span>
-                                <span class="ladder-multiplier">x1.3</span>
-                            </div>
-                            <div class="ladder-step" data-chance="80" data-multiplier="1.15" onclick="selectLadderStep(this)">
-                                <span class="ladder-chance">80%</span>
-                                <span class="ladder-multiplier">x1.15</span>
+                        <div class="stones-selector" id="stones-selector">
+                            <div class="stones-label">Количество камней (мин)</div>
+                            <div class="stones-buttons">
+                                <button class="stone-btn" onclick="selectStones(1)">1</button>
+                                <button class="stone-btn" onclick="selectStones(2)">2</button>
+                                <button class="stone-btn selected" onclick="selectStones(3)">3</button>
+                                <button class="stone-btn" onclick="selectStones(4)">4</button>
+                                <button class="stone-btn" onclick="selectStones(5)">5</button>
                             </div>
                         </div>
                         
-                        <button class="play-btn" id="ladder-btn" onclick="playLadder()">Играть</button>
+                        <div id="ladder-game-area"></div>
+                        
+                        <button class="play-btn" id="ladder-start-btn" onclick="startLadder()">Играть</button>
                         
                         <div class="result-display" id="ladder-result"></div>
                     </div>
@@ -933,15 +962,11 @@
             document.querySelector(`.color-btn.${color}`).classList.add('selected');
         }
         
-        function selectLadderStep(element) {
-            if (isPlaying) return;
-            document.querySelectorAll('.ladder-step').forEach(step => step.classList.remove('selected'));
-            element.classList.add('selected');
-            selectedLadderStep = {
-                chance: parseInt(element.dataset.chance),
-                multiplier: parseFloat(element.dataset.multiplier),
-                element: element
-            };
+        function selectStones(count) {
+            if (ladderPlaying) return;
+            ladderStones = count;
+            document.querySelectorAll('.stone-btn').forEach(btn => btn.classList.remove('selected'));
+            event.target.classList.add('selected');
         }
         
         async function spinRoulette() {
@@ -969,58 +994,167 @@
             document.getElementById('spin-btn').disabled = true;
             document.getElementById('roulette-result').style.display = 'none';
             
-            // Deduct bet first (locally)
             const balanceAfterBet = player.balance - bet;
             player.balance = balanceAfterBet;
             updateBalanceDisplay();
             
-            // Determine result (48.5% red, 48.5% black, 3% green)
+            // Random result based on probability
             const random = Math.random() * 100;
-            let result;
-            if (random < 48.5) {
-                result = 'red';
-            } else if (random < 97) {
-                result = 'black';
+            let resultColor;
+            if (random < 48.5) resultColor = 'red';
+            else if (random < 97) resultColor = 'black';
+            else resultColor = 'green';
+            
+            // Find a number with this color
+            let resultNumber;
+            if (resultColor === 'green') {
+                resultNumber = 0;
             } else {
-                result = 'green';
+                const colorNumbers = ROULETTE_SEQUENCE.filter(n => getNumberColor(n) === resultColor);
+                resultNumber = colorNumbers[Math.floor(Math.random() * colorNumbers.length)];
             }
             
-            // Spin animation
-            const wheel = document.getElementById('wheel');
-            const spins = 5 + Math.random() * 3;
-            const resultAngle = result === 'red' ? 0 : result === 'black' ? 17.14 : 120;
-            const finalRotation = spins * 360 + resultAngle + Math.random() * 17;
+            // Calculate position
+            const strip = document.getElementById('roulette-strip');
+            const numberWidth = 60;
+            const containerWidth = strip.parentElement.offsetWidth;
+            const centerOffset = containerWidth / 2 - numberWidth / 2;
             
-            wheel.style.transform = `rotate(${finalRotation}deg)`;
+            // Find position of result number in strip
+            const indexInSequence = ROULETTE_SEQUENCE.indexOf(resultNumber);
+            const targetCycle = 7; // Stop at 7th cycle
+            const targetPosition = (targetCycle * ROULETTE_SEQUENCE.length + indexInSequence) * numberWidth;
+            
+            strip.style.transform = `translateX(${-targetPosition + centerOffset}px)`;
             
             setTimeout(async () => {
                 const resultDisplay = document.getElementById('roulette-result');
-                
-                // Apply premium multiplier
                 const premiumMultiplier = player.is_premium ? 2 : 1;
                 
-                if (result === selectedColor) {
-                    const multiplier = result === 'green' ? 14 : 2;
+                if (resultColor === selectedColor) {
+                    const multiplier = resultColor === 'green' ? 14 : 2;
                     const winAmount = Math.floor(bet * multiplier * premiumMultiplier);
                     const newBalance = balanceAfterBet + winAmount;
                     await updateBalance(newBalance, 'web_roulette', bet, winAmount);
                     resultDisplay.className = 'result-display win';
-                    resultDisplay.innerHTML = `🎉 +${formatNumber(winAmount)} 🪙`;
+                    resultDisplay.innerHTML = `🎉 ${resultNumber} - Выигрыш +${formatNumber(winAmount)} 🪙`;
                 } else {
                     await updateBalance(balanceAfterBet, 'web_roulette', bet, 0);
                     resultDisplay.className = 'result-display lose';
-                    resultDisplay.innerHTML = `Выпало: ${result === 'red' ? '🔴 Красное' : result === 'black' ? '⚫ Чёрное' : '🟢 Зелёное'}`;
+                    const colorEmoji = resultColor === 'red' ? '🔴' : resultColor === 'black' ? '⚫' : '🟢';
+                    resultDisplay.innerHTML = `${colorEmoji} ${resultNumber} - Проигрыш`;
                 }
                 
                 resultDisplay.style.display = 'block';
                 isSpinning = false;
                 document.getElementById('spin-btn').disabled = false;
+                
+                // Reset strip position for next spin (instant)
+                setTimeout(() => {
+                    strip.style.transition = 'none';
+                    strip.style.transform = 'translateX(0)';
+                    setTimeout(() => {
+                        strip.style.transition = 'transform 4s cubic-bezier(0.15, 0.6, 0.2, 1)';
+                    }, 50);
+                }, 500);
             }, 4000);
         }
         
-        async function playLadder() {
-            if (isPlaying) return;
+        // LADDER GAME
+        function getMultiplier(level, stones) {
+            // Higher stones = higher multipliers
+            const baseMultiplier = 1 + (stones * 0.2);
+            const growthRate = 1 + (stones * 0.1);
+            return Math.round(Math.pow(growthRate, level) * baseMultiplier * 100) / 100;
+        }
+        
+        function generateLadderRows() {
+            const rows = [];
+            const totalRows = 8;
             
+            for (let i = 0; i < totalRows; i++) {
+                const cells = [];
+                const mineCount = ladderStones;
+                const totalCells = 5;
+                
+                // Randomly place mines
+                const minePositions = new Set();
+                while (minePositions.size < mineCount) {
+                    minePositions.add(Math.floor(Math.random() * totalCells));
+                }
+                
+                for (let j = 0; j < totalCells; j++) {
+                    cells.push({
+                        isMine: minePositions.has(j),
+                        revealed: false
+                    });
+                }
+                
+                rows.push({
+                    cells,
+                    multiplier: getMultiplier(i + 1, ladderStones),
+                    cleared: false
+                });
+            }
+            
+            return rows;
+        }
+        
+        function renderLadderGame() {
+            const gameArea = document.getElementById('ladder-game-area');
+            
+            let html = `
+                <div class="current-win" id="current-win" style="display: ${ladderLevel > 0 ? 'block' : 'none'}">
+                    <div class="current-win-label">Текущий выигрыш</div>
+                    <div class="current-win-amount" id="current-win-amount">${formatNumber(ladderCurrentWin)} 🪙</div>
+                </div>
+                <div class="ladder-tower">
+            `;
+            
+            // Render rows from top to bottom (highest level first)
+            for (let i = ladderRows.length - 1; i >= 0; i--) {
+                const row = ladderRows[i];
+                const isCurrentRow = i === ladderLevel;
+                const isLocked = i > ladderLevel;
+                
+                html += `<div class="ladder-row">`;
+                html += `<div class="ladder-multiplier-label">x${row.multiplier}</div>`;
+                html += `<div class="ladder-cells">`;
+                
+                for (let j = 0; j < row.cells.length; j++) {
+                    const cell = row.cells[j];
+                    let cellClass = 'ladder-cell';
+                    let cellContent = '';
+                    
+                    if (cell.revealed) {
+                        cellClass += cell.isMine ? ' mine' : ' safe';
+                        cellContent = cell.isMine ? '💣' : '✓';
+                    } else if (isLocked) {
+                        cellClass += ' disabled';
+                    } else if (isCurrentRow) {
+                        cellClass += ' current-row';
+                    }
+                    
+                    const onclick = (!cell.revealed && isCurrentRow && ladderPlaying) 
+                        ? `onclick="clickLadderCell(${i}, ${j})"` 
+                        : '';
+                    
+                    html += `<div class="${cellClass}" ${onclick}>${cellContent}</div>`;
+                }
+                
+                html += `</div></div>`;
+            }
+            
+            html += `</div>`;
+            
+            if (ladderPlaying && ladderLevel > 0) {
+                html += `<button class="withdraw-btn" onclick="withdrawLadder()">Забрать ${formatNumber(ladderCurrentWin)} 🪙</button>`;
+            }
+            
+            gameArea.innerHTML = html;
+        }
+        
+        async function startLadder() {
             const betInput = document.getElementById('ladder-bet');
             const bet = parseInt(betInput.value);
             
@@ -1029,60 +1163,102 @@
                 return;
             }
             
-            if (!selectedLadderStep) {
-                showToast('Выберите шанс!', true);
-                return;
-            }
-            
             if (bet > player.balance) {
                 showToast('Недостаточно монет!', true);
                 return;
             }
             
-            isPlaying = true;
-            document.getElementById('ladder-btn').disabled = true;
-            document.getElementById('ladder-result').style.display = 'none';
+            ladderBet = bet;
+            ladderLevel = 0;
+            ladderCurrentWin = bet;
+            ladderPlaying = true;
+            ladderRows = generateLadderRows();
             
-            // Deduct bet first (locally)
-            const balanceAfterBet = player.balance - bet;
-            player.balance = balanceAfterBet;
+            // Deduct bet
+            player.balance -= bet;
             updateBalanceDisplay();
             
-            // Determine result
-            const random = Math.random() * 100;
-            const won = random < selectedLadderStep.chance;
+            document.getElementById('ladder-start-btn').style.display = 'none';
+            document.getElementById('stones-selector').style.display = 'none';
+            document.getElementById('ladder-result').style.display = 'none';
             
-            setTimeout(async () => {
+            renderLadderGame();
+        }
+        
+        async function clickLadderCell(rowIndex, cellIndex) {
+            if (!ladderPlaying || rowIndex !== ladderLevel) return;
+            
+            const row = ladderRows[rowIndex];
+            const cell = row.cells[cellIndex];
+            
+            // Reveal the cell
+            cell.revealed = true;
+            
+            if (cell.isMine) {
+                // Game over - lost
+                ladderPlaying = false;
+                
+                // Reveal all cells in this row
+                row.cells.forEach(c => c.revealed = true);
+                
+                renderLadderGame();
+                
+                await updateBalance(player.balance, 'web_ladder', ladderBet, 0);
+                
                 const resultDisplay = document.getElementById('ladder-result');
-                
-                // Apply premium multiplier
-                const premiumMultiplier = player.is_premium ? 2 : 1;
-                
-                if (won) {
-                    const winAmount = Math.floor(bet * selectedLadderStep.multiplier * premiumMultiplier);
-                    const newBalance = balanceAfterBet + winAmount;
-                    await updateBalance(newBalance, 'web_ladder', bet, winAmount);
-                    selectedLadderStep.element.classList.add('success');
-                    resultDisplay.className = 'result-display win';
-                    resultDisplay.innerHTML = `🎉 +${formatNumber(winAmount)} 🪙`;
-                } else {
-                    await updateBalance(balanceAfterBet, 'web_ladder', bet, 0);
-                    selectedLadderStep.element.classList.add('fail');
-                    resultDisplay.className = 'result-display lose';
-                    resultDisplay.innerHTML = `Не повезло!`;
-                }
-                
+                resultDisplay.className = 'result-display lose';
+                resultDisplay.innerHTML = `💣 Проигрыш -${formatNumber(ladderBet)} 🪙`;
                 resultDisplay.style.display = 'block';
                 
                 setTimeout(() => {
-                    selectedLadderStep.element.classList.remove('success', 'fail');
-                    isPlaying = false;
-                    document.getElementById('ladder-btn').disabled = false;
-                }, 1500);
-            }, 1000);
+                    document.getElementById('ladder-start-btn').style.display = 'block';
+                    document.getElementById('stones-selector').style.display = 'block';
+                    document.getElementById('ladder-game-area').innerHTML = '';
+                }, 2000);
+            } else {
+                // Safe! Move to next level
+                row.cleared = true;
+                ladderLevel++;
+                
+                // Calculate new potential win
+                ladderCurrentWin = Math.floor(ladderBet * row.multiplier);
+                
+                // Apply premium multiplier
+                if (player.is_premium) {
+                    ladderCurrentWin = Math.floor(ladderCurrentWin * 2);
+                }
+                
+                renderLadderGame();
+                
+                // Check if reached the top
+                if (ladderLevel >= ladderRows.length) {
+                    await withdrawLadder();
+                }
+            }
         }
         
-        // Initialize app
+        async function withdrawLadder() {
+            if (!ladderPlaying || ladderLevel === 0) return;
+            
+            ladderPlaying = false;
+            
+            const winAmount = ladderCurrentWin;
+            const newBalance = player.balance + winAmount;
+            
+            await updateBalance(newBalance, 'web_ladder', ladderBet, winAmount);
+            
+            const resultDisplay = document.getElementById('ladder-result');
+            resultDisplay.className = 'result-display win';
+            resultDisplay.innerHTML = `🎉 Выигрыш +${formatNumber(winAmount)} 🪙`;
+            resultDisplay.style.display = 'block';
+            
+            setTimeout(() => {
+                document.getElementById('ladder-start-btn').style.display = 'block';
+                document.getElementById('stones-selector').style.display = 'block';
+                document.getElementById('ladder-game-area').innerHTML = '';
+            }, 2000);
+        }
+        
         init();
     </script>
 </body>
