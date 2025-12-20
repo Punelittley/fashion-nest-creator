@@ -587,6 +587,83 @@ export type Database = {
           },
         ]
       }
+      squid_jackpot_bets: {
+        Row: {
+          bet_amount: number
+          color: string
+          created_at: string | null
+          id: string
+          player_id: string
+          session_id: string
+        }
+        Insert: {
+          bet_amount: number
+          color: string
+          created_at?: string | null
+          id?: string
+          player_id: string
+          session_id: string
+        }
+        Update: {
+          bet_amount?: number
+          color?: string
+          created_at?: string | null
+          id?: string
+          player_id?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "squid_jackpot_bets_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "squid_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "squid_jackpot_bets_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "squid_jackpot_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      squid_jackpot_sessions: {
+        Row: {
+          created_at: string | null
+          finished_at: string | null
+          id: string
+          pool_amount: number
+          status: string
+          winner_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          finished_at?: string | null
+          id?: string
+          pool_amount?: number
+          status?: string
+          winner_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          finished_at?: string | null
+          id?: string
+          pool_amount?: number
+          status?: string
+          winner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "squid_jackpot_sessions_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "squid_players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       squid_player_businesses: {
         Row: {
           business_type: string
@@ -698,6 +775,7 @@ export type Database = {
           gift_count: number
           id: string
           is_premium: boolean | null
+          last_bp_claim: string | null
           last_daily_claim: string | null
           last_rob_time: string | null
           last_si_claim: string | null
@@ -720,6 +798,7 @@ export type Database = {
           gift_count?: number
           id?: string
           is_premium?: boolean | null
+          last_bp_claim?: string | null
           last_daily_claim?: string | null
           last_rob_time?: string | null
           last_si_claim?: string | null
@@ -742,6 +821,7 @@ export type Database = {
           gift_count?: number
           id?: string
           is_premium?: boolean | null
+          last_bp_claim?: string | null
           last_daily_claim?: string | null
           last_rob_time?: string | null
           last_si_claim?: string | null

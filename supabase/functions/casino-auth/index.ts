@@ -175,6 +175,239 @@ serve(async (req) => {
       );
     }
 
+    // JACKPOT ACTIONS
+    if (action === "jackpot_get_session") {
+      // Get or create active jackpot session
+      let { data: session } = await supabaseClient
+        .from("squid_jackpot_sessions")
+        .select("*")
+        .eq("status", "waiting")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!session) {
+        // Create new session
+        const { data: newSession, error: createError } = await supabaseClient
+          .from("squid_jackpot_sessions")
+          .insert({ pool_amount: 0, status: "waiting" })
+          .select()
+          .single();
+
+        if (createError) {
+          console.error("Error creating jackpot session:", createError);
+          return new Response(
+            JSON.stringify({ error: "Failed to create session" }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        session = newSession;
+      }
+
+      // Get bets for this session
+      const { data: bets } = await supabaseClient
+        .from("squid_jackpot_bets")
+        .select("*, squid_players(first_name, username)")
+        .eq("session_id", session.id);
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          session,
+          bets: bets || []
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === "jackpot_join") {
+      const { player_id, bet_amount, session_id } = body;
+
+      if (!player_id || !bet_amount || !session_id) {
+        return new Response(
+          JSON.stringify({ error: "player_id, bet_amount, and session_id are required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Check player balance
+      const { data: player } = await supabaseClient
+        .from("squid_players")
+        .select("balance, first_name, username")
+        .eq("id", player_id)
+        .single();
+
+      if (!player || player.balance < bet_amount) {
+        return new Response(
+          JSON.stringify({ error: "Insufficient balance" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Check session is still waiting
+      const { data: session } = await supabaseClient
+        .from("squid_jackpot_sessions")
+        .select("*")
+        .eq("id", session_id)
+        .eq("status", "waiting")
+        .single();
+
+      if (!session) {
+        return new Response(
+          JSON.stringify({ error: "Session not found or already spinning" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Deduct balance
+      await supabaseClient
+        .from("squid_players")
+        .update({ balance: player.balance - bet_amount })
+        .eq("id", player_id);
+
+      // Generate random color for player
+      const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c', '#e91e63', '#00bcd4'];
+      const color = colors[Math.floor(Math.random() * colors.length)];
+
+      // Check if player already has a bet in this session
+      const { data: existingBet } = await supabaseClient
+        .from("squid_jackpot_bets")
+        .select("*")
+        .eq("session_id", session_id)
+        .eq("player_id", player_id)
+        .maybeSingle();
+
+      if (existingBet) {
+        // Update existing bet
+        await supabaseClient
+          .from("squid_jackpot_bets")
+          .update({ bet_amount: existingBet.bet_amount + bet_amount })
+          .eq("id", existingBet.id);
+      } else {
+        // Create new bet
+        await supabaseClient
+          .from("squid_jackpot_bets")
+          .insert({
+            session_id,
+            player_id,
+            bet_amount,
+            color
+          });
+      }
+
+      // Update session pool
+      await supabaseClient
+        .from("squid_jackpot_sessions")
+        .update({ pool_amount: session.pool_amount + bet_amount })
+        .eq("id", session_id);
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          new_balance: player.balance - bet_amount
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === "jackpot_spin") {
+      const { session_id } = body;
+
+      // Get session and bets
+      const { data: session } = await supabaseClient
+        .from("squid_jackpot_sessions")
+        .select("*")
+        .eq("id", session_id)
+        .eq("status", "waiting")
+        .single();
+
+      if (!session) {
+        return new Response(
+          JSON.stringify({ error: "Session not found or already spinning" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const { data: bets } = await supabaseClient
+        .from("squid_jackpot_bets")
+        .select("*, squid_players(id, first_name, username)")
+        .eq("session_id", session_id);
+
+      if (!bets || bets.length < 2) {
+        return new Response(
+          JSON.stringify({ error: "Need at least 2 players" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Mark session as spinning
+      await supabaseClient
+        .from("squid_jackpot_sessions")
+        .update({ status: "spinning" })
+        .eq("id", session_id);
+
+      // Pick weighted random winner
+      const totalPool = bets.reduce((sum, b) => sum + b.bet_amount, 0);
+      const random = Math.random() * totalPool;
+      let cumulative = 0;
+      let winner = bets[0];
+
+      for (const bet of bets) {
+        cumulative += bet.bet_amount;
+        if (random <= cumulative) {
+          winner = bet;
+          break;
+        }
+      }
+
+      // Award winner
+      const { data: winnerPlayer } = await supabaseClient
+        .from("squid_players")
+        .select("balance")
+        .eq("id", winner.player_id)
+        .single();
+
+      await supabaseClient
+        .from("squid_players")
+        .update({ balance: (winnerPlayer?.balance || 0) + totalPool })
+        .eq("id", winner.player_id);
+
+      // Finish session
+      await supabaseClient
+        .from("squid_jackpot_sessions")
+        .update({ 
+          status: "finished", 
+          winner_id: winner.player_id,
+          finished_at: new Date().toISOString()
+        })
+        .eq("id", session_id);
+
+      // Log history for all participants
+      for (const bet of bets) {
+        await supabaseClient.from("squid_casino_history").insert({
+          player_id: bet.player_id,
+          game_type: "web_jackpot",
+          bet_amount: bet.bet_amount,
+          win_amount: bet.player_id === winner.player_id ? totalPool : 0,
+          result: { session_id, winner_id: winner.player_id },
+        });
+      }
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          winner: {
+            player_id: winner.player_id,
+            name: winner.squid_players?.first_name || winner.squid_players?.username || 'Игрок',
+            color: winner.color,
+            bet: winner.bet_amount
+          },
+          pool: totalPool
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     return new Response(
       JSON.stringify({ error: "Invalid action" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
