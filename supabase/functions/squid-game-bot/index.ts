@@ -64,6 +64,73 @@ async function sendMessage(chatId: number, text: string, replyMarkup?: any) {
   }
 }
 
+// Function to send photo with caption
+async function sendPhoto(chatId: number, photo: string, caption?: string, replyMarkup?: any) {
+  const body: any = { chat_id: chatId, photo, parse_mode: "HTML" };
+  if (caption) body.caption = caption;
+  if (replyMarkup) body.reply_markup = replyMarkup;
+
+  try {
+    const response = await fetch(`${TELEGRAM_API}/sendPhoto`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("Error sending photo:", error);
+  }
+}
+
+// Function to send animation (GIF)
+async function sendAnimation(chatId: number, animation: string, caption?: string, replyMarkup?: any) {
+  const body: any = { chat_id: chatId, animation, parse_mode: "HTML" };
+  if (caption) body.caption = caption;
+  if (replyMarkup) body.reply_markup = replyMarkup;
+
+  try {
+    const response = await fetch(`${TELEGRAM_API}/sendAnimation`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("Error sending animation:", error);
+  }
+}
+
+// Function to send video
+async function sendVideo(chatId: number, video: string, caption?: string, replyMarkup?: any) {
+  const body: any = { chat_id: chatId, video, parse_mode: "HTML" };
+  if (caption) body.caption = caption;
+  if (replyMarkup) body.reply_markup = replyMarkup;
+
+  try {
+    const response = await fetch(`${TELEGRAM_API}/sendVideo`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("Error sending video:", error);
+  }
+}
+
+// Function to send media with text (auto-detect type from URL)
+async function sendMediaWithText(chatId: number, mediaUrl: string, text: string, replyMarkup?: any) {
+  const lowerUrl = mediaUrl.toLowerCase();
+  
+  if (lowerUrl.includes('.gif') || lowerUrl.includes('giphy') || lowerUrl.includes('tenor')) {
+    return await sendAnimation(chatId, mediaUrl, text, replyMarkup);
+  } else if (lowerUrl.includes('.mp4') || lowerUrl.includes('.mov') || lowerUrl.includes('.avi') || lowerUrl.includes('video')) {
+    return await sendVideo(chatId, mediaUrl, text, replyMarkup);
+  } else {
+    return await sendPhoto(chatId, mediaUrl, text, replyMarkup);
+  }
+}
+
 async function editMessage(chatId: number, messageId: number, text: string, replyMarkup?: any) {
   const body: any = { chat_id: chatId, message_id: messageId, text, parse_mode: "HTML" };
   if (replyMarkup) body.reply_markup = replyMarkup;
@@ -3718,12 +3785,23 @@ serve(async (req) => {
         const firstSpace = args.indexOf(" ");
 
         if (firstSpace === -1) {
-          await sendMessage(chat.id, "❌ Формат: /gift_all [количество] [сообщение]");
+          await sendMessage(chat.id, "❌ Формат: /gift_all [количество] [сообщение] [ссылка на медиа - опционально]");
           return new Response("OK", { headers: corsHeaders });
         }
 
         const amount = parseInt(args.substring(0, firstSpace));
-        const messageText = args.substring(firstSpace + 1).trim();
+        const restArgs = args.substring(firstSpace + 1).trim();
+        
+        // Parse message and optional media URL
+        let messageText = restArgs;
+        let mediaUrl: string | null = null;
+        
+        // Check if there's a URL at the end (http/https)
+        const urlMatch = restArgs.match(/(https?:\/\/[^\s]+)$/);
+        if (urlMatch) {
+          mediaUrl = urlMatch[1];
+          messageText = restArgs.replace(mediaUrl, "").trim();
+        }
 
         if (isNaN(amount) || amount <= 0) {
           await sendMessage(chat.id, "❌ Количество подарков должно быть положительным числом!");
@@ -3745,6 +3823,8 @@ serve(async (req) => {
         let sent = 0;
         let failed = 0;
 
+        const fullMessage = `🎁 <b>Подарок от создателя!</b>\n\n🎁 Тебе начислено: ${amount} ${amount === 1 ? "подарок" : amount < 5 ? "подарка" : "подарков"}\n\n📢 ${messageText}\n\nОткрой подарки: /gift_open`;
+
         for (const player of allPlayers) {
           try {
             // Add gifts to player
@@ -3755,10 +3835,12 @@ serve(async (req) => {
 
             // Convert telegram_id to number (might be BigInt from DB)
             const telegramId = Number(player.telegram_id);
-            await sendMessage(
-              telegramId,
-              `🎁 <b>Подарок от создателя!</b>\n\n🎁 Тебе начислено: ${amount} ${amount === 1 ? "подарок" : amount < 5 ? "подарка" : "подарков"}\n\n📢 ${messageText}\n\nОткрой подарки: /gift_open`,
-            );
+            
+            if (mediaUrl) {
+              await sendMediaWithText(telegramId, mediaUrl, fullMessage);
+            } else {
+              await sendMessage(telegramId, fullMessage);
+            }
             sent++;
             await new Promise((resolve) => setTimeout(resolve, 50));
           } catch (e) {
@@ -3773,7 +3855,8 @@ serve(async (req) => {
             `🎁 Количество: ${amount} каждому\n` +
             `📤 Отправлено: ${sent}\n` +
             `❌ Не доставлено: ${failed}\n` +
-            `🎁 Всего выдано: ${sent * amount} подарков`,
+            `🎁 Всего выдано: ${sent * amount} подарков` +
+            (mediaUrl ? `\n📎 С медиа: ${mediaUrl}` : ""),
         );
       } else if (text.startsWith("/gift ")) {
         const { data: admin } = await supabaseClient
@@ -4049,6 +4132,86 @@ serve(async (req) => {
           chat.id,
           "🟢 <b>Бот включён!</b>\n\nБот теперь доступен для всех пользователей."
         );
+      } else if (text === "/bp") {
+        // New Year daily bonus command
+        const { data: player } = await supabaseClient
+          .from("squid_players")
+          .select("id, balance, last_bp_claim, gift_count")
+          .eq("telegram_id", from.id)
+          .single();
+
+        if (!player) {
+          await sendMessage(chat.id, "❌ Игрок не найден. Используй /start");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const now = new Date();
+        const lastClaim = player.last_bp_claim ? new Date(player.last_bp_claim) : null;
+        
+        // Check if already claimed today
+        if (lastClaim) {
+          const lastClaimDate = new Date(lastClaim.getFullYear(), lastClaim.getMonth(), lastClaim.getDate());
+          const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          
+          if (lastClaimDate.getTime() === todayDate.getTime()) {
+            const tomorrow = new Date(todayDate);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const hoursLeft = Math.ceil((tomorrow.getTime() - now.getTime()) / (1000 * 60 * 60));
+            
+            await sendMessage(
+              chat.id,
+              `⏰ <b>Ты уже получил бонус сегодня!</b>\n\nПриходи завтра через ${hoursLeft} ${hoursLeft === 1 ? "час" : hoursLeft < 5 ? "часа" : "часов"}.`
+            );
+            return new Response("OK", { headers: corsHeaders });
+          }
+        }
+
+        // Check if it's January 1st (New Year)
+        const isNewYear = now.getMonth() === 0 && now.getDate() === 1;
+        
+        if (isNewYear) {
+          // New Year special bonus - 20 gifts
+          const newGiftCount = (player.gift_count || 0) + 20;
+          
+          await supabaseClient
+            .from("squid_players")
+            .update({ 
+              gift_count: newGiftCount,
+              last_bp_claim: now.toISOString()
+            })
+            .eq("id", player.id);
+
+          await sendMessage(
+            chat.id,
+            `🎄 <b>С НОВЫМ ГОДОМ!</b> 🎄\n\n` +
+              `🎁 Тебе начислено: <b>20 подарков!</b>\n\n` +
+              `📢 Друзья, поздравляю вас с Новым годом, желаю вам только всего наилучшего, ` +
+              `пусть в следующем году ваши мечты и желания исполнятся все до единого. ` +
+              `Заберите все хорошее в этот год, а плохое оставьте в прошлом, с уважением squid game, by @COKPYIIIEHUE\n\n` +
+              `🎁 Всего подарков: ${newGiftCount}\n` +
+              `Открой их: /gift_open`
+          );
+        } else {
+          // Regular daily bonus - 10000 to 100000 coins
+          const bonusAmount = Math.floor(Math.random() * 90001) + 10000; // 10000 to 100000
+          const newBalance = (player.balance || 0) + bonusAmount;
+          
+          await supabaseClient
+            .from("squid_players")
+            .update({ 
+              balance: newBalance,
+              last_bp_claim: now.toISOString()
+            })
+            .eq("id", player.id);
+
+          await sendMessage(
+            chat.id,
+            `🎁 <b>Ежедневный бонус!</b>\n\n` +
+              `💰 Ты получил: <b>+${bonusAmount.toLocaleString()} монет!</b>\n\n` +
+              `💵 Новый баланс: ${newBalance.toLocaleString()} монет\n\n` +
+              `Приходи завтра за новым бонусом! 🎉`
+          );
+        }
       }
     }
 
