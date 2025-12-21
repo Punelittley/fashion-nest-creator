@@ -408,6 +408,98 @@ serve(async (req) => {
       );
     }
 
+    // JACKPOT CANCEL
+    if (action === "jackpot_cancel") {
+      const { player_id, session_id } = body;
+
+      if (!player_id || !session_id) {
+        return new Response(
+          JSON.stringify({ error: "player_id and session_id are required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Get session and check status
+      const { data: session } = await supabaseClient
+        .from("squid_jackpot_sessions")
+        .select("*")
+        .eq("id", session_id)
+        .eq("status", "waiting")
+        .single();
+
+      if (!session) {
+        return new Response(
+          JSON.stringify({ error: "Session not found or already spinning" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Get all bets for this session
+      const { data: allBets } = await supabaseClient
+        .from("squid_jackpot_bets")
+        .select("*")
+        .eq("session_id", session_id);
+
+      // Check if more than one player
+      if (allBets && allBets.length > 1) {
+        return new Response(
+          JSON.stringify({ error: "Нельзя отменить ставку - уже есть другие участники!" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Get player's bet
+      const { data: playerBet } = await supabaseClient
+        .from("squid_jackpot_bets")
+        .select("*")
+        .eq("session_id", session_id)
+        .eq("player_id", player_id)
+        .single();
+
+      if (!playerBet) {
+        return new Response(
+          JSON.stringify({ error: "У вас нет ставки в этой сессии" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Refund player
+      const { data: player } = await supabaseClient
+        .from("squid_players")
+        .select("balance")
+        .eq("id", player_id)
+        .single();
+
+      const newBalance = (player?.balance || 0) + playerBet.bet_amount;
+
+      await supabaseClient
+        .from("squid_players")
+        .update({ balance: newBalance })
+        .eq("id", player_id);
+
+      // Delete bet
+      await supabaseClient
+        .from("squid_jackpot_bets")
+        .delete()
+        .eq("id", playerBet.id);
+
+      // Update session pool
+      await supabaseClient
+        .from("squid_jackpot_sessions")
+        .update({ pool_amount: session.pool_amount - playerBet.bet_amount })
+        .eq("id", session_id);
+
+      console.log(`Jackpot bet cancelled: player ${player_id}, refunded ${playerBet.bet_amount}`);
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          new_balance: newBalance
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     return new Response(
       JSON.stringify({ error: "Invalid action" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
