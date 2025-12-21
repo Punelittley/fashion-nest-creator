@@ -20,6 +20,10 @@ interface TelegramUpdate {
     };
     from?: { id: number; username?: string; first_name?: string };
     text?: string;
+    caption?: string;
+    photo?: Array<{ file_id: string; file_unique_id: string; width: number; height: number }>;
+    video?: { file_id: string; file_unique_id: string; width: number; height: number; duration: number };
+    animation?: { file_id: string; file_unique_id: string; width: number; height: number; duration: number };
     reply_to_message?: {
       from?: { id: number; username?: string; first_name?: string };
     };
@@ -128,6 +132,41 @@ async function sendMediaWithText(chatId: number, mediaUrl: string, text: string,
     return await sendVideo(chatId, mediaUrl, text, replyMarkup);
   } else {
     return await sendPhoto(chatId, mediaUrl, text, replyMarkup);
+  }
+}
+
+// Function to send media by file_id (for forwarding attachments)
+async function sendMediaByFileId(chatId: number, fileId: string, mediaType: 'photo' | 'video' | 'animation', caption?: string) {
+  let endpoint = '';
+  let fieldName = '';
+  
+  switch (mediaType) {
+    case 'photo':
+      endpoint = 'sendPhoto';
+      fieldName = 'photo';
+      break;
+    case 'video':
+      endpoint = 'sendVideo';
+      fieldName = 'video';
+      break;
+    case 'animation':
+      endpoint = 'sendAnimation';
+      fieldName = 'animation';
+      break;
+  }
+  
+  const body: any = { chat_id: chatId, [fieldName]: fileId, parse_mode: "HTML" };
+  if (caption) body.caption = caption;
+  
+  try {
+    const response = await fetch(`${TELEGRAM_API}/${endpoint}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    return await response.json();
+  } catch (error) {
+    console.error(`Error sending ${mediaType}:`, error);
   }
 }
 
@@ -2611,7 +2650,7 @@ serve(async (req) => {
           chat.id,
           `✅ <b>Рассылка завершена!</b>\n\n📤 Отправлено: ${sent}\n❌ Не доставлено: ${failed}`,
         );
-      } else if (text.startsWith("/dep_all ")) {
+      } else if (text.startsWith("/dep_all ") || (update.message?.caption?.startsWith("/dep_all ") && (update.message?.photo || update.message?.video || update.message?.animation))) {
         const { data: admin } = await supabaseClient
           .from("squid_admins")
           .select("*")
@@ -2622,11 +2661,31 @@ serve(async (req) => {
           return new Response("OK", { headers: corsHeaders });
         }
 
-        const args = text.replace("/dep_all ", "").trim();
+        // Check for attached media
+        const hasPhoto = update.message?.photo && update.message.photo.length > 0;
+        const hasVideo = !!update.message?.video;
+        const hasAnimation = !!update.message?.animation;
+        
+        let mediaFileId: string | null = null;
+        let mediaType: 'photo' | 'video' | 'animation' | null = null;
+        
+        if (hasPhoto && update.message?.photo) {
+          mediaFileId = update.message.photo[update.message.photo.length - 1].file_id;
+          mediaType = 'photo';
+        } else if (hasVideo && update.message?.video) {
+          mediaFileId = update.message.video.file_id;
+          mediaType = 'video';
+        } else if (hasAnimation && update.message?.animation) {
+          mediaFileId = update.message.animation.file_id;
+          mediaType = 'animation';
+        }
+
+        const commandText = (hasPhoto || hasVideo || hasAnimation) ? (update.message?.caption || "") : text;
+        const args = commandText.replace("/dep_all ", "").trim();
         const firstSpace = args.indexOf(" ");
 
         if (firstSpace === -1) {
-          await sendMessage(chat.id, "❌ Формат: /dep_all [сумма] [текст сообщения]");
+          await sendMessage(chat.id, "❌ Формат: /dep_all [сумма] [текст]\n\n💡 Прикрепите фото/видео/GIF для рассылки с медиа!");
           return new Response("OK", { headers: corsHeaders });
         }
 
@@ -2652,19 +2711,21 @@ serve(async (req) => {
 
         let sent = 0;
         let failed = 0;
+        const fullMessage = `🎁 <b>Подарок от создателя!</b>\n\n💰 Тебе начислено: ${amount.toLocaleString()} монет\n\n📢 ${messageText}`;
 
         for (const player of allPlayers) {
           try {
-            // Add coins to player
             await supabaseClient
               .from("squid_players")
               .update({ balance: player.balance + amount })
               .eq("id", player.id);
 
-            await sendMessage(
-              player.telegram_id,
-              `🎁 <b>Подарок от создателя!</b>\n\n💰 Тебе начислено: ${amount.toLocaleString()} монет\n\n📢 ${messageText}`,
-            );
+            const telegramId = Number(player.telegram_id);
+            if (mediaFileId && mediaType) {
+              await sendMediaByFileId(telegramId, mediaFileId, mediaType, fullMessage);
+            } else {
+              await sendMessage(telegramId, fullMessage);
+            }
             sent++;
             await new Promise((resolve) => setTimeout(resolve, 50));
           } catch (e) {
@@ -2678,7 +2739,8 @@ serve(async (req) => {
             `💰 Сумма: ${amount.toLocaleString()} монет каждому\n` +
             `📤 Отправлено: ${sent}\n` +
             `❌ Не доставлено: ${failed}\n` +
-            `💵 Всего выдано: ${(sent * amount).toLocaleString()} монет`,
+            `💵 Всего выдано: ${(sent * amount).toLocaleString()} монет` +
+            (mediaFileId ? `\n📎 С прикреплённым медиа` : ""),
         );
       } else if (text.startsWith("/admin_delete_promo ")) {
         const { data: admin } = await supabaseClient
@@ -3770,7 +3832,7 @@ serve(async (req) => {
           chat.id,
           `🎁 <b>Открытие подарка</b>\n\n${rewardText}\n\n💵 Баланс: ${newBalance.toLocaleString()} монет\n🎁 Осталось подарков: ${remainingGifts}`,
         );
-      } else if (text.startsWith("/gift_all ")) {
+      } else if (text.startsWith("/gift_all ") || (update.message?.caption?.startsWith("/gift_all ") && (update.message?.photo || update.message?.video || update.message?.animation))) {
         const { data: admin } = await supabaseClient
           .from("squid_admins")
           .select("*")
@@ -3781,26 +3843,45 @@ serve(async (req) => {
           return new Response("OK", { headers: corsHeaders });
         }
 
-        const args = text.replace("/gift_all ", "").trim();
+        // Check for attached media
+        const hasPhoto = update.message?.photo && update.message.photo.length > 0;
+        const hasVideo = !!update.message?.video;
+        const hasAnimation = !!update.message?.animation;
+        const hasAttachedMedia = hasPhoto || hasVideo || hasAnimation;
+        
+        let mediaFileId: string | null = null;
+        let mediaType: 'photo' | 'video' | 'animation' | null = null;
+        
+        if (hasPhoto && update.message?.photo) {
+          mediaFileId = update.message.photo[update.message.photo.length - 1].file_id;
+          mediaType = 'photo';
+        } else if (hasVideo && update.message?.video) {
+          mediaFileId = update.message.video.file_id;
+          mediaType = 'video';
+        } else if (hasAnimation && update.message?.animation) {
+          mediaFileId = update.message.animation.file_id;
+          mediaType = 'animation';
+        }
+
+        // Use caption if media attached, otherwise use text
+        const commandText = hasAttachedMedia ? (update.message?.caption || "") : text;
+        const args = commandText.replace("/gift_all ", "").trim();
         const firstSpace = args.indexOf(" ");
 
         if (firstSpace === -1) {
-          await sendMessage(chat.id, "❌ Формат: /gift_all [количество] [сообщение] [ссылка на медиа - опционально]");
+          await sendMessage(chat.id, "❌ Формат: /gift_all [количество] [сообщение]\n\n💡 Прикрепите фото/видео/GIF к сообщению для рассылки с медиа!");
           return new Response("OK", { headers: corsHeaders });
         }
 
         const amount = parseInt(args.substring(0, firstSpace));
-        const restArgs = args.substring(firstSpace + 1).trim();
+        let messageText = args.substring(firstSpace + 1).trim();
         
-        // Parse message and optional media URL
-        let messageText = restArgs;
+        // Also check for URL in text for backward compatibility
         let mediaUrl: string | null = null;
-        
-        // Check if there's a URL at the end (http/https)
-        const urlMatch = restArgs.match(/(https?:\/\/[^\s]+)$/);
-        if (urlMatch) {
+        const urlMatch = messageText.match(/(https?:\/\/[^\s]+)$/);
+        if (urlMatch && !hasAttachedMedia) {
           mediaUrl = urlMatch[1];
-          messageText = restArgs.replace(mediaUrl, "").trim();
+          messageText = messageText.replace(mediaUrl, "").trim();
         }
 
         if (isNaN(amount) || amount <= 0) {
@@ -3836,7 +3917,9 @@ serve(async (req) => {
             // Convert telegram_id to number (might be BigInt from DB)
             const telegramId = Number(player.telegram_id);
             
-            if (mediaUrl) {
+            if (mediaFileId && mediaType) {
+              await sendMediaByFileId(telegramId, mediaFileId, mediaType, fullMessage);
+            } else if (mediaUrl) {
               await sendMediaWithText(telegramId, mediaUrl, fullMessage);
             } else {
               await sendMessage(telegramId, fullMessage);
@@ -3856,7 +3939,7 @@ serve(async (req) => {
             `📤 Отправлено: ${sent}\n` +
             `❌ Не доставлено: ${failed}\n` +
             `🎁 Всего выдано: ${sent * amount} подарков` +
-            (mediaUrl ? `\n📎 С медиа: ${mediaUrl}` : ""),
+            (mediaFileId ? `\n📎 С прикреплённым медиа` : mediaUrl ? `\n📎 С медиа: ${mediaUrl}` : ""),
         );
       } else if (text.startsWith("/gift ")) {
         const { data: admin } = await supabaseClient
