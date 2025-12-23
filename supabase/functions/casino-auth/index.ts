@@ -37,7 +37,7 @@ serve(async (req) => {
       // Try to get existing player
       let { data: player, error } = await supabaseClient
         .from("squid_players")
-        .select("*")
+        .select("*, casino_admin_mode, casino_downgrade")
         .eq("telegram_id", telegram_id)
         .maybeSingle();
 
@@ -97,6 +97,8 @@ serve(async (req) => {
             balance: player.balance,
             is_premium: player.is_premium,
             prefix: player.prefix,
+            casino_admin_mode: player.casino_admin_mode,
+            casino_downgrade: player.casino_downgrade,
           }
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -330,7 +332,7 @@ serve(async (req) => {
 
       const { data: bets } = await supabaseClient
         .from("squid_jackpot_bets")
-        .select("*, squid_players(id, first_name, username)")
+        .select("*, squid_players(id, first_name, username, casino_admin_mode)")
         .eq("session_id", session_id);
 
       if (!bets || bets.length < 2) {
@@ -346,17 +348,28 @@ serve(async (req) => {
         .update({ status: "spinning" })
         .eq("id", session_id);
 
-      // Pick weighted random winner
+      // Calculate total pool
       const totalPool = bets.reduce((sum, b) => sum + b.bet_amount, 0);
-      const random = Math.random() * totalPool;
-      let cumulative = 0;
-      let winner = bets[0];
 
-      for (const bet of bets) {
-        cumulative += bet.bet_amount;
-        if (random <= cumulative) {
-          winner = bet;
-          break;
+      // Check if any player has casino_admin_mode enabled
+      const adminBetIndex = bets.findIndex(b => b.squid_players?.casino_admin_mode === true);
+      
+      let winner;
+      if (adminBetIndex !== -1) {
+        // Admin always wins
+        winner = bets[adminBetIndex];
+      } else {
+        // Pick weighted random winner
+        const random = Math.random() * totalPool;
+        let cumulative = 0;
+        winner = bets[0];
+
+        for (const bet of bets) {
+          cumulative += bet.bet_amount;
+          if (random <= cumulative) {
+            winner = bet;
+            break;
+          }
         }
       }
 

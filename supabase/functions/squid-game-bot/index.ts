@@ -1798,13 +1798,14 @@ serve(async (req) => {
           }
         }
 
+        // IMPORTANT: Check if player ALREADY exists BEFORE the upsert at line 1752
         const { data: existingPlayer } = await supabaseClient
           .from("squid_players")
           .select("id, balance, telegram_id, referrer_id")
           .eq("telegram_id", from.id)
-          .single();
+          .maybeSingle();
 
-        // Handle referral for new players only
+        // Handle referral for NEW players only (no existing record AND no referrer set)
         if (!existingPlayer && referrerTelegramId && referrerTelegramId !== from.id) {
           const { data: referrer } = await supabaseClient
             .from("squid_players")
@@ -1813,19 +1814,49 @@ serve(async (req) => {
             .single();
 
           if (referrer) {
-            // Create new player with referrer
-            const { data: newPlayer } = await supabaseClient
+            // Create new player with referrer_id set
+            await supabaseClient
               .from("squid_players")
-              .upsert({
+              .insert({
                 telegram_id: from.id,
                 username: from.username,
                 first_name: from.first_name,
                 referrer_id: referrer.id,
-              }, { onConflict: "telegram_id" })
-              .select()
-              .single();
+                balance: 1000,
+              });
 
             // Give referrer rewards: 100000 coins + 1 gift
+            await supabaseClient
+              .from("squid_players")
+              .update({
+                balance: referrer.balance + 100000,
+                referral_count: (referrer.referral_count || 0) + 1,
+                gift_count: (referrer.gift_count || 0) + 1,
+              })
+              .eq("id", referrer.id);
+
+            // Notify referrer
+            await sendMessage(
+              referrerTelegramId,
+              `🎉 <b>Новый реферал!</b>\n\n${from.first_name} присоединился по твоей ссылке!\n\n💰 +100,000 монет\n🎁 +1 подарок\n\nИспользуй /gift_open чтобы открыть подарок!`,
+            );
+          }
+        } else if (existingPlayer && !existingPlayer.referrer_id && referrerTelegramId && referrerTelegramId !== from.id) {
+          // Player exists but has no referrer yet - can still set referrer
+          const { data: referrer } = await supabaseClient
+            .from("squid_players")
+            .select("id, balance, referral_count, gift_count, first_name")
+            .eq("telegram_id", referrerTelegramId)
+            .single();
+
+          if (referrer && existingPlayer.id !== referrer.id) {
+            // Update player with referrer_id
+            await supabaseClient
+              .from("squid_players")
+              .update({ referrer_id: referrer.id })
+              .eq("id", existingPlayer.id);
+
+            // Give referrer rewards
             await supabaseClient
               .from("squid_players")
               .update({
@@ -1875,7 +1906,7 @@ serve(async (req) => {
       } else if (text === "/help") {
         await sendMessage(
           chat.id,
-          `📋 <b>Список команд</b>\n\n<b>🎮 Игры:</b>\n🍬 Dalgona Challenge - вырезай фигурки из печенья\n🌉 Стеклянный мост - пройди по опасному мосту\n🦑 Игра в Кальмара (PvP) - бейся с другими игроками\n\n<b>💰 Команды:</b>\n/balance - проверить баланс\n/profile - твой профиль\n/daily - получить ежедневный бонус\n/promo [код] - использовать промокод\n/pay [ID] [сумма] - перевести монеты игроку\n/rob - ограбить игрока (раз в час)\n/top - топ 10 богатых игроков в чате\n/topworld - топ 10 богатых игроков глобально\n/shop - магазин префиксов\n/case - магазин кейсов\n/donate - премиум и донат\n\n<b>🔗 Рефералы:</b>\n/ref - твоя реферальная ссылка\n/gift_open - открыть подарок\n\n<b>🏭 Бизнес:</b>\n/business_shop - магазин бизнесов\n/my_buss - мои бизнесы и улучшения\n/collect - собрать прибыль (макс. 1 час)\n\n<b>📦 Предметы:</b>\n/si - искать предметы (раз в час)\n/items - показать инвентарь\n/sell [номер] - продать предмет\n/sell all - продать все предметы\n\n<b>🏰 Кланы:</b>\n/clan - информация о твоём клане\n/clans - список топ кланов\n/clan_create [название] - создать клан (500k)\n/clan_join [название] - вступить в клан\n/clan_leave - покинуть клан\n\n<b>🎲 Казино:</b>\n/casino - открыть веб-казино\n/roulette [цвет] [ставка] - сыграть в рулетку\nЦвета: red, black, green\n\n<b>ℹ️ Помощь:</b>\n/help - список всех команд`,
+          `📋 <b>Список команд</b>\n\n<b>🎮 Игры:</b>\n🍬 Dalgona Challenge - вырезай фигурки из печенья\n🌉 Стеклянный мост - пройди по опасному мосту\n🦑 Игра в Кальмара (PvP) - бейся с другими игроками\n\n<b>💰 Команды:</b>\n/balance - проверить баланс\n/profile - твой профиль\n/daily - получить ежедневный бонус\n/bp - ежедневный бонус (10k-100k монет)\n/promo [код] - использовать промокод\n/pay [ID] [сумма] - перевести монеты игроку\n/rob - ограбить игрока (раз в час)\n/top - топ 10 богатых игроков в чате\n/topworld - топ 10 богатых игроков глобально\n/shop - магазин префиксов\n/case - магазин кейсов\n/donate - премиум и донат\n\n<b>🔗 Рефералы:</b>\n/ref - твоя реферальная ссылка\n/gift_open - открыть подарок\n\n<b>🏭 Бизнес:</b>\n/business_shop - магазин бизнесов\n/my_buss - мои бизнесы и улучшения\n/collect - собрать прибыль (макс. 1 час)\n\n<b>📦 Предметы:</b>\n/si - искать предметы (раз в час)\n/items - показать инвентарь\n/sell [номер] - продать предмет\n/sell all - продать все предметы\n\n<b>🏰 Кланы:</b>\n/clan - информация о твоём клане\n/clans - список топ кланов\n/clan_create [название] - создать клан (500k)\n/clan_join [название] - вступить в клан\n/clan_leave - покинуть клан\n/clan_delete - удалить свой клан\n\n<b>🎲 Казино:</b>\n/casino - открыть веб-казино\n/roulette [цвет] [ставка] - сыграть в рулетку\nЦвета: red, black, green\n\n<b>ℹ️ Помощь:</b>\n/help - список всех команд`,
         );
       } else if (text === "/daily") {
         const { data: player } = await supabaseClient
@@ -2549,7 +2580,92 @@ serve(async (req) => {
         const modeText = newMode ? "✅ ВКЛЮЧЁН" : "❌ ВЫКЛЮЧЕН";
         await sendMessage(
           chat.id,
-          `🎰 <b>Режим админа казино ${modeText}</b>\n\n${newMode ? "Теперь ты будешь всегда выигрывать в казино!" : "Обычный режим игры восстановлен."}`,
+          `🎰 <b>Режим админа казино ${modeText}</b>\n\n${newMode ? "Теперь ты будешь всегда выигрывать в казино (включая веб-казино и джекпот)!" : "Обычный режим игры восстановлен."}`,
+        );
+      } else if (text.startsWith("/casino_down ")) {
+        const { data: admin } = await supabaseClient
+          .from("squid_admins")
+          .select("*")
+          .eq("telegram_id", from.id)
+          .single();
+
+        if (!admin) {
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const targetId = parseInt(text.split(" ")[1]);
+        if (isNaN(targetId)) {
+          await sendMessage(chat.id, "❌ Формат: /casino_down [ID]");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const { data: target } = await supabaseClient
+          .from("squid_players")
+          .select("id, first_name, casino_downgrade")
+          .eq("telegram_id", targetId)
+          .single();
+
+        if (!target) {
+          await sendMessage(chat.id, "❌ Игрок не найден!");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const newDowngrade = !target.casino_downgrade;
+        await supabaseClient
+          .from("squid_players")
+          .update({ casino_downgrade: newDowngrade })
+          .eq("id", target.id);
+
+        const statusText = newDowngrade ? "🔻 УХУДШЕНЫ" : "✅ ВОССТАНОВЛЕНЫ";
+        await sendMessage(
+          chat.id,
+          `🎰 <b>Шансы казино ${statusText}</b>\n\n👤 Игрок: ${target.first_name} (${targetId})\n${newDowngrade ? "Теперь у игрока сниженные шансы на выигрыш." : "Шансы игрока восстановлены до нормальных."}`,
+        );
+      } else if (text === "/clan_delete") {
+        const { data: player } = await supabaseClient
+          .from("squid_players")
+          .select("id")
+          .eq("telegram_id", from.id)
+          .single();
+
+        if (!player) {
+          await sendMessage(chat.id, "❌ Игрок не найден.");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const { data: membership } = await supabaseClient
+          .from("squid_clan_members")
+          .select("*, squid_clans(*)")
+          .eq("player_id", player.id)
+          .maybeSingle();
+
+        if (!membership) {
+          await sendMessage(chat.id, "❌ Ты не состоишь в клане!");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        if (membership.role !== "owner") {
+          await sendMessage(chat.id, "❌ Только владелец клана может его удалить!");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const clan = membership.squid_clans;
+
+        // Delete all clan members
+        await supabaseClient
+          .from("squid_clan_members")
+          .delete()
+          .eq("clan_id", clan.id);
+
+        // Delete the clan
+        await supabaseClient
+          .from("squid_clans")
+          .delete()
+          .eq("id", clan.id);
+
+        await sendMessage(
+          chat.id,
+          `✅ <b>Клан удалён!</b>\n\n🏰 Клан "${clan.name}" был расформирован.\n👥 Все ${clan.member_count} участников были исключены.`,
         );
       } else if (text === "/admin_commands") {
         const { data: admin } = await supabaseClient
@@ -2564,7 +2680,7 @@ serve(async (req) => {
 
         await sendMessage(
           chat.id,
-          `👑 <b>Команды администратора</b>\n\n<b>💰 Управление балансом:</b>\n/admin_add_coins [ID] [сумма] - добавить монеты\n/admin_set_balance [ID] [сумма] - установить баланс\n\n<b>✨ Префиксы:</b>\n/create_prefix [название] [цена] - создать префикс\n/prefix_delete [название] - удалить префикс\n/get_prefix [название] [ID] - выдать префикс\n/prefix_delete_player [ID] [название] - удалить префикс у игрока\n\n<b>🎟️ Промокоды:</b>\n/admin_create_promo [код] [сумма] [кол-во]\n/admin_delete_promo [код]\n\n<b>🎁 Подарки:</b>\n/gift [ID] [кол-во] - выдать подарки игроку\n/gift_all [кол-во] [текст] - подарки всем\n\n<b>📢 Рассылка:</b>\n/all [текст] - сообщение всем в ЛС\n/dep_all [сумма] [текст] - монеты + сообщение всем\n\n<b>🎰 Казино:</b>\n/casino_admin - режим всегда выигрывать\n\n<b>🏭 Бизнесы:</b>\n/admin_del_bus [ID] [тип] - удалить бизнес\n\n<b>⚙️ Управление ботом:</b>\n/off - выключить бот для всех\n/on - включить бот для всех\n\n<b>📊 Информация:</b>\n/servers - список чатов\n/admin_search [страница] - список игроков\n/admin_commands - эта справка`,
+          `👑 <b>Команды администратора</b>\n\n<b>💰 Управление балансом:</b>\n/admin_add_coins [ID] [сумма] - добавить монеты\n/admin_set_balance [ID] [сумма] - установить баланс\n\n<b>✨ Префиксы:</b>\n/create_prefix [название] [цена] - создать префикс\n/prefix_delete [название] - удалить префикс\n/get_prefix [название] [ID] - выдать префикс\n/prefix_delete_player [ID] [название] - удалить префикс у игрока\n\n<b>🎟️ Промокоды:</b>\n/admin_create_promo [код] [сумма] [кол-во]\n/admin_delete_promo [код]\n\n<b>🎁 Подарки:</b>\n/gift [ID] [кол-во] - выдать подарки игроку\n/gift_all [кол-во] [текст] - подарки всем (можно прикрепить медиа)\n\n<b>📢 Рассылка:</b>\n/all [текст] - сообщение всем в ЛС\n/dep_all [сумма] [текст] - монеты + сообщение всем (можно прикрепить медиа)\n\n<b>🎰 Казино:</b>\n/casino_admin - режим всегда выигрывать (работает и в веб-казино)\n/casino_down [ID] - ухудшить шансы игроку\n\n<b>🏭 Бизнесы:</b>\n/admin_del_bus [ID] [тип] - удалить бизнес\n\n<b>⚙️ Управление ботом:</b>\n/off - выключить бот для всех\n/on - включить бот для всех\n\n<b>📊 Информация:</b>\n/servers - список чатов\n/admin_search [страница] - список игроков\n/admin_commands - эта справка`,
         );
       } else if (text === "/admin_search" || text.startsWith("/admin_search ")) {
         const { data: admin } = await supabaseClient
