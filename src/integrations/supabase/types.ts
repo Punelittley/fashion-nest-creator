@@ -770,6 +770,7 @@ export type Database = {
         Row: {
           balance: number | null
           casino_admin_mode: boolean | null
+          casino_downgrade: boolean | null
           created_at: string | null
           first_name: string | null
           gift_count: number
@@ -793,6 +794,7 @@ export type Database = {
         Insert: {
           balance?: number | null
           casino_admin_mode?: boolean | null
+          casino_downgrade?: boolean | null
           created_at?: string | null
           first_name?: string | null
           gift_count?: number
@@ -816,6 +818,7 @@ export type Database = {
         Update: {
           balance?: number | null
           casino_admin_mode?: boolean | null
+          casino_downgrade?: boolean | null
           created_at?: string | null
           first_name?: string | null
           gift_count?: number

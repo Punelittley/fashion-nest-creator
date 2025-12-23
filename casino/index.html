@@ -1339,11 +1339,32 @@
             player.balance -= bet;
             updateBalanceDisplay();
             
-            const random = Math.random() * 100;
+            // Determine result based on player flags
             let resultColor;
-            if (random < 48.5) resultColor = 'red';
-            else if (random < 97) resultColor = 'black';
-            else resultColor = 'green';
+            if (player.casino_admin_mode) {
+                // Admin always wins - result matches their bet
+                resultColor = selectedColor;
+            } else if (player.casino_downgrade) {
+                // Downgraded player has much worse chances (80% lose)
+                const random = Math.random() * 100;
+                if (random < 80) {
+                    // Force a loss - pick color different from bet
+                    const otherColors = ['red', 'black', 'green'].filter(c => c !== selectedColor);
+                    resultColor = otherColors[Math.floor(Math.random() * otherColors.length)];
+                } else if (random < 90) {
+                    resultColor = 'red';
+                } else if (random < 99) {
+                    resultColor = 'black';
+                } else {
+                    resultColor = 'green';
+                }
+            } else {
+                // Normal chances - slightly reduced (red 46%, black 46%, green 2%)
+                const random = Math.random() * 100;
+                if (random < 46) resultColor = 'red';
+                else if (random < 92) resultColor = 'black';
+                else resultColor = 'green';
+            }
             
             let resultNumber;
             if (resultColor === 'green') {
@@ -1404,11 +1425,11 @@
         
         function getMinesMultiplier(revealed, totalMines) {
             const safeSpots = 25 - totalMines;
-            // Reduced multipliers - house edge increased
-            let multiplier = 0.97; // Start slightly below 1
+            // Reduced multipliers - house edge increased more
+            let multiplier = 0.95; // Start lower
             for (let i = 0; i < revealed; i++) {
-                // Reduced growth rate - multiplier grows slower
-                multiplier *= (safeSpots / (safeSpots - i)) * 0.92;
+                // Even slower growth rate
+                multiplier *= (safeSpots / (safeSpots - i)) * 0.88;
             }
             return Math.max(1.01, Math.round(multiplier * 100) / 100);
         }
@@ -1493,6 +1514,25 @@
             if (!minesPlaying || minesGrid[index].revealed) return;
             
             const cell = minesGrid[index];
+            
+            // For admin mode - never hit a mine
+            if (player.casino_admin_mode && cell.isMine) {
+                // Swap this mine with a non-revealed safe cell
+                for (let i = 0; i < minesGrid.length; i++) {
+                    if (!minesGrid[i].revealed && !minesGrid[i].isMine && i !== index) {
+                        minesGrid[i].isMine = true;
+                        cell.isMine = false;
+                        break;
+                    }
+                }
+            }
+            
+            // For downgraded player - higher chance to hit mine
+            if (player.casino_downgrade && !cell.isMine && Math.random() < 0.4) {
+                // 40% chance to convert a safe cell to a mine
+                cell.isMine = true;
+            }
+            
             cell.revealed = true;
             
             if (cell.isMine) {
@@ -1683,6 +1723,23 @@
             
             const row = ladderRows[rowIndex];
             const cell = row.cells[cellIndex];
+            
+            // For admin mode - never hit a mine
+            if (player.casino_admin_mode && cell.isMine) {
+                // Swap this mine with a safe cell in same row
+                for (let i = 0; i < row.cells.length; i++) {
+                    if (!row.cells[i].revealed && !row.cells[i].isMine && i !== cellIndex) {
+                        row.cells[i].isMine = true;
+                        cell.isMine = false;
+                        break;
+                    }
+                }
+            }
+            
+            // For downgraded player - higher chance to hit mine
+            if (player.casino_downgrade && !cell.isMine && Math.random() < 0.35) {
+                cell.isMine = true;
+            }
             
             cell.revealed = true;
             
