@@ -1906,7 +1906,7 @@ serve(async (req) => {
       } else if (text === "/help") {
         await sendMessage(
           chat.id,
-          `📋 <b>Список команд</b>\n\n<b>🎮 Игры:</b>\n🍬 Dalgona Challenge - вырезай фигурки из печенья\n🌉 Стеклянный мост - пройди по опасному мосту\n🦑 Игра в Кальмара (PvP) - бейся с другими игроками\n\n<b>⚔️ Дуэли:</b>\n/challenge [ставка] - ответь на сообщение игрока\n/challenge [ID] [ставка] - вызов по ID\n\n<b>💰 Команды:</b>\n/balance - проверить баланс\n/profile - твой профиль\n/daily - получить ежедневный бонус\n/bp - ежедневный бонус (10k-100k монет)\n/promo [код] - использовать промокод\n/pay [ID] [сумма] - перевести монеты игроку\n/rob - ограбить игрока (раз в час)\n/top - топ 10 богатых игроков в чате\n/topworld - топ 10 богатых игроков глобально\n/shop - магазин префиксов\n/case - магазин кейсов\n/donate - премиум и донат\n\n<b>🔗 Рефералы:</b>\n/ref - твоя реферальная ссылка\n/gift_open - открыть подарок\n\n<b>🏭 Бизнес:</b>\n/business_shop - магазин бизнесов\n/my_buss - мои бизнесы и улучшения\n/collect - собрать прибыль (макс. 1 час)\n\n<b>📦 Предметы:</b>\n/si - искать предметы (раз в час)\n/items - показать инвентарь\n/sell [номер] - продать предмет\n/sell all - продать все предметы\n\n<b>🏰 Кланы:</b>\n/clan - информация о твоём клане\n/clans - список топ кланов\n/clan_create [название] - создать клан (500k)\n/clan_join [название] - вступить в клан\n/clan_leave - покинуть клан\n/clan_delete - удалить свой клан\n\n<b>🎲 Казино:</b>\n/casino - открыть веб-казино\n/roulette [цвет] [ставка] - сыграть в рулетку\nЦвета: red, black, green\n\n<b>ℹ️ Помощь:</b>\n/help - список всех команд`,
+          `📋 <b>Список команд</b>\n\n<b>🎮 Игры:</b>\n🍬 Dalgona Challenge - вырезай фигурки из печенья\n🌉 Стеклянный мост - пройди по опасному мосту\n🦑 Игра в Кальмара (PvP) - бейся с другими игроками\n\n<b>⚔️ Дуэли:</b>\n/challenge [ставка] - ответь на сообщение игрока\n/challenge [ID] [ставка] - вызов по ID\n/accept - принять вызов (ответом на сообщение с вызовом)\n/decline - отказаться от вызова\n\n<b>💰 Команды:</b>\n/balance - проверить баланс\n/profile - твой профиль\n/daily - получить ежедневный бонус\n/bp - ежедневный бонус (10k-100k монет)\n/promo [код] - использовать промокод\n/pay [ID] [сумма] - перевести монеты игроку\n/rob - ограбить игрока (раз в час)\n/top - топ 10 богатых игроков в чате\n/topworld - топ 10 богатых игроков глобально\n/shop - магазин префиксов\n/case - магазин кейсов\n/donate - премиум и донат\n\n<b>🔗 Рефералы:</b>\n/ref - твоя реферальная ссылка\n/gift_open - открыть подарок\n\n<b>🏭 Бизнес:</b>\n/business_shop - магазин бизнесов\n/my_buss - мои бизнесы и улучшения\n/collect - собрать прибыль (макс. 1 час)\n\n<b>📦 Предметы:</b>\n/si - искать предметы (раз в час)\n/items - показать инвентарь\n/sell [номер] - продать предмет\n/sell all - продать все предметы\n\n<b>🏰 Кланы:</b>\n/clan - информация о твоём клане\n/clans - список топ кланов\n/clan_create [название] - создать клан (500k)\n/clan_join [название] - вступить в клан\n/clan_leave - покинуть клан\n/clan_delete - удалить свой клан\n\n<b>🎲 Казино:</b>\n/casino - открыть веб-казино\n🎰 Рулетка • 💣 Мины • 🪜 Лестница • 🎁 Джекпот • 🚀 Краш\n/roulette [цвет] [ставка] - сыграть в рулетку\nЦвета: red, black, green\n\n<b>ℹ️ Помощь:</b>\n/help - список всех команд`,
         );
       } else if (text === "/daily") {
         const { data: player } = await supabaseClient
@@ -2139,6 +2139,139 @@ serve(async (req) => {
         } else {
           await sendMessage(targetTelegramId, challengeMessage, challengeButtons);
         }
+      } else if (text === "/accept") {
+        // Accept challenge by replying to the challenge message
+        const replyTo = update.message?.reply_to_message;
+        
+        if (!replyTo) {
+          await sendMessage(chat.id, "❌ Ответь на сообщение с вызовом на дуэль, чтобы принять его!");
+          return new Response("OK", { headers: corsHeaders });
+        }
+        
+        // Find active challenge for this player
+        const { data: playerData } = await supabaseClient
+          .from("squid_players")
+          .select("id, balance, first_name")
+          .eq("telegram_id", from.id)
+          .single();
+          
+        if (!playerData) {
+          await sendMessage(chat.id, "❌ Ты не зарегистрирован. Используй /start");
+          return new Response("OK", { headers: corsHeaders });
+        }
+        
+        // Find waiting challenge where this player is the target
+        const { data: sessions } = await supabaseClient
+          .from("squid_game_sessions")
+          .select("*, player1:squid_players!player1_id(telegram_id, first_name)")
+          .eq("status", "waiting")
+          .eq("game_type", "squid_pvp");
+          
+        // Find session where this player was challenged
+        const session = sessions?.find((s: any) => {
+          const gameData = s.game_data as any;
+          return gameData?.target_telegram_id === from.id;
+        });
+        
+        if (!session) {
+          await sendMessage(chat.id, "❌ Активный вызов не найден!");
+          return new Response("OK", { headers: corsHeaders });
+        }
+        
+        if (playerData.balance < session.bet_amount) {
+          await sendMessage(chat.id, `❌ Недостаточно монет! Нужно ${session.bet_amount.toLocaleString()} монет.`);
+          return new Response("OK", { headers: corsHeaders });
+        }
+        
+        // Deduct bets from both players
+        const { data: player1Data } = await supabaseClient
+          .from("squid_players")
+          .select("balance")
+          .eq("id", session.player1_id)
+          .single();
+          
+        await supabaseClient
+          .from("squid_players")
+          .update({ balance: playerData.balance - session.bet_amount })
+          .eq("id", playerData.id);
+          
+        await supabaseClient
+          .from("squid_players")
+          .update({ balance: (player1Data?.balance || 0) - session.bet_amount })
+          .eq("id", session.player1_id);
+          
+        // Initialize game with 3 lives each
+        const gameData = {
+          player1_hp: 3,
+          player2_hp: 3,
+          current_turn: "player1",
+          moves: [],
+        };
+        
+        await supabaseClient
+          .from("squid_game_sessions")
+          .update({
+            player2_id: playerData.id,
+            status: "active",
+            game_data: gameData,
+          })
+          .eq("id", session.id);
+          
+        const player1Name = (session.player1 as any).first_name;
+        const player2Name = playerData.first_name;
+        const player1TgId = (session.player1 as any).telegram_id;
+        
+        // Send interactive buttons to both players
+        await sendMessage(
+          player1TgId,
+          `⚔️ <b>Игра началась!</b>\n\nТы против ${player2Name}\nСтавка: ${session.bet_amount} монет\n\n❤️ Твоё HP: ${gameData.player1_hp}\n❤️ HP противника: ${gameData.player2_hp}\n\n🎯 <b>Твой ход!</b>`,
+          {
+            inline_keyboard: [[{ text: "⚔️ Ударить", callback_data: `squid_attack_${session.id}_p1` }]],
+          },
+        );
+        
+        await sendMessage(
+          chat.id,
+          `⚔️ <b>Игра началась!</b>\n\nТы против ${player1Name}\nСтавка: ${session.bet_amount} монет\n\n❤️ Твоё HP: ${gameData.player2_hp}\n❤️ HP противника: ${gameData.player1_hp}\n\n⏳ Ожидание хода противника...`,
+        );
+      } else if (text === "/decline") {
+        // Decline challenge
+        const { data: playerData } = await supabaseClient
+          .from("squid_players")
+          .select("id")
+          .eq("telegram_id", from.id)
+          .single();
+          
+        if (!playerData) {
+          await sendMessage(chat.id, "❌ Ты не зарегистрирован. Используй /start");
+          return new Response("OK", { headers: corsHeaders });
+        }
+        
+        // Find waiting challenge where this player is the target
+        const { data: sessions } = await supabaseClient
+          .from("squid_game_sessions")
+          .select("*, player1:squid_players!player1_id(telegram_id, first_name)")
+          .eq("status", "waiting")
+          .eq("game_type", "squid_pvp");
+          
+        const session = sessions?.find((s: any) => {
+          const gameData = s.game_data as any;
+          return gameData?.target_telegram_id === from.id;
+        });
+        
+        if (!session) {
+          await sendMessage(chat.id, "❌ Активный вызов не найден!");
+          return new Response("OK", { headers: corsHeaders });
+        }
+        
+        await supabaseClient
+          .from("squid_game_sessions")
+          .update({ status: "cancelled" })
+          .eq("id", session.id);
+          
+        const player1TgId = (session.player1 as any).telegram_id;
+        await sendMessage(player1TgId, `❌ ${from.first_name} отказался от вызова.`);
+        await sendMessage(chat.id, `❌ Ты отказался от вызова.`);
       } else if (text.startsWith("/pay ")) {
         const args = text.split(" ");
         if (args.length !== 3) {
