@@ -1906,7 +1906,7 @@ serve(async (req) => {
       } else if (text === "/help") {
         await sendMessage(
           chat.id,
-          `📋 <b>Список команд</b>\n\n<b>🎮 Игры:</b>\n🍬 Dalgona Challenge - вырезай фигурки из печенья\n🌉 Стеклянный мост - пройди по опасному мосту\n🦑 Игра в Кальмара (PvP) - бейся с другими игроками\n\n<b>💰 Команды:</b>\n/balance - проверить баланс\n/profile - твой профиль\n/daily - получить ежедневный бонус\n/bp - ежедневный бонус (10k-100k монет)\n/promo [код] - использовать промокод\n/pay [ID] [сумма] - перевести монеты игроку\n/rob - ограбить игрока (раз в час)\n/top - топ 10 богатых игроков в чате\n/topworld - топ 10 богатых игроков глобально\n/shop - магазин префиксов\n/case - магазин кейсов\n/donate - премиум и донат\n\n<b>🔗 Рефералы:</b>\n/ref - твоя реферальная ссылка\n/gift_open - открыть подарок\n\n<b>🏭 Бизнес:</b>\n/business_shop - магазин бизнесов\n/my_buss - мои бизнесы и улучшения\n/collect - собрать прибыль (макс. 1 час)\n\n<b>📦 Предметы:</b>\n/si - искать предметы (раз в час)\n/items - показать инвентарь\n/sell [номер] - продать предмет\n/sell all - продать все предметы\n\n<b>🏰 Кланы:</b>\n/clan - информация о твоём клане\n/clans - список топ кланов\n/clan_create [название] - создать клан (500k)\n/clan_join [название] - вступить в клан\n/clan_leave - покинуть клан\n/clan_delete - удалить свой клан\n\n<b>🎲 Казино:</b>\n/casino - открыть веб-казино\n/roulette [цвет] [ставка] - сыграть в рулетку\nЦвета: red, black, green\n\n<b>ℹ️ Помощь:</b>\n/help - список всех команд`,
+          `📋 <b>Список команд</b>\n\n<b>🎮 Игры:</b>\n🍬 Dalgona Challenge - вырезай фигурки из печенья\n🌉 Стеклянный мост - пройди по опасному мосту\n🦑 Игра в Кальмара (PvP) - бейся с другими игроками\n\n<b>⚔️ Дуэли:</b>\n/challenge [ставка] - ответь на сообщение игрока\n/challenge [ID] [ставка] - вызов по ID\n\n<b>💰 Команды:</b>\n/balance - проверить баланс\n/profile - твой профиль\n/daily - получить ежедневный бонус\n/bp - ежедневный бонус (10k-100k монет)\n/promo [код] - использовать промокод\n/pay [ID] [сумма] - перевести монеты игроку\n/rob - ограбить игрока (раз в час)\n/top - топ 10 богатых игроков в чате\n/topworld - топ 10 богатых игроков глобально\n/shop - магазин префиксов\n/case - магазин кейсов\n/donate - премиум и донат\n\n<b>🔗 Рефералы:</b>\n/ref - твоя реферальная ссылка\n/gift_open - открыть подарок\n\n<b>🏭 Бизнес:</b>\n/business_shop - магазин бизнесов\n/my_buss - мои бизнесы и улучшения\n/collect - собрать прибыль (макс. 1 час)\n\n<b>📦 Предметы:</b>\n/si - искать предметы (раз в час)\n/items - показать инвентарь\n/sell [номер] - продать предмет\n/sell all - продать все предметы\n\n<b>🏰 Кланы:</b>\n/clan - информация о твоём клане\n/clans - список топ кланов\n/clan_create [название] - создать клан (500k)\n/clan_join [название] - вступить в клан\n/clan_leave - покинуть клан\n/clan_delete - удалить свой клан\n\n<b>🎲 Казино:</b>\n/casino - открыть веб-казино\n/roulette [цвет] [ставка] - сыграть в рулетку\nЦвета: red, black, green\n\n<b>ℹ️ Помощь:</b>\n/help - список всех команд`,
         );
       } else if (text === "/daily") {
         const { data: player } = await supabaseClient
@@ -2017,72 +2017,128 @@ serve(async (req) => {
           chat.id,
           `✅ <b>Промокод активирован!</b>\n\n+${promo.reward_amount} монет\n💰 Новый баланс: ${player.balance + promo.reward_amount} монет`,
         );
-      } else if (text.startsWith("/challenge ")) {
-        const args = text.split(" ");
-        if (args.length !== 3) {
-          await sendMessage(chat.id, "❌ Формат: /challenge [Telegram_ID] [ставка]");
+      } else if (text.startsWith("/challenge") && (text === "/challenge" || text.startsWith("/challenge "))) {
+        // Support both /challenge ID bet and reply with /challenge bet
+        const replyTo = update.message?.reply_to_message;
+        const args = text.split(" ").filter(a => a.length > 0);
+        
+        let targetTelegramId: number | null = null;
+        let betAmount: number | null = null;
+        
+        if (replyTo && replyTo.from) {
+          // Reply mode: /challenge [ставка]
+          targetTelegramId = replyTo.from.id;
+          if (args.length >= 2) {
+            betAmount = parseInt(args[1]);
+          }
+        } else {
+          // Direct mode: /challenge [ID] [ставка]
+          if (args.length >= 3) {
+            targetTelegramId = parseInt(args[1]);
+            betAmount = parseInt(args[2]);
+          }
+        }
+        
+        if (!targetTelegramId || !betAmount || isNaN(betAmount) || betAmount <= 0) {
+          await sendMessage(
+            chat.id, 
+            "❌ <b>Формат команды:</b>\n\n" +
+            "1️⃣ Ответь на сообщение игрока и напиши:\n<code>/challenge [ставка]</code>\n\n" +
+            "2️⃣ Или напиши напрямую:\n<code>/challenge [Telegram_ID] [ставка]</code>\n\n" +
+            "Например: /challenge 100 (в ответ на сообщение)\nИли: /challenge 123456789 100"
+          );
           return new Response("OK", { headers: corsHeaders });
         }
 
-        const targetId = parseInt(args[1]);
-        const betAmount = parseInt(args[2]);
-
-        if (targetId === from.id) {
+        if (targetTelegramId === from.id) {
           await sendMessage(chat.id, "❌ Ты не можешь вызвать сам себя!");
           return new Response("OK", { headers: corsHeaders });
         }
 
         const { data: challenger } = await supabaseClient
           .from("squid_players")
-          .select("id, balance, first_name")
+          .select("id, balance, first_name, prefix")
           .eq("telegram_id", from.id)
           .single();
 
-        if (!challenger || challenger.balance < betAmount) {
-          await sendMessage(chat.id, "❌ Недостаточно монет для ставки!");
+        if (!challenger) {
+          await sendMessage(chat.id, "❌ Ты не зарегистрирован. Используй /start");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        if (challenger.balance < betAmount) {
+          await sendMessage(chat.id, `❌ Недостаточно монет для ставки!\n\nТвой баланс: ${challenger.balance.toLocaleString()} монет\nНужно: ${betAmount.toLocaleString()} монет`);
           return new Response("OK", { headers: corsHeaders });
         }
 
         const { data: target } = await supabaseClient
           .from("squid_players")
-          .select("id, balance, first_name")
-          .eq("telegram_id", targetId)
+          .select("id, balance, first_name, prefix, telegram_id")
+          .eq("telegram_id", targetTelegramId)
           .single();
 
         if (!target) {
-          await sendMessage(chat.id, "❌ Игрок не найден!");
+          await sendMessage(chat.id, "❌ Игрок не найден! Он должен сначала использовать /start в боте.");
           return new Response("OK", { headers: corsHeaders });
         }
 
         if (target.balance < betAmount) {
-          await sendMessage(chat.id, "❌ У твоего противника недостаточно монет!");
+          await sendMessage(chat.id, `❌ У противника недостаточно монет!\n\nЕго баланс: ${target.balance.toLocaleString()} монет\nНужно: ${betAmount.toLocaleString()} монет`);
           return new Response("OK", { headers: corsHeaders });
         }
 
         // Create game session
-        const { data: session } = await supabaseClient
+        const { data: session, error: sessionError } = await supabaseClient
           .from("squid_game_sessions")
           .insert({
             player1_id: challenger.id,
             game_type: "squid_pvp",
             bet_amount: betAmount,
             status: "waiting",
+            game_data: { challenger_telegram_id: from.id, target_telegram_id: targetTelegramId }
           })
           .select()
           .single();
 
-        await sendMessage(chat.id, `✅ Вызов отправлен игроку ${target.first_name}!`);
+        if (sessionError || !session) {
+          console.error("Error creating challenge session:", sessionError);
+          await sendMessage(chat.id, "❌ Ошибка при создании вызова. Попробуй позже.");
+          return new Response("OK", { headers: corsHeaders });
+        }
 
-        await sendMessage(
-          targetId,
-          `⚔️ <b>Вызов на Игру в Кальмара!</b>\n\n${challenger.first_name} вызывает тебя на дуэль!\n💰 Ставка: ${betAmount} монет\n\nПринимаешь вызов?`,
-          {
-            inline_keyboard: [
-              [{ text: "✅ Принять", callback_data: `accept_challenge_${session?.id}_u${targetId}` }],
-              [{ text: "❌ Отказать", callback_data: `decline_challenge_${session?.id}_u${targetId}` }],
+        const challengerName = challenger.prefix 
+          ? `[${challenger.prefix}] ${challenger.first_name}` 
+          : challenger.first_name;
+        
+        const targetName = target.prefix 
+          ? `[${target.prefix}] ${target.first_name}` 
+          : target.first_name;
+
+        await sendMessage(chat.id, `✅ Вызов на дуэль отправлен игроку ${targetName}!\n\n💰 Ставка: ${betAmount.toLocaleString()} монет\n⏳ Ожидание ответа...`);
+
+        // Send challenge to target player - in same chat if it's a group, or DM if private
+        const challengeMessage = 
+          `⚔️ <b>ВЫЗОВ НА ДУЭЛЬ!</b> ⚔️\n\n` +
+          `👤 ${challengerName} вызывает тебя на Игру в Кальмара!\n\n` +
+          `💰 Ставка: <b>${betAmount.toLocaleString()} монет</b>\n` +
+          `🎮 Игра: Бой 3 на 3 HP\n\n` +
+          `Принимаешь вызов?`;
+        
+        const challengeButtons = {
+          inline_keyboard: [
+            [
+              { text: "✅ Принять вызов", callback_data: `accept_challenge_${session.id}_u${targetTelegramId}` },
+              { text: "❌ Отказаться", callback_data: `decline_challenge_${session.id}_u${targetTelegramId}` }
             ],
-          },
-        );
+          ],
+        };
+
+        // Send to the same chat if it's a group, or to target's DM
+        if (chat.type !== "private") {
+          await sendMessage(chat.id, challengeMessage, challengeButtons);
+        } else {
+          await sendMessage(targetTelegramId, challengeMessage, challengeButtons);
+        }
       } else if (text.startsWith("/pay ")) {
         const args = text.split(" ");
         if (args.length !== 3) {
@@ -2601,7 +2657,7 @@ serve(async (req) => {
 
         const { data: target } = await supabaseClient
           .from("squid_players")
-          .select("id, first_name, casino_downgrade")
+          .select("id, first_name, casino_downgrade, telegram_id")
           .eq("telegram_id", targetId)
           .single();
 
@@ -2610,17 +2666,26 @@ serve(async (req) => {
           return new Response("OK", { headers: corsHeaders });
         }
 
-        const newDowngrade = !target.casino_downgrade;
-        await supabaseClient
+        const newDowngrade = target.casino_downgrade ? false : true;
+        
+        const { error: updateError } = await supabaseClient
           .from("squid_players")
           .update({ casino_downgrade: newDowngrade })
-          .eq("id", target.id);
+          .eq("telegram_id", targetId);
+
+        if (updateError) {
+          console.error("Error updating casino_downgrade:", updateError);
+          await sendMessage(chat.id, `❌ Ошибка при обновлении: ${updateError.message}`);
+          return new Response("OK", { headers: corsHeaders });
+        }
 
         const statusText = newDowngrade ? "🔻 УХУДШЕНЫ" : "✅ ВОССТАНОВЛЕНЫ";
         await sendMessage(
           chat.id,
-          `🎰 <b>Шансы казино ${statusText}</b>\n\n👤 Игрок: ${target.first_name} (${targetId})\n${newDowngrade ? "Теперь у игрока сниженные шансы на выигрыш." : "Шансы игрока восстановлены до нормальных."}`,
+          `🎰 <b>Шансы казино ${statusText}</b>\n\n👤 Игрок: ${target.first_name} (${targetId})\n${newDowngrade ? "Теперь у игрока сниженные шансы на выигрыш в казино (веб и бот)." : "Шансы игрока восстановлены до нормальных."}`,
         );
+        
+        console.log(`Casino downgrade set to ${newDowngrade} for player ${targetId}`);
       } else if (text === "/clan_delete") {
         const { data: player } = await supabaseClient
           .from("squid_players")
