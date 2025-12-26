@@ -124,239 +124,94 @@ const Header = () => {
   };
 
   return (
-    <header style={{
-      position: "sticky",
-      top: 0,
-      zIndex: 50,
-      backgroundColor: "hsl(var(--background))",
-      borderBottom: "1px solid hsl(var(--border))",
-      boxShadow: "var(--shadow-soft)"
-    }}>
-      <nav style={{
-        maxWidth: "1400px",
-        margin: "0 auto",
-        padding: "1rem 2rem",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between"
-      }}>
-        <Link to="/" style={{
-          display: "flex",
-          alignItems: "center",
-          textDecoration: "none"
-        }}>
+    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-primary/20 shadow-lg shadow-primary/5">
+      <nav className="max-w-[1400px] mx-auto px-8 py-4 flex items-center justify-between">
+        <Link to="/" className="flex items-center gap-3 group">
           <img 
             src={logo} 
             alt="Logo" 
-            style={{
-              height: "50px",
-              width: "auto"
-            }}
+            className="h-12 w-auto transition-transform duration-300 group-hover:scale-105"
           />
+          <span className="text-xl font-orbitron font-bold text-gradient-gold hidden sm:block">
+            CASINO
+          </span>
         </Link>
 
-        <div style={{
-          display: "flex",
-          gap: "2rem",
-          alignItems: "center"
-        }} className="desktop-menu">
-          <Link to="/catalog" style={{
-            color: "hsl(var(--foreground))",
-            textDecoration: "none",
-            fontSize: "0.95rem",
-            transition: "var(--transition)"
-          }} onMouseEnter={(e) => e.currentTarget.style.color = "hsl(var(--accent))"}
-             onMouseLeave={(e) => e.currentTarget.style.color = "hsl(var(--foreground))"}>
+        <div className="hidden md:flex gap-8 items-center">
+          <Link to="/catalog" className="text-foreground/80 hover:text-accent transition-colors duration-300 font-medium">
             Каталог
           </Link>
-          <Link to="/delivery" style={{
-            color: "hsl(var(--foreground))",
-            textDecoration: "none",
-            fontSize: "0.95rem",
-            transition: "var(--transition)"
-          }} onMouseEnter={(e) => e.currentTarget.style.color = "hsl(var(--accent))"}
-             onMouseLeave={(e) => e.currentTarget.style.color = "hsl(var(--foreground))"}>
+          <Link to="/delivery" className="text-foreground/80 hover:text-accent transition-colors duration-300 font-medium">
             Доставка
           </Link>
-          <Link to="/support" style={{
-            color: "hsl(var(--foreground))",
-            textDecoration: "none",
-            fontSize: "0.95rem",
-            transition: "var(--transition)"
-          }} onMouseEnter={(e) => e.currentTarget.style.color = "hsl(var(--accent))"}
-             onMouseLeave={(e) => e.currentTarget.style.color = "hsl(var(--foreground))"}>
+          <Link to="/support" className="text-foreground/80 hover:text-accent transition-colors duration-300 font-medium">
             Поддержка
           </Link>
-          <Link to="/contacts" style={{
-            color: "hsl(var(--foreground))",
-            textDecoration: "none",
-            fontSize: "0.95rem",
-            transition: "var(--transition)"
-          }} onMouseEnter={(e) => e.currentTarget.style.color = "hsl(var(--accent))"}
-             onMouseLeave={(e) => e.currentTarget.style.color = "hsl(var(--foreground))"}>
+          <Link to="/contacts" className="text-foreground/80 hover:text-accent transition-colors duration-300 font-medium">
             Контакты
           </Link>
-          <Link to="/about" style={{
-            color: "hsl(var(--foreground))",
-            textDecoration: "none",
-            fontSize: "0.95rem",
-            transition: "var(--transition)"
-          }} onMouseEnter={(e) => e.currentTarget.style.color = "hsl(var(--accent))"}
-             onMouseLeave={(e) => e.currentTarget.style.color = "hsl(var(--foreground))"}>
+          <Link to="/about" className="text-foreground/80 hover:text-accent transition-colors duration-300 font-medium">
             О нас
           </Link>
         </div>
 
-        <div style={{
-          display: "flex",
-          gap: "1.5rem",
-          alignItems: "center"
-        }}>
+        <div className="flex gap-4 items-center">
           {isAuthenticated ? (
             <>
-              <Link to="/wishlist" style={{
-                position: "relative",
-                color: "hsl(var(--foreground))",
-                transition: "var(--transition)"
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.color = "hsl(var(--accent))"}
-              onMouseLeave={(e) => e.currentTarget.style.color = "hsl(var(--foreground))"}>
+              <Link to="/wishlist" className="text-foreground/80 hover:text-accent transition-colors duration-300 p-2 rounded-lg hover:bg-primary/10">
                 <Heart size={22} />
               </Link>
-              <Link to="/cart" style={{
-                position: "relative",
-                color: "hsl(var(--foreground))",
-                transition: "var(--transition)"
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.color = "hsl(var(--accent))"}
-              onMouseLeave={(e) => e.currentTarget.style.color = "hsl(var(--foreground))"}>
+              <Link to="/cart" className="relative text-foreground/80 hover:text-accent transition-colors duration-300 p-2 rounded-lg hover:bg-primary/10">
                 <ShoppingCart size={22} />
                 {cartCount > 0 && (
-                  <span style={{
-                    position: "absolute",
-                    top: "-8px",
-                    right: "-8px",
-                    backgroundColor: "hsl(var(--accent))",
-                    color: "hsl(var(--accent-foreground))",
-                    borderRadius: "50%",
-                    width: "18px",
-                    height: "18px",
-                    fontSize: "0.7rem",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: "600"
-                  }}>
+                  <span className="absolute -top-1 -right-1 bg-accent text-accent-foreground rounded-full w-5 h-5 text-xs flex items-center justify-center font-bold animate-pulse-glow">
                     {cartCount}
                   </span>
                 )}
               </Link>
-              <Link to="/profile" style={{ 
-                color: "hsl(var(--foreground))", 
-                transition: "var(--transition)" 
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.color = "hsl(var(--accent))"}
-              onMouseLeave={(e) => e.currentTarget.style.color = "hsl(var(--foreground))"}>
+              <Link to="/profile" className="text-foreground/80 hover:text-accent transition-colors duration-300 p-2 rounded-lg hover:bg-primary/10">
                 <User size={22} />
               </Link>
               {isAdmin && (
-                <Link to="/admin" style={{ color: "hsl(var(--accent))", transition: "var(--transition)" }}>
+                <Link to="/admin" className="text-accent hover:text-accent/80 transition-colors duration-300 p-2 rounded-lg hover:bg-accent/10">
                   <LayoutDashboard size={22} />
                 </Link>
               )}
-              <button onClick={handleLogout} style={{
-                background: "none",
-                border: "none",
-                color: "hsl(var(--foreground))",
-                cursor: "pointer",
-                padding: 0,
-                transition: "var(--transition)"
-              }}>
+              <button onClick={handleLogout} className="text-foreground/80 hover:text-destructive transition-colors duration-300 p-2 rounded-lg hover:bg-destructive/10">
                 <LogOut size={22} />
               </button>
             </>
           ) : (
-            <Link to="/auth" style={{
-              padding: "0.5rem 1.5rem",
-              backgroundColor: "hsl(var(--primary))",
-              color: "hsl(var(--primary-foreground))",
-              textDecoration: "none",
-              fontSize: "0.9rem",
-              transition: "var(--transition)",
-              display: "inline-block"
-            }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "hsl(var(--accent))"}
-               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "hsl(var(--primary))"}>
+            <Link to="/auth" className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25 transition-all duration-300 hover:-translate-y-0.5">
               Войти
             </Link>
           )}
           
-          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} style={{
-            display: "none",
-            background: "none",
-            border: "none",
-            color: "hsl(var(--foreground))",
-            cursor: "pointer",
-            padding: 0
-          }} className="mobile-menu-btn">
+          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden text-foreground p-2">
             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
       </nav>
 
       {mobileMenuOpen && (
-        <div style={{
-          backgroundColor: "hsl(var(--background))",
-          borderTop: "1px solid hsl(var(--border))",
-          padding: "1rem 2rem"
-        }} className="mobile-menu-content">
-          <Link to="/catalog" onClick={() => setMobileMenuOpen(false)} style={{
-            display: "block",
-            padding: "0.75rem 0",
-            color: "hsl(var(--foreground))",
-            textDecoration: "none",
-            borderBottom: "1px solid hsl(var(--border))"
-          }}>
+        <div className="md:hidden bg-background/95 backdrop-blur-md border-t border-primary/20 px-8 py-4">
+          <Link to="/catalog" onClick={() => setMobileMenuOpen(false)} className="block py-3 text-foreground/80 hover:text-accent border-b border-border/50">
             Каталог
           </Link>
-          <Link to="/delivery" onClick={() => setMobileMenuOpen(false)} style={{
-            display: "block",
-            padding: "0.75rem 0",
-            color: "hsl(var(--foreground))",
-            textDecoration: "none",
-            borderBottom: "1px solid hsl(var(--border))"
-          }}>
+          <Link to="/delivery" onClick={() => setMobileMenuOpen(false)} className="block py-3 text-foreground/80 hover:text-accent border-b border-border/50">
             Доставка
           </Link>
-          <Link to="/contacts" onClick={() => setMobileMenuOpen(false)} style={{
-            display: "block",
-            padding: "0.75rem 0",
-            color: "hsl(var(--foreground))",
-            textDecoration: "none",
-            borderBottom: "1px solid hsl(var(--border))"
-          }}>
+          <Link to="/support" onClick={() => setMobileMenuOpen(false)} className="block py-3 text-foreground/80 hover:text-accent border-b border-border/50">
+            Поддержка
+          </Link>
+          <Link to="/contacts" onClick={() => setMobileMenuOpen(false)} className="block py-3 text-foreground/80 hover:text-accent border-b border-border/50">
             Контакты
           </Link>
-          <Link to="/about" onClick={() => setMobileMenuOpen(false)} style={{
-            display: "block",
-            padding: "0.75rem 0",
-            color: "hsl(var(--foreground))",
-            textDecoration: "none"
-          }}>
+          <Link to="/about" onClick={() => setMobileMenuOpen(false)} className="block py-3 text-foreground/80 hover:text-accent">
             О нас
           </Link>
         </div>
       )}
-
-      <style>{`
-        @media (max-width: 768px) {
-          .desktop-menu {
-            display: none !important;
-          }
-          .mobile-menu-btn {
-            display: block !important;
-          }
-        }
-      `}</style>
     </header>
   );
 };
