@@ -14,21 +14,23 @@
         }
         
         :root {
-            --primary: #ff0066;
-            --primary-glow: #ff0066;
-            --secondary: #00ff88;
-            --dark: #0a0a0f;
-            --darker: #050508;
-            --card-bg: rgba(20, 20, 30, 0.9);
+            --primary: #d4a014;
+            --primary-glow: #f5d742;
+            --secondary: #c9a227;
+            --dark: #1a1812;
+            --darker: #0d0b08;
+            --card-bg: rgba(30, 25, 18, 0.95);
             --gold: #ffd700;
-            --jackpot: #9b59b6;
+            --jackpot: #b8860b;
+            --white: #fffef5;
+            --cream: #f5f0e1;
         }
         
         body {
             font-family: 'Rajdhani', sans-serif;
-            background: var(--darker);
+            background: linear-gradient(180deg, #1a1812 0%, #0d0b08 50%, #1a1408 100%);
             min-height: 100vh;
-            color: #fff;
+            color: var(--white);
             overflow-x: hidden;
             position: relative;
         }
@@ -41,8 +43,9 @@
             right: 0;
             bottom: 0;
             background: 
-                radial-gradient(circle at 20% 20%, rgba(255, 0, 102, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(0, 255, 136, 0.1) 0%, transparent 50%);
+                radial-gradient(circle at 20% 20%, rgba(212, 160, 20, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 215, 0, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(245, 240, 225, 0.05) 0%, transparent 70%);
             pointer-events: none;
             z-index: 0;
         }
@@ -54,8 +57,8 @@
             right: 0;
             bottom: 0;
             background-image: 
-                linear-gradient(rgba(255, 0, 102, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 0, 102, 0.03) 1px, transparent 1px);
+                linear-gradient(rgba(212, 160, 20, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(212, 160, 20, 0.05) 1px, transparent 1px);
             background-size: 50px 50px;
             animation: gridMove 20s linear infinite;
             pointer-events: none;
@@ -142,26 +145,26 @@
         .squid-icon {
             width: 50px;
             height: 50px;
-            background: linear-gradient(135deg, var(--primary), #cc0052);
+            background: linear-gradient(135deg, var(--gold), #b8860b);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.5rem;
-            box-shadow: 0 0 25px rgba(255, 0, 102, 0.6);
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.6);
             animation: pulse 2s ease-in-out infinite;
         }
         
         @keyframes pulse {
-            0%, 100% { box-shadow: 0 0 25px rgba(255, 0, 102, 0.6); }
-            50% { box-shadow: 0 0 40px rgba(255, 0, 102, 0.8); }
+            0%, 100% { box-shadow: 0 0 25px rgba(255, 215, 0, 0.6); }
+            50% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.8); }
         }
         
         .header h1 {
             font-family: 'Orbitron', sans-serif;
             font-size: 1.6rem;
             font-weight: 900;
-            background: linear-gradient(135deg, var(--primary), #ff3388);
+            background: linear-gradient(135deg, var(--gold), #fffef5);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -170,8 +173,8 @@
         }
         
         .balance-card {
-            background: linear-gradient(135deg, rgba(255, 0, 102, 0.1), rgba(20, 20, 30, 0.95));
-            border: 2px solid rgba(255, 0, 102, 0.3);
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(30, 25, 18, 0.95));
+            border: 2px solid rgba(255, 215, 0, 0.4);
             border-radius: 15px;
             padding: 15px 25px;
             display: inline-block;
@@ -187,7 +190,7 @@
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 0, 102, 0.2), transparent);
+            background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.3), transparent);
             animation: shine 3s ease-in-out infinite;
         }
         
@@ -215,12 +218,12 @@
             text-align: center;
             margin-bottom: 15px;
             padding: 8px 15px;
-            background: rgba(255, 0, 102, 0.1);
+            background: rgba(255, 215, 0, 0.1);
             border-radius: 25px;
             display: inline-block;
             font-weight: 600;
-            color: var(--primary);
-            border: 1px solid rgba(255, 0, 102, 0.2);
+            color: var(--gold);
+            border: 1px solid rgba(255, 215, 0, 0.3);
             font-size: 0.9rem;
         }
         
@@ -266,13 +269,13 @@
         
         .game-tab:hover {
             color: #fff;
-            background: rgba(255,0,102,0.2);
+            background: rgba(255, 215, 0, 0.2);
         }
         
         .game-tab.active {
-            background: linear-gradient(135deg, var(--primary), #cc0052);
-            color: #fff;
-            box-shadow: 0 0 20px rgba(255,0,102,0.4);
+            background: linear-gradient(135deg, var(--gold), #b8860b);
+            color: #000;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
         }
         
         .game-tab-icon {
@@ -295,7 +298,7 @@
             padding: 20px;
             margin-bottom: 15px;
             backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 0, 102, 0.2);
+            border: 1px solid rgba(255, 215, 0, 0.2);
             position: relative;
             overflow: hidden;
         }
@@ -307,7 +310,7 @@
             left: 0;
             right: 0;
             height: 3px;
-            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--primary));
+            background: linear-gradient(90deg, var(--gold), var(--cream), var(--gold));
         }
         
         .game-title {
@@ -317,13 +320,13 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            color: #fff;
+            color: var(--cream);
         }
         
         .game-icon {
             width: 40px;
             height: 40px;
-            background: linear-gradient(135deg, var(--primary), rgba(255, 0, 102, 0.5));
+            background: linear-gradient(135deg, var(--gold), rgba(255, 215, 0, 0.5));
             border-radius: 10px;
             display: flex;
             align-items: center;
@@ -338,7 +341,7 @@
             overflow: hidden;
             border-radius: 15px;
             background: rgba(0, 0, 0, 0.5);
-            border: 2px solid rgba(255, 0, 102, 0.3);
+            border: 2px solid rgba(255, 215, 0, 0.3);
         }
         
         .roulette-viewport {
@@ -402,10 +405,10 @@
         .bet-input {
             flex: 1;
             padding: 12px 15px;
-            border: 2px solid rgba(255, 0, 102, 0.3);
+            border: 2px solid rgba(255, 215, 0, 0.3);
             border-radius: 12px;
-            background: rgba(10, 10, 15, 0.8);
-            color: #fff;
+            background: rgba(20, 18, 12, 0.9);
+            color: var(--cream);
             font-family: 'Orbitron', sans-serif;
             font-size: 0.95rem;
             outline: none;
@@ -413,8 +416,14 @@
         }
         
         .bet-input:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 15px rgba(255, 0, 102, 0.3);
+            border-color: var(--gold);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+        }
+        
+        .bet-input:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: rgba(50, 45, 35, 0.8);
         }
         
         .bet-input::placeholder { color: rgba(255, 255, 255, 0.3); }
@@ -462,21 +471,21 @@
         }
         
         .action-btn.primary {
-            background: linear-gradient(135deg, var(--primary), #cc0052);
-            color: #fff;
-            box-shadow: 0 5px 25px rgba(255, 0, 102, 0.4);
+            background: linear-gradient(135deg, var(--gold), #b8860b);
+            color: #1a1812;
+            box-shadow: 0 5px 25px rgba(255, 215, 0, 0.4);
         }
         
         .action-btn.success {
-            background: linear-gradient(135deg, var(--secondary), #00cc6a);
-            color: #000;
-            box-shadow: 0 5px 25px rgba(0, 255, 136, 0.4);
+            background: linear-gradient(135deg, #27ae60, #1e8449);
+            color: #fff;
+            box-shadow: 0 5px 25px rgba(39, 174, 96, 0.4);
         }
         
         .action-btn.jackpot {
-            background: linear-gradient(135deg, var(--jackpot), #8e44ad);
-            color: #fff;
-            box-shadow: 0 5px 25px rgba(155, 89, 182, 0.4);
+            background: linear-gradient(135deg, var(--jackpot), #8b7355);
+            color: var(--cream);
+            box-shadow: 0 5px 25px rgba(184, 134, 11, 0.4);
         }
         
         .action-btn:hover { transform: translateY(-2px); }
@@ -1471,6 +1480,8 @@
             
             isSpinning = true;
             document.getElementById('spin-btn').disabled = true;
+            document.getElementById('roulette-bet').disabled = true;
+            document.querySelectorAll('.color-btn').forEach(btn => btn.disabled = true);
             document.getElementById('roulette-result').style.display = 'none';
             
             player.balance -= bet;
@@ -1482,24 +1493,14 @@
                 // Admin always wins - result matches their bet
                 resultColor = selectedColor;
             } else if (player.casino_downgrade) {
-                // Downgraded player has much worse chances (80% lose)
-                const random = Math.random() * 100;
-                if (random < 80) {
-                    // Force a loss - pick color different from bet
-                    const otherColors = ['red', 'black', 'green'].filter(c => c !== selectedColor);
-                    resultColor = otherColors[Math.floor(Math.random() * otherColors.length)];
-                } else if (random < 90) {
-                    resultColor = 'red';
-                } else if (random < 99) {
-                    resultColor = 'black';
-                } else {
-                    resultColor = 'green';
-                }
+                // Downgraded player ALWAYS LOSES - 100% loss
+                const otherColors = ['red', 'black', 'green'].filter(c => c !== selectedColor);
+                resultColor = otherColors[Math.floor(Math.random() * otherColors.length)];
             } else {
-                // Normal chances - slightly reduced (red 46%, black 46%, green 2%)
+                // Normal chances - reduced (red 49.975%, black 49.975%, green 0.05%)
                 const random = Math.random() * 100;
-                if (random < 46) resultColor = 'red';
-                else if (random < 92) resultColor = 'black';
+                if (random < 49.975) resultColor = 'red';
+                else if (random < 99.95) resultColor = 'black';
                 else resultColor = 'green';
             }
             
@@ -1544,6 +1545,8 @@
                 resultDisplay.style.display = 'block';
                 isSpinning = false;
                 document.getElementById('spin-btn').disabled = false;
+                document.getElementById('roulette-bet').disabled = false;
+                document.querySelectorAll('.color-btn').forEach(btn => btn.disabled = false);
                 
                 setTimeout(() => {
                     strip.style.transition = 'none';
@@ -1608,6 +1611,7 @@
             
             document.getElementById('mines-start-btn').style.display = 'none';
             document.getElementById('mines-selector').style.display = 'none';
+            document.getElementById('mines-bet').disabled = true;
             document.getElementById('mines-result').style.display = 'none';
             
             renderMinesGame();
@@ -1664,9 +1668,9 @@
                 }
             }
             
-            // For downgraded player - higher chance to hit mine
-            if (player.casino_downgrade && !cell.isMine && Math.random() < 0.4) {
-                // 40% chance to convert a safe cell to a mine
+            // For downgraded player - ALWAYS hit mine
+            if (player.casino_downgrade && !cell.isMine) {
+                // 100% chance to convert safe cell to mine
                 cell.isMine = true;
             }
             
@@ -1724,6 +1728,7 @@
             minesRevealed = 0;
             document.getElementById('mines-start-btn').style.display = 'block';
             document.getElementById('mines-selector').style.display = 'block';
+            document.getElementById('mines-bet').disabled = false;
             document.getElementById('mines-game-area').innerHTML = '';
         }
         
@@ -1797,6 +1802,7 @@
             
             document.getElementById('ladder-start-btn').style.display = 'none';
             document.getElementById('ladder-selector').style.display = 'none';
+            document.getElementById('ladder-bet').disabled = true;
             document.getElementById('ladder-result').style.display = 'none';
             
             renderLadderGame();
@@ -1873,8 +1879,8 @@
                 }
             }
             
-            // For downgraded player - higher chance to hit mine
-            if (player.casino_downgrade && !cell.isMine && Math.random() < 0.35) {
+            // For downgraded player - ALWAYS hit mine
+            if (player.casino_downgrade && !cell.isMine) {
                 cell.isMine = true;
             }
             
@@ -1934,6 +1940,7 @@
             ladderLevel = 0;
             document.getElementById('ladder-start-btn').style.display = 'block';
             document.getElementById('ladder-selector').style.display = 'block';
+            document.getElementById('ladder-bet').disabled = false;
             document.getElementById('ladder-game-area').innerHTML = '';
         }
         
@@ -1963,6 +1970,7 @@
             
             document.getElementById('crash-btn').style.display = 'none';
             document.getElementById('crash-cashout-btn').style.display = 'block';
+            document.getElementById('crash-bet').disabled = true;
             document.getElementById('crash-result').style.display = 'none';
             
             const multiplierEl = document.getElementById('crash-multiplier');
@@ -1976,23 +1984,23 @@
                 // Admin always gets high multiplier
                 crashPoint = 5 + Math.random() * 10;
             } else if (player.casino_downgrade) {
-                // Downgraded players get low multipliers
-                crashPoint = 1.01 + Math.random() * 0.5;
+                // Downgraded players INSTANT crash - always lose
+                crashPoint = 1.00;
             } else {
-                // Normal crash calculation with house edge
+                // Normal crash calculation - increased house edge
                 const r = Math.random();
-                if (r < 0.02) {
-                    crashPoint = 1.00; // Instant crash 2%
-                } else if (r < 0.15) {
-                    crashPoint = 1.01 + Math.random() * 0.49; // Low 13%
-                } else if (r < 0.50) {
-                    crashPoint = 1.50 + Math.random() * 1.0; // Medium 35%
-                } else if (r < 0.80) {
-                    crashPoint = 2.50 + Math.random() * 2.5; // Good 30%
-                } else if (r < 0.95) {
-                    crashPoint = 5 + Math.random() * 5; // Great 15%
+                if (r < 0.08) {
+                    crashPoint = 1.00; // Instant crash 8%
+                } else if (r < 0.30) {
+                    crashPoint = 1.01 + Math.random() * 0.49; // Low 22%
+                } else if (r < 0.60) {
+                    crashPoint = 1.50 + Math.random() * 0.8; // Medium-Low 30%
+                } else if (r < 0.85) {
+                    crashPoint = 2.30 + Math.random() * 1.5; // Medium 25%
+                } else if (r < 0.97) {
+                    crashPoint = 3.80 + Math.random() * 3; // Good 12%
                 } else {
-                    crashPoint = 10 + Math.random() * 40; // Massive 5%
+                    crashPoint = 6.80 + Math.random() * 15; // Great 3%
                 }
             }
             
@@ -2077,6 +2085,7 @@
             crashMultiplier = 1.00;
             document.getElementById('crash-btn').style.display = 'block';
             document.getElementById('crash-cashout-btn').style.display = 'none';
+            document.getElementById('crash-bet').disabled = false;
             document.getElementById('crash-multiplier').textContent = '1.00x';
             document.getElementById('crash-multiplier').className = 'crash-multiplier';
             document.getElementById('crash-status').textContent = 'Ожидание ставки...';
