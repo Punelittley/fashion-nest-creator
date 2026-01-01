@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>🦑 Squid Casino</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -14,23 +14,31 @@
         }
         
         :root {
-            --primary: #d4a014;
-            --primary-glow: #f5d742;
-            --secondary: #c9a227;
-            --dark: #1a1812;
-            --darker: #0d0b08;
-            --card-bg: rgba(30, 25, 18, 0.95);
-            --gold: #ffd700;
-            --jackpot: #b8860b;
-            --white: #fffef5;
-            --cream: #f5f0e1;
+            --primary: #e8b923;
+            --primary-glow: #ffd54f;
+            --accent: #00e5ff;
+            --accent-dark: #00b8d4;
+            --bg-dark: #0a0a12;
+            --bg-card: rgba(18, 18, 28, 0.95);
+            --bg-card-hover: rgba(28, 28, 42, 0.95);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --text-muted: rgba(255, 255, 255, 0.4);
+            --border: rgba(232, 185, 35, 0.2);
+            --border-accent: rgba(0, 229, 255, 0.3);
+            --success: #00e676;
+            --danger: #ff1744;
+            --gradient-gold: linear-gradient(135deg, #e8b923 0%, #ffd54f 50%, #e8b923 100%);
+            --gradient-accent: linear-gradient(135deg, #00e5ff 0%, #00b8d4 100%);
+            --shadow-gold: 0 0 30px rgba(232, 185, 35, 0.4);
+            --shadow-accent: 0 0 30px rgba(0, 229, 255, 0.4);
         }
         
         body {
-            font-family: 'Rajdhani', sans-serif;
-            background: linear-gradient(180deg, #1a1812 0%, #0d0b08 50%, #1a1408 100%);
+            font-family: 'Montserrat', sans-serif;
+            background: var(--bg-dark);
             min-height: 100vh;
-            color: var(--white);
+            color: var(--text-primary);
             overflow-x: hidden;
             position: relative;
         }
@@ -43,142 +51,126 @@
             right: 0;
             bottom: 0;
             background: 
-                radial-gradient(circle at 20% 20%, rgba(212, 160, 20, 0.2) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(255, 215, 0, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 50% 50%, rgba(245, 240, 225, 0.05) 0%, transparent 70%);
+                radial-gradient(ellipse at 20% 0%, rgba(232, 185, 35, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(0, 229, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(232, 185, 35, 0.05) 0%, transparent 70%);
             pointer-events: none;
             z-index: 0;
         }
         
-        .grid-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-image: 
-                linear-gradient(rgba(212, 160, 20, 0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(212, 160, 20, 0.05) 1px, transparent 1px);
-            background-size: 50px 50px;
-            animation: gridMove 20s linear infinite;
-            pointer-events: none;
-            z-index: 0;
-        }
-        
-        @keyframes gridMove {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(50px, 50px); }
-        }
-        
-        /* SNOWFLAKES */
-        .snowflakes {
+        /* Animated particles */
+        .particles {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             pointer-events: none;
-            z-index: 1000;
+            z-index: 0;
             overflow: hidden;
         }
         
-        .snowflake {
+        .particle {
             position: absolute;
-            top: -20px;
-            color: #fff;
-            font-size: 1rem;
-            opacity: 0.8;
-            animation: fall linear infinite;
-            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+            width: 4px;
+            height: 4px;
+            background: var(--primary);
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: float-particle 15s infinite;
         }
         
-        @keyframes fall {
-            0% {
-                transform: translateY(-20px) rotate(0deg);
-                opacity: 0.8;
-            }
-            100% {
-                transform: translateY(100vh) rotate(360deg);
-                opacity: 0.3;
-            }
+        @keyframes float-particle {
+            0%, 100% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.5; }
+            90% { opacity: 0.5; }
+            100% { transform: translateY(-100vh) rotate(720deg); opacity: 0; }
         }
         
-        .snowflake:nth-child(1) { left: 5%; animation-duration: 8s; animation-delay: 0s; font-size: 0.8rem; }
-        .snowflake:nth-child(2) { left: 15%; animation-duration: 12s; animation-delay: 2s; font-size: 1.2rem; }
-        .snowflake:nth-child(3) { left: 25%; animation-duration: 10s; animation-delay: 4s; font-size: 1rem; }
-        .snowflake:nth-child(4) { left: 35%; animation-duration: 14s; animation-delay: 1s; font-size: 0.9rem; }
-        .snowflake:nth-child(5) { left: 45%; animation-duration: 9s; animation-delay: 3s; font-size: 1.1rem; }
-        .snowflake:nth-child(6) { left: 55%; animation-duration: 11s; animation-delay: 5s; font-size: 0.7rem; }
-        .snowflake:nth-child(7) { left: 65%; animation-duration: 13s; animation-delay: 2.5s; font-size: 1rem; }
-        .snowflake:nth-child(8) { left: 75%; animation-duration: 8s; animation-delay: 0.5s; font-size: 1.3rem; }
-        .snowflake:nth-child(9) { left: 85%; animation-duration: 10s; animation-delay: 4.5s; font-size: 0.8rem; }
-        .snowflake:nth-child(10) { left: 95%; animation-duration: 15s; animation-delay: 1.5s; font-size: 1rem; }
-        .snowflake:nth-child(11) { left: 10%; animation-duration: 7s; animation-delay: 6s; font-size: 0.9rem; }
-        .snowflake:nth-child(12) { left: 30%; animation-duration: 16s; animation-delay: 3.5s; font-size: 1.1rem; }
-        .snowflake:nth-child(13) { left: 50%; animation-duration: 9s; animation-delay: 7s; font-size: 0.6rem; }
-        .snowflake:nth-child(14) { left: 70%; animation-duration: 11s; animation-delay: 0.8s; font-size: 1.2rem; }
-        .snowflake:nth-child(15) { left: 90%; animation-duration: 13s; animation-delay: 5.5s; font-size: 0.85rem; }
+        .particle:nth-child(1) { left: 10%; animation-delay: 0s; animation-duration: 12s; }
+        .particle:nth-child(2) { left: 20%; animation-delay: 2s; animation-duration: 14s; background: var(--accent); }
+        .particle:nth-child(3) { left: 30%; animation-delay: 4s; animation-duration: 11s; }
+        .particle:nth-child(4) { left: 40%; animation-delay: 1s; animation-duration: 16s; background: var(--accent); }
+        .particle:nth-child(5) { left: 50%; animation-delay: 3s; animation-duration: 13s; }
+        .particle:nth-child(6) { left: 60%; animation-delay: 5s; animation-duration: 15s; background: var(--accent); }
+        .particle:nth-child(7) { left: 70%; animation-delay: 2.5s; animation-duration: 12s; }
+        .particle:nth-child(8) { left: 80%; animation-delay: 0.5s; animation-duration: 14s; background: var(--accent); }
+        .particle:nth-child(9) { left: 90%; animation-delay: 4.5s; animation-duration: 11s; }
+        .particle:nth-child(10) { left: 5%; animation-delay: 1.5s; animation-duration: 17s; background: var(--accent); }
         
         .container {
-            max-width: 500px;
+            max-width: 480px;
             margin: 0 auto;
-            padding: 15px;
+            padding: 16px;
             min-height: 100vh;
             position: relative;
             z-index: 1;
         }
         
+        /* Header */
         .header {
             text-align: center;
-            padding: 15px 0;
-            margin-bottom: 15px;
+            padding: 20px 0;
+            margin-bottom: 20px;
         }
         
         .logo {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
-            margin-bottom: 15px;
+            gap: 14px;
+            margin-bottom: 16px;
         }
         
-        .squid-icon {
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, var(--gold), #b8860b);
-            border-radius: 50%;
+        .logo-icon {
+            width: 56px;
+            height: 56px;
+            background: var(--gradient-gold);
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
-            box-shadow: 0 0 25px rgba(255, 215, 0, 0.6);
-            animation: pulse 2s ease-in-out infinite;
+            font-size: 1.8rem;
+            box-shadow: var(--shadow-gold);
+            animation: logo-glow 3s ease-in-out infinite;
+            position: relative;
         }
         
-        @keyframes pulse {
-            0%, 100% { box-shadow: 0 0 25px rgba(255, 215, 0, 0.6); }
-            50% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.8); }
+        .logo-icon::before {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            background: var(--gradient-gold);
+            border-radius: 18px;
+            z-index: -1;
+            opacity: 0.5;
+            filter: blur(10px);
+        }
+        
+        @keyframes logo-glow {
+            0%, 100% { box-shadow: var(--shadow-gold); }
+            50% { box-shadow: 0 0 50px rgba(232, 185, 35, 0.6); }
         }
         
         .header h1 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.6rem;
-            font-weight: 900;
-            background: linear-gradient(135deg, var(--gold), #fffef5);
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: var(--gradient-gold);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            letter-spacing: 3px;
             text-transform: uppercase;
-            letter-spacing: 2px;
         }
         
+        /* Balance Card */
         .balance-card {
-            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(30, 25, 18, 0.95));
-            border: 2px solid rgba(255, 215, 0, 0.4);
-            border-radius: 15px;
-            padding: 15px 25px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 20px 32px;
             display: inline-block;
-            backdrop-filter: blur(20px);
             position: relative;
             overflow: hidden;
         }
@@ -190,115 +182,115 @@
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.3), transparent);
-            animation: shine 3s ease-in-out infinite;
+            background: linear-gradient(90deg, transparent, rgba(232, 185, 35, 0.1), transparent);
+            animation: shimmer 4s ease-in-out infinite;
         }
         
-        @keyframes shine {
+        @keyframes shimmer {
             0% { left: -100%; }
             50%, 100% { left: 100%; }
         }
         
         .balance-label {
-            font-size: 0.8rem;
-            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.7rem;
+            color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 3px;
+            font-weight: 600;
         }
         
         .balance-amount {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.5rem;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.6rem;
             font-weight: 700;
-            color: var(--gold);
-            text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+            color: var(--primary);
+            text-shadow: 0 0 20px rgba(232, 185, 35, 0.5);
         }
         
+        /* User Info */
         .user-info {
-            text-align: center;
-            margin-bottom: 15px;
-            padding: 8px 15px;
-            background: rgba(255, 215, 0, 0.1);
-            border-radius: 25px;
-            display: inline-block;
-            font-weight: 600;
-            color: var(--gold);
-            border: 1px solid rgba(255, 215, 0, 0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: rgba(232, 185, 35, 0.1);
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            font-weight: 500;
+            color: var(--text-primary);
             font-size: 0.9rem;
+            margin-bottom: 20px;
         }
-        
-        .user-wrapper { text-align: center; }
         
         .premium-badge {
-            background: linear-gradient(135deg, var(--gold), #ffaa00);
-            color: #000;
-            padding: 2px 8px;
-            border-radius: 15px;
+            background: var(--gradient-gold);
+            color: var(--bg-dark);
+            padding: 3px 10px;
+            border-radius: 20px;
             font-size: 0.65rem;
             font-weight: 700;
-            margin-left: 6px;
-            text-transform: uppercase;
+            letter-spacing: 1px;
         }
         
-        /* GAME TABS */
+        /* Game Tabs */
         .game-tabs {
             display: flex;
-            gap: 5px;
-            margin-bottom: 15px;
-            padding: 5px;
-            background: rgba(0,0,0,0.3);
-            border-radius: 15px;
+            gap: 6px;
+            margin-bottom: 20px;
+            padding: 6px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
             flex-wrap: wrap;
         }
         
         .game-tab {
             flex: 1;
-            min-width: 70px;
-            padding: 10px 8px;
+            min-width: 65px;
+            padding: 12px 8px;
             border: none;
             border-radius: 12px;
             background: transparent;
-            color: rgba(255,255,255,0.5);
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.75rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             text-align: center;
         }
         
         .game-tab:hover {
-            color: #fff;
-            background: rgba(255, 215, 0, 0.2);
+            color: var(--text-primary);
+            background: rgba(232, 185, 35, 0.1);
         }
         
         .game-tab.active {
-            background: linear-gradient(135deg, var(--gold), #b8860b);
-            color: #000;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+            background: var(--gradient-gold);
+            color: var(--bg-dark);
+            box-shadow: var(--shadow-gold);
         }
         
         .game-tab-icon {
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             display: block;
-            margin-bottom: 3px;
+            margin-bottom: 4px;
         }
         
-        .game-section {
-            display: none;
+        .game-section { display: none; }
+        .game-section.active { display: block; animation: fadeIn 0.3s ease; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
-        .game-section.active {
-            display: block;
-        }
-        
+        /* Game Card */
         .game-card {
-            background: var(--card-bg);
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 15px;
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 215, 0, 0.2);
+            background: var(--bg-card);
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border);
             position: relative;
             overflow: hidden;
         }
@@ -309,43 +301,44 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--gold), var(--cream), var(--gold));
+            height: 2px;
+            background: var(--gradient-gold);
         }
         
         .game-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.1rem;
-            margin-bottom: 15px;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
             display: flex;
             align-items: center;
-            gap: 10px;
-            color: var(--cream);
+            gap: 12px;
+            color: var(--text-primary);
         }
         
         .game-icon {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, var(--gold), rgba(255, 215, 0, 0.5));
-            border-radius: 10px;
+            width: 44px;
+            height: 44px;
+            background: var(--gradient-gold);
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.3rem;
+            font-size: 1.4rem;
         }
         
-        /* ROULETTE */
+        /* Roulette */
         .roulette-container {
             position: relative;
-            margin: 15px auto;
+            margin: 20px auto;
             overflow: hidden;
-            border-radius: 15px;
+            border-radius: 16px;
             background: rgba(0, 0, 0, 0.5);
-            border: 2px solid rgba(255, 215, 0, 0.3);
+            border: 2px solid var(--border);
         }
         
         .roulette-viewport {
-            height: 70px;
+            height: 80px;
             overflow: hidden;
             position: relative;
         }
@@ -356,20 +349,20 @@
         }
         
         .roulette-number {
-            width: 55px;
-            height: 70px;
+            width: 60px;
+            height: 80px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.3rem;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
             font-weight: 700;
             flex-shrink: 0;
         }
         
-        .roulette-number.red { background: linear-gradient(135deg, #e74c3c, #c0392b); color: #fff; }
-        .roulette-number.black { background: linear-gradient(135deg, #2c3e50, #1a252f); color: #fff; }
-        .roulette-number.green { background: linear-gradient(135deg, #00ff88, #00cc6a); color: #000; }
+        .roulette-number.red { background: linear-gradient(180deg, #ff1744 0%, #d50000 100%); color: #fff; }
+        .roulette-number.black { background: linear-gradient(180deg, #263238 0%, #0d1419 100%); color: #fff; }
+        .roulette-number.green { background: linear-gradient(180deg, #00e676 0%, #00c853 100%); color: #000; }
         
         .roulette-pointer {
             position: absolute;
@@ -378,135 +371,224 @@
             transform: translateX(-50%);
             width: 4px;
             height: 100%;
-            background: var(--gold);
+            background: var(--primary);
             z-index: 10;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
+            box-shadow: 0 0 20px rgba(232, 185, 35, 0.8);
         }
         
         .roulette-pointer::before {
             content: '';
             position: absolute;
-            top: -8px;
+            top: -10px;
             left: 50%;
             transform: translateX(-50%);
-            border-left: 10px solid transparent;
-            border-right: 10px solid transparent;
-            border-top: 12px solid var(--gold);
+            border-left: 12px solid transparent;
+            border-right: 12px solid transparent;
+            border-top: 14px solid var(--primary);
         }
         
-        .bet-controls { margin-top: 15px; }
+        /* Inputs & Buttons */
+        .bet-controls { margin-top: 20px; }
         
         .bet-input-group {
             display: flex;
-            gap: 8px;
-            margin-bottom: 10px;
+            gap: 10px;
+            margin-bottom: 12px;
         }
         
         .bet-input {
             flex: 1;
-            padding: 12px 15px;
-            border: 2px solid rgba(255, 215, 0, 0.3);
-            border-radius: 12px;
-            background: rgba(20, 18, 12, 0.9);
-            color: var(--cream);
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.95rem;
+            padding: 14px 18px;
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            background: rgba(0, 0, 0, 0.4);
+            color: var(--text-primary);
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
             outline: none;
             transition: all 0.3s;
         }
         
         .bet-input:focus {
-            border-color: var(--gold);
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(232, 185, 35, 0.2);
         }
         
         .bet-input:disabled {
             opacity: 0.5;
             cursor: not-allowed;
-            background: rgba(50, 45, 35, 0.8);
+            background: rgba(50, 50, 60, 0.5);
         }
         
-        .bet-input::placeholder { color: rgba(255, 255, 255, 0.3); }
+        .bet-input::placeholder { color: var(--text-muted); }
         
         .color-buttons {
             display: flex;
-            gap: 8px;
-            margin-bottom: 15px;
+            gap: 10px;
+            margin-bottom: 16px;
         }
         
         .color-btn {
             flex: 1;
-            padding: 15px 8px;
+            padding: 16px 10px;
             border: 2px solid transparent;
-            border-radius: 12px;
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 0.95rem;
+            border-radius: 14px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.9rem;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.3s;
         }
         
-        .color-btn.red { background: linear-gradient(135deg, #e74c3c, #c0392b); color: #fff; }
-        .color-btn.black { background: linear-gradient(135deg, #2c3e50, #1a252f); color: #fff; }
-        .color-btn.green { background: linear-gradient(135deg, #00ff88, #00cc6a); color: #000; }
+        .color-btn.red { 
+            background: linear-gradient(180deg, #ff1744 0%, #d50000 100%); 
+            color: #fff;
+        }
+        .color-btn.black { 
+            background: linear-gradient(180deg, #263238 0%, #0d1419 100%); 
+            color: #fff;
+        }
+        .color-btn.green { 
+            background: linear-gradient(180deg, #00e676 0%, #00c853 100%); 
+            color: #000;
+        }
+        
+        .color-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
         
         .color-btn.selected {
-            border-color: #fff;
+            border-color: var(--primary);
             transform: scale(1.03);
-            box-shadow: 0 0 25px currentColor;
+            box-shadow: 0 0 30px rgba(232, 185, 35, 0.5);
         }
         
         .action-btn {
             width: 100%;
-            padding: 15px;
+            padding: 16px;
             border: none;
-            border-radius: 12px;
-            font-family: 'Orbitron', sans-serif;
+            border-radius: 14px;
+            font-family: 'Montserrat', sans-serif;
             font-size: 1rem;
             font-weight: 700;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             text-transform: uppercase;
             letter-spacing: 2px;
         }
         
         .action-btn.primary {
-            background: linear-gradient(135deg, var(--gold), #b8860b);
-            color: #1a1812;
-            box-shadow: 0 5px 25px rgba(255, 215, 0, 0.4);
+            background: var(--gradient-gold);
+            color: var(--bg-dark);
+            box-shadow: var(--shadow-gold);
         }
         
         .action-btn.success {
-            background: linear-gradient(135deg, #27ae60, #1e8449);
-            color: #fff;
-            box-shadow: 0 5px 25px rgba(39, 174, 96, 0.4);
+            background: linear-gradient(135deg, var(--success) 0%, #00c853 100%);
+            color: var(--bg-dark);
+            box-shadow: 0 0 30px rgba(0, 230, 118, 0.4);
         }
         
         .action-btn.jackpot {
-            background: linear-gradient(135deg, var(--jackpot), #8b7355);
-            color: var(--cream);
-            box-shadow: 0 5px 25px rgba(184, 134, 11, 0.4);
+            background: var(--gradient-accent);
+            color: var(--bg-dark);
+            box-shadow: var(--shadow-accent);
         }
         
-        .action-btn:hover { transform: translateY(-2px); }
+        .action-btn:hover:not(:disabled) { transform: translateY(-3px); }
         
         .action-btn:disabled {
-            background: #333;
+            background: rgba(100, 100, 120, 0.5);
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
+            color: var(--text-muted);
         }
         
+        .quick-bets {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+        
+        .quick-bet-btn {
+            flex: 1;
+            min-width: 50px;
+            padding: 10px 8px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: rgba(232, 185, 35, 0.1);
+            color: var(--primary);
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .quick-bet-btn:hover {
+            background: rgba(232, 185, 35, 0.2);
+            border-color: var(--primary);
+        }
+        
+        /* Selector Group */
+        .selector-group { margin-bottom: 16px; }
+        
+        .selector-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+        
+        .selector-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .selector-btn {
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            color: var(--text-secondary);
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .selector-btn:hover {
+            background: rgba(232, 185, 35, 0.1);
+            border-color: var(--primary);
+            color: var(--text-primary);
+        }
+        
+        .selector-btn.selected {
+            background: var(--gradient-gold);
+            border-color: var(--primary);
+            color: var(--bg-dark);
+            box-shadow: var(--shadow-gold);
+        }
+        
+        /* Result Display */
         .result-display {
             text-align: center;
-            padding: 15px;
-            margin-top: 15px;
-            border-radius: 12px;
-            font-family: 'Orbitron', sans-serif;
+            padding: 16px;
+            margin-top: 16px;
+            border-radius: 14px;
+            font-family: 'Montserrat', sans-serif;
             font-size: 1rem;
             font-weight: 700;
             display: none;
-            animation: resultPop 0.5s ease;
+            animation: resultPop 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         @keyframes resultPop {
@@ -516,135 +598,129 @@
         }
         
         .result-display.win {
-            background: linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(0, 200, 100, 0.1));
-            border: 2px solid var(--secondary);
-            color: var(--secondary);
+            background: rgba(0, 230, 118, 0.15);
+            border: 2px solid var(--success);
+            color: var(--success);
         }
         
         .result-display.lose {
-            background: linear-gradient(135deg, rgba(255, 0, 102, 0.2), rgba(200, 0, 80, 0.1));
-            border: 2px solid var(--primary);
-            color: var(--primary);
+            background: rgba(255, 23, 68, 0.15);
+            border: 2px solid var(--danger);
+            color: var(--danger);
         }
         
-        /* MINES GAME */
+        /* Mines Grid */
         .mines-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 8px;
-            margin: 15px 0;
+            gap: 10px;
+            margin: 20px 0;
         }
         
         .mine-cell {
             aspect-ratio: 1;
-            background: linear-gradient(135deg, #2a3a50, #1e2a3a);
-            border: 2px solid rgba(100, 150, 200, 0.3);
-            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(232, 185, 35, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%);
+            border: 2px solid var(--border);
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             font-size: 1.5rem;
         }
         
         .mine-cell:hover:not(.revealed):not(.disabled) {
-            background: linear-gradient(135deg, #3a4a60, #2e3a4a);
-            border-color: rgba(100, 200, 255, 0.5);
+            background: linear-gradient(135deg, rgba(232, 185, 35, 0.2) 0%, rgba(0, 0, 0, 0.3) 100%);
+            border-color: var(--primary);
             transform: scale(1.05);
         }
         
         .mine-cell.gem {
-            background: linear-gradient(135deg, var(--secondary), #00cc6a);
-            border-color: var(--secondary);
-            animation: cellWin 0.4s ease;
+            background: linear-gradient(135deg, var(--success) 0%, #00c853 100%);
+            border-color: var(--success);
+            animation: cellWin 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         .mine-cell.bomb {
-            background: linear-gradient(135deg, #e74c3c, #c0392b);
-            border-color: #e74c3c;
+            background: linear-gradient(135deg, var(--danger) 0%, #d50000 100%);
+            border-color: var(--danger);
             animation: cellLose 0.4s ease;
         }
         
-        .mine-cell.disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
+        .mine-cell.disabled { opacity: 0.4; cursor: not-allowed; }
         
         @keyframes cellWin {
-            0% { transform: scale(1.2); }
+            0% { transform: scale(1.3); }
             100% { transform: scale(1); }
         }
         
         @keyframes cellLose {
             0%, 20%, 40%, 60%, 80%, 100% { transform: translateX(0); }
-            10%, 30%, 50%, 70%, 90% { transform: translateX(-3px); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
         }
         
         .current-win {
             text-align: center;
-            margin: 10px 0;
-            padding: 12px;
-            background: rgba(0, 255, 136, 0.1);
-            border: 1px solid rgba(0, 255, 136, 0.3);
-            border-radius: 12px;
+            margin: 12px 0;
+            padding: 14px;
+            background: rgba(0, 230, 118, 0.1);
+            border: 1px solid rgba(0, 230, 118, 0.3);
+            border-radius: 14px;
         }
         
         .current-win-label {
-            font-size: 0.8rem;
-            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.75rem;
+            color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 1px;
         }
         
         .current-win-amount {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.3rem;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
             font-weight: 700;
-            color: var(--secondary);
+            color: var(--success);
         }
         
-        /* LADDER GAME */
+        /* Ladder */
         .ladder-tower {
             display: flex;
             flex-direction: column;
-            gap: 6px;
-            margin: 15px 0;
-            max-height: 350px;
+            gap: 8px;
+            margin: 20px 0;
+            max-height: 360px;
             overflow-y: auto;
-            padding: 8px;
+            padding: 10px;
             background: rgba(0, 0, 0, 0.3);
-            border-radius: 12px;
+            border-radius: 14px;
         }
         
         .ladder-row {
             display: flex;
-            gap: 6px;
+            gap: 8px;
             justify-content: center;
             align-items: center;
         }
         
         .ladder-multiplier-label {
-            min-width: 60px;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.8rem;
+            min-width: 65px;
+            font-family: 'Playfair Display', serif;
+            font-size: 0.85rem;
             font-weight: 700;
-            color: var(--gold);
+            color: var(--primary);
             text-align: right;
-            padding-right: 8px;
+            padding-right: 10px;
         }
         
-        .ladder-cells {
-            display: flex;
-            gap: 5px;
-        }
+        .ladder-cells { display: flex; gap: 6px; }
         
         .ladder-cell {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, #2a3a50, #1e2a3a);
-            border: 2px solid rgba(100, 150, 200, 0.3);
-            border-radius: 8px;
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, rgba(232, 185, 35, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%);
+            border: 2px solid var(--border);
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -654,38 +730,36 @@
         }
         
         .ladder-cell:hover:not(.disabled):not(.revealed) {
-            background: linear-gradient(135deg, #3a4a60, #2e3a4a);
-            border-color: rgba(100, 200, 255, 0.5);
+            background: linear-gradient(135deg, rgba(232, 185, 35, 0.2) 0%, rgba(0, 0, 0, 0.3) 100%);
+            border-color: var(--primary);
             transform: scale(1.05);
         }
         
         .ladder-cell.safe {
-            background: linear-gradient(135deg, var(--secondary), #00cc6a);
-            border-color: var(--secondary);
+            background: linear-gradient(135deg, var(--success) 0%, #00c853 100%);
+            border-color: var(--success);
         }
         
         .ladder-cell.mine {
-            background: linear-gradient(135deg, #e74c3c, #c0392b);
-            border-color: #e74c3c;
+            background: linear-gradient(135deg, var(--danger) 0%, #d50000 100%);
+            border-color: var(--danger);
         }
         
         .ladder-cell.disabled { opacity: 0.3; cursor: not-allowed; }
         
         .ladder-cell.current-row {
-            border-color: var(--gold);
-            box-shadow: 0 0 12px rgba(255, 215, 0, 0.5);
+            border-color: var(--accent);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.5);
         }
         
-        /* JACKPOT */
-        
-        /* CRASH GAME */
+        /* Crash */
         .crash-display {
             text-align: center;
-            padding: 30px;
-            background: linear-gradient(135deg, rgba(243, 156, 18, 0.1), rgba(231, 76, 60, 0.1));
-            border: 2px solid rgba(243, 156, 18, 0.3);
-            border-radius: 15px;
-            margin-bottom: 15px;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, rgba(232, 185, 35, 0.05) 0%, rgba(0, 229, 255, 0.05) 100%);
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            margin-bottom: 20px;
             position: relative;
             overflow: hidden;
         }
@@ -697,104 +771,115 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: radial-gradient(circle at center, rgba(243, 156, 18, 0.1) 0%, transparent 70%);
+            background: radial-gradient(circle at center, rgba(232, 185, 35, 0.1) 0%, transparent 70%);
             pointer-events: none;
         }
         
         .crash-multiplier {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 3rem;
+            font-family: 'Playfair Display', serif;
+            font-size: 3.5rem;
             font-weight: 900;
-            color: #f39c12;
-            text-shadow: 0 0 30px rgba(243, 156, 18, 0.6);
+            color: var(--primary);
+            text-shadow: 0 0 40px rgba(232, 185, 35, 0.6);
             transition: all 0.1s ease;
         }
         
         .crash-multiplier.crashed {
-            color: #e74c3c;
-            text-shadow: 0 0 30px rgba(231, 76, 60, 0.8);
+            color: var(--danger);
+            text-shadow: 0 0 40px rgba(255, 23, 68, 0.8);
             animation: crashShake 0.5s ease;
         }
         
         .crash-multiplier.flying {
-            color: var(--secondary);
-            text-shadow: 0 0 30px rgba(0, 255, 136, 0.6);
+            color: var(--success);
+            text-shadow: 0 0 40px rgba(0, 230, 118, 0.6);
         }
         
         @keyframes crashShake {
             0%, 100% { transform: translateX(0); }
-            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-            20%, 40%, 60%, 80% { transform: translateX(5px); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-6px); }
+            20%, 40%, 60%, 80% { transform: translateX(6px); }
         }
         
         .crash-status {
             font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.7);
-            margin-top: 10px;
+            color: var(--text-secondary);
+            margin-top: 12px;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 2px;
+            font-weight: 600;
         }
         
         .crash-history {
             display: flex;
-            gap: 8px;
+            gap: 10px;
             flex-wrap: wrap;
             justify-content: center;
-            margin-top: 15px;
+            margin-top: 20px;
         }
         
         .crash-history-item {
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-family: 'Orbitron', sans-serif;
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-family: 'Montserrat', sans-serif;
             font-size: 0.8rem;
             font-weight: 600;
         }
         
         .crash-history-item.low {
-            background: rgba(231, 76, 60, 0.2);
-            color: #e74c3c;
-            border: 1px solid rgba(231, 76, 60, 0.3);
+            background: rgba(255, 23, 68, 0.15);
+            color: var(--danger);
+            border: 1px solid rgba(255, 23, 68, 0.3);
         }
         
         .crash-history-item.medium {
-            background: rgba(243, 156, 18, 0.2);
-            color: #f39c12;
-            border: 1px solid rgba(243, 156, 18, 0.3);
+            background: rgba(232, 185, 35, 0.15);
+            color: var(--primary);
+            border: 1px solid rgba(232, 185, 35, 0.3);
         }
         
         .crash-history-item.high {
-            background: rgba(0, 255, 136, 0.2);
-            color: var(--secondary);
-            border: 1px solid rgba(0, 255, 136, 0.3);
+            background: rgba(0, 230, 118, 0.15);
+            color: var(--success);
+            border: 1px solid rgba(0, 230, 118, 0.3);
         }
         
+        /* Jackpot */
         .jackpot-pool {
             text-align: center;
-            padding: 20px;
-            background: linear-gradient(135deg, rgba(155, 89, 182, 0.2), rgba(142, 68, 173, 0.1));
-            border: 2px solid var(--jackpot);
-            border-radius: 15px;
-            margin-bottom: 15px;
+            padding: 24px;
+            background: linear-gradient(135deg, rgba(0, 229, 255, 0.1) 0%, rgba(232, 185, 35, 0.05) 100%);
+            border: 2px solid var(--border-accent);
+            border-radius: 20px;
+            margin-bottom: 20px;
         }
         
         .jackpot-label {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.8rem;
+            color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 2px;
+            font-weight: 600;
         }
         
         .jackpot-amount {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 2rem;
+            font-family: 'Playfair Display', serif;
+            font-size: 2.2rem;
             font-weight: 900;
-            color: var(--gold);
-            text-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+            color: var(--accent);
+            text-shadow: 0 0 30px rgba(0, 229, 255, 0.6);
+        }
+        
+        .jackpot-timer {
+            text-align: center;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.6rem;
+            color: var(--primary);
+            margin: 16px 0;
         }
         
         .jackpot-players {
-            margin: 15px 0;
+            margin: 16px 0;
             max-height: 200px;
             overflow-y: auto;
         }
@@ -803,39 +888,41 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 12px;
+            padding: 12px 14px;
             background: rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
-            margin-bottom: 6px;
+            border-radius: 12px;
+            margin-bottom: 8px;
         }
         
         .jackpot-player-name {
-            color: #fff;
+            color: var(--text-primary);
             font-weight: 600;
         }
         
         .jackpot-player-bet {
-            color: var(--gold);
-            font-family: 'Orbitron', sans-serif;
+            color: var(--primary);
+            font-family: 'Montserrat', sans-serif;
             font-size: 0.9rem;
+            font-weight: 600;
         }
         
         .jackpot-player-chance {
-            color: var(--secondary);
+            color: var(--accent);
             font-size: 0.85rem;
+            font-weight: 500;
         }
         
         .jackpot-wheel {
             position: relative;
-            margin: 15px auto;
+            margin: 20px auto;
             overflow: hidden;
-            border-radius: 15px;
+            border-radius: 16px;
             background: rgba(0, 0, 0, 0.5);
-            border: 2px solid var(--jackpot);
+            border: 2px solid var(--border-accent);
         }
         
         .jackpot-wheel-viewport {
-            height: 60px;
+            height: 70px;
             overflow: hidden;
             position: relative;
         }
@@ -846,8 +933,8 @@
         }
         
         .jackpot-item {
-            width: 80px;
-            height: 60px;
+            width: 90px;
+            height: 70px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -855,88 +942,11 @@
             font-size: 0.85rem;
             font-weight: 600;
             text-align: center;
-            padding: 5px;
-            border-right: 1px solid rgba(255,255,255,0.1);
+            padding: 6px;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
         }
         
-        .jackpot-timer {
-            text-align: center;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.5rem;
-            color: var(--primary);
-            margin: 15px 0;
-        }
-        
-        /* SETTINGS / SELECTORS */
-        .selector-group {
-            margin-bottom: 15px;
-        }
-        
-        .selector-label {
-            font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .selector-buttons {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
-        
-        .selector-btn {
-            padding: 10px 14px;
-            border: 2px solid rgba(255, 0, 102, 0.3);
-            border-radius: 10px;
-            background: rgba(255, 0, 102, 0.1);
-            color: #fff;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.85rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .selector-btn:hover {
-            background: rgba(255, 0, 102, 0.3);
-            border-color: var(--primary);
-        }
-        
-        .selector-btn.selected {
-            background: var(--primary);
-            border-color: var(--primary);
-            box-shadow: 0 0 15px rgba(255, 0, 102, 0.5);
-        }
-        
-        .quick-bets {
-            display: flex;
-            gap: 6px;
-            margin-bottom: 12px;
-            flex-wrap: wrap;
-        }
-        
-        .quick-bet-btn {
-            flex: 1;
-            min-width: 50px;
-            padding: 10px 6px;
-            border: 1px solid rgba(255, 0, 102, 0.3);
-            border-radius: 10px;
-            background: rgba(255, 0, 102, 0.1);
-            color: #fff;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.75rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .quick-bet-btn:hover {
-            background: rgba(255, 0, 102, 0.3);
-            border-color: var(--primary);
-        }
-        
+        /* Loading & Toast */
         .loading {
             text-align: center;
             padding: 80px 20px;
@@ -945,7 +955,7 @@
         .loading-spinner {
             width: 60px;
             height: 60px;
-            border: 4px solid rgba(255, 0, 102, 0.2);
+            border: 4px solid rgba(232, 185, 35, 0.2);
             border-top-color: var(--primary);
             border-radius: 50%;
             animation: spin 1s linear infinite;
@@ -953,38 +963,28 @@
         }
         
         .loading p {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1rem;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
             color: var(--primary);
-            text-transform: uppercase;
             letter-spacing: 2px;
         }
         
         @keyframes spin { to { transform: rotate(360deg); } }
-        
-        .error-message {
-            background: rgba(255, 0, 102, 0.1);
-            border: 2px solid var(--primary);
-            border-radius: 15px;
-            padding: 25px;
-            text-align: center;
-            color: var(--primary);
-        }
         
         .toast {
             position: fixed;
             bottom: 25px;
             left: 50%;
             transform: translateX(-50%) translateY(100px);
-            background: var(--card-bg);
+            background: var(--bg-card);
             border: 2px solid var(--primary);
-            border-radius: 12px;
-            padding: 12px 25px;
-            font-family: 'Rajdhani', sans-serif;
+            border-radius: 14px;
+            padding: 14px 28px;
+            font-family: 'Montserrat', sans-serif;
             font-weight: 600;
             z-index: 1000;
             opacity: 0;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         .toast.show {
@@ -992,29 +992,25 @@
             opacity: 1;
         }
         
-        .toast.error { border-color: #e74c3c; color: #e74c3c; }
-        .toast.success { border-color: var(--secondary); color: var(--secondary); }
+        .toast.error { border-color: var(--danger); color: var(--danger); }
+        .toast.success { border-color: var(--success); color: var(--success); }
+        
+        .user-wrapper { text-align: center; }
     </style>
 </head>
 <body>
-    <div class="snowflakes">
-        <div class="snowflake">❄</div>
-        <div class="snowflake">❅</div>
-        <div class="snowflake">❆</div>
-        <div class="snowflake">❄</div>
-        <div class="snowflake">❅</div>
-        <div class="snowflake">❆</div>
-        <div class="snowflake">❄</div>
-        <div class="snowflake">❅</div>
-        <div class="snowflake">❆</div>
-        <div class="snowflake">❄</div>
-        <div class="snowflake">❅</div>
-        <div class="snowflake">❆</div>
-        <div class="snowflake">❄</div>
-        <div class="snowflake">❅</div>
-        <div class="snowflake">❆</div>
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
     </div>
-    <div class="grid-bg"></div>
     <div class="container" id="app">
         <div class="loading" id="loading">
             <div class="loading-spinner"></div>
@@ -1058,7 +1054,7 @@
         
         // Crash state
         let crashBet = 0;
-        let crashMultiplier = 1.00;
+        let crashMultiplier = 0.00;
         let crashPlaying = false;
         let crashInterval = null;
         let crashHistory = [];
@@ -1069,98 +1065,85 @@
         let jackpotTimer = 30;
         let jackpotInterval = null;
         let jackpotSpinning = false;
-        let myJackpotBet = 0;
         let currentJackpotSession = null;
-        
-        const tg = window.Telegram?.WebApp;
+        let myJackpotBet = 0;
         
         async function init() {
-            if (tg) {
-                tg.ready();
-                tg.expand();
-                tg.setHeaderColor('#0a0a0f');
-                tg.setBackgroundColor('#0a0a0f');
+            try {
+                const tg = window.Telegram?.WebApp;
                 
-                const user = tg.initDataUnsafe?.user;
-                if (user) {
-                    await loadOrCreatePlayer(user.id, user.first_name, user.username);
-                } else {
-                    showError('Не удалось получить данные пользователя');
+                if (tg) {
+                    tg.ready();
+                    tg.expand();
+                    tg.enableClosingConfirmation();
+                    
+                    const user = tg.initDataUnsafe?.user;
+                    if (user) {
+                        await loginPlayer(user);
+                        return;
+                    }
                 }
-            } else {
+                
+                // Fallback for testing
+                const urlParams = new URLSearchParams(window.location.search);
+                const testId = urlParams.get('test_id');
+                if (testId) {
+                    await loginPlayer({ id: parseInt(testId), first_name: 'Test User' });
+                    return;
+                }
+                
                 showError('Откройте через Telegram бота');
+            } catch (error) {
+                console.error('Init error:', error);
+                showError('Ошибка инициализации');
             }
         }
         
-        async function loadOrCreatePlayer(telegramId, firstName, username) {
+        async function loginPlayer(telegramUser) {
             try {
                 const response = await fetch(`${API_URL}?action=auth`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ telegram_id: telegramId, first_name: firstName, username: username })
+                    body: JSON.stringify({
+                        telegram_id: telegramUser.id,
+                        username: telegramUser.username,
+                        first_name: telegramUser.first_name,
+                        is_premium: telegramUser.is_premium || false
+                    })
                 });
                 
                 const data = await response.json();
                 
-                if (data.success && data.player) {
+                if (data.success) {
                     player = data.player;
-                    showToast('🎮 Добро пожаловать!', 'success');
                     renderApp();
                 } else {
-                    showError('Ошибка авторизации');
+                    showError(data.error || 'Ошибка авторизации');
                 }
             } catch (error) {
-                showError('Ошибка подключения');
+                console.error('Login error:', error);
+                showError('Ошибка подключения к серверу');
             }
-        }
-        
-        function showToast(message, type = '') {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.className = 'toast' + (type ? ' ' + type : '');
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 3000);
-        }
-        
-        async function updateBalance(newBalance, gameType, betAmount, winAmount) {
-            try {
-                await fetch(`${API_URL}?action=balance`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        player_id: player.id, 
-                        balance: newBalance,
-                        game_type: gameType,
-                        bet_amount: betAmount,
-                        win_amount: winAmount
-                    })
-                });
-                player.balance = newBalance;
-                updateBalanceDisplay();
-            } catch (error) {
-                console.error('Error updating balance:', error);
-            }
-        }
-        
-        function updateBalanceDisplay() {
-            const balanceEl = document.getElementById('balance-amount');
-            if (balanceEl) balanceEl.textContent = formatNumber(player.balance) + ' 🪙';
-        }
-        
-        function formatNumber(num) {
-            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
         }
         
         function showError(message) {
             document.getElementById('app').innerHTML = `
-                <div class="header">
-                    <div class="logo">
-                        <div class="squid-icon">🦑</div>
-                        <h1>Casino</h1>
-                    </div>
+                <div class="error-message" style="background: rgba(255, 23, 68, 0.1); border: 2px solid var(--danger); border-radius: 20px; padding: 30px; text-align: center; color: var(--danger); margin-top: 50px;">
+                    <h2 style="font-family: 'Playfair Display', serif; margin-bottom: 10px;">⚠️ Ошибка</h2>
+                    <p>${message}</p>
                 </div>
-                <div class="error-message">${message}</div>
             `;
+        }
+        
+        function showToast(message, type = 'error') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type} show`;
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+        
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
         }
         
         function getNumberColor(num) {
@@ -1168,18 +1151,43 @@
             return RED_NUMBERS.includes(num) ? 'red' : 'black';
         }
         
+        function updateBalanceDisplay() {
+            const el = document.getElementById('balance-display');
+            if (el) el.textContent = formatNumber(player.balance) + ' 🪙';
+        }
+        
+        async function updateBalance(newBalance, gameType, betAmount, winAmount) {
+            try {
+                const response = await fetch(`${API_URL}?action=balance`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        player_id: player.id,
+                        new_balance: newBalance,
+                        game_type: gameType,
+                        bet_amount: betAmount,
+                        win_amount: winAmount
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    player.balance = newBalance;
+                    updateBalanceDisplay();
+                }
+            } catch (error) {
+                console.error('Balance update error:', error);
+            }
+        }
+        
         function switchGame(game) {
             currentGame = game;
-            document.querySelectorAll('.game-tab').forEach(t => t.classList.remove('active'));
-            document.querySelector(`[data-game="${game}"]`).classList.add('active');
-            document.querySelectorAll('.game-section').forEach(s => s.classList.remove('active'));
-            document.getElementById(`game-${game}`).classList.add('active');
-            
-            if (game === 'jackpot') {
-                startJackpotTimer();
-            } else {
-                stopJackpotTimer();
-            }
+            document.querySelectorAll('.game-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.game === game);
+            });
+            document.querySelectorAll('.game-section').forEach(section => {
+                section.classList.toggle('active', section.id === `game-${game}`);
+            });
         }
         
         function renderApp() {
@@ -1190,12 +1198,12 @@
             document.getElementById('app').innerHTML = `
                 <div class="header">
                     <div class="logo">
-                        <div class="squid-icon">🦑</div>
-                        <h1>Casino</h1>
+                        <div class="logo-icon">🦑</div>
+                        <h1>Squid Casino</h1>
                     </div>
                     <div class="balance-card">
                         <div class="balance-label">Баланс</div>
-                        <div class="balance-amount" id="balance-amount">${formatNumber(player.balance)} 🪙</div>
+                        <div class="balance-amount" id="balance-display">${formatNumber(player.balance)} 🪙</div>
                     </div>
                 </div>
                 <div class="user-wrapper">
@@ -1211,7 +1219,7 @@
                         Рулетка
                     </button>
                     <button class="game-tab" data-game="mines" onclick="switchGame('mines')">
-                        <span class="game-tab-icon">💣</span>
+                        <span class="game-tab-icon">💎</span>
                         Мины
                     </button>
                     <button class="game-tab" data-game="ladder" onclick="switchGame('ladder')">
@@ -1275,7 +1283,7 @@
                 <div id="game-mines" class="game-section">
                     <div class="game-card">
                         <div class="game-title">
-                            <div class="game-icon">💣</div>
+                            <div class="game-icon">💎</div>
                             Мины
                         </div>
                         
@@ -1353,12 +1361,12 @@
                 <div id="game-crash" class="game-section">
                     <div class="game-card">
                         <div class="game-title">
-                            <div class="game-icon" style="background: linear-gradient(135deg, #f39c12, #e74c3c);">🚀</div>
+                            <div class="game-icon" style="background: linear-gradient(135deg, #e8b923, #00e5ff);">🚀</div>
                             Краш
                         </div>
                         
                         <div class="crash-display" id="crash-display">
-                            <div class="crash-multiplier" id="crash-multiplier">1.00x</div>
+                            <div class="crash-multiplier" id="crash-multiplier">0.00x</div>
                             <div class="crash-status" id="crash-status">Ожидание ставки...</div>
                         </div>
                         
@@ -1387,7 +1395,7 @@
                 <div id="game-jackpot" class="game-section">
                     <div class="game-card">
                         <div class="game-title">
-                            <div class="game-icon" style="background: linear-gradient(135deg, var(--jackpot), #8e44ad);">🎁</div>
+                            <div class="game-icon" style="background: var(--gradient-accent);">🎁</div>
                             Джекпот
                         </div>
                         
@@ -1420,7 +1428,7 @@
                         </div>
                         
                         <button class="action-btn jackpot" id="jackpot-btn" onclick="joinJackpot()">Участвовать</button>
-                        <button class="action-btn" id="jackpot-cancel-btn" onclick="cancelJackpotBet()" style="display: none; background: #e74c3c; margin-top: 10px;">Отменить ставку</button>
+                        <button class="action-btn" id="jackpot-cancel-btn" onclick="cancelJackpotBet()" style="display: none; background: var(--danger); margin-top: 10px;">Отменить ставку</button>
                         
                         <div class="result-display" id="jackpot-result"></div>
                     </div>
@@ -1451,6 +1459,7 @@
         }
         
         function selectColor(color) {
+            if (isSpinning) return;
             selectedColor = color;
             document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('selected'));
             document.querySelector(`.color-btn.${color}`).classList.add('selected');
@@ -1513,7 +1522,7 @@
             }
             
             const strip = document.getElementById('roulette-strip');
-            const numberWidth = 55;
+            const numberWidth = 60;
             const viewportWidth = strip.parentElement.offsetWidth;
             const centerOffset = viewportWidth / 2 - numberWidth / 2;
             
@@ -1525,33 +1534,40 @@
             strip.style.transform = `translateX(${-targetPosition + centerOffset}px)`;
             
             setTimeout(async () => {
-                const resultDisplay = document.getElementById('roulette-result');
-                const premiumMultiplier = player.is_premium ? 2 : 1;
+                const win = selectedColor === resultColor;
+                let winAmount = 0;
                 
-                if (resultColor === selectedColor) {
+                if (win) {
                     const multiplier = resultColor === 'green' ? 14 : 2;
-                    const winAmount = Math.floor(bet * multiplier * premiumMultiplier);
-                    const newBalance = player.balance + winAmount;
-                    await updateBalance(newBalance, 'web_roulette', bet, winAmount);
-                    resultDisplay.className = 'result-display win';
-                    resultDisplay.innerHTML = `🎉 ${resultNumber} - Выигрыш +${formatNumber(winAmount)} 🪙`;
-                } else {
-                    await updateBalance(player.balance, 'web_roulette', bet, 0);
-                    resultDisplay.className = 'result-display lose';
-                    const colorEmoji = resultColor === 'red' ? '🔴' : resultColor === 'black' ? '⚫' : '🟢';
-                    resultDisplay.innerHTML = `${colorEmoji} ${resultNumber} - Проигрыш`;
+                    winAmount = bet * multiplier;
+                    
+                    if (player.is_premium) {
+                        winAmount = Math.floor(winAmount * 1.2);
+                    }
+                    
+                    player.balance += winAmount;
                 }
                 
+                await updateBalance(player.balance, 'web_roulette', bet, winAmount);
+                
+                const resultDisplay = document.getElementById('roulette-result');
+                if (win) {
+                    resultDisplay.className = 'result-display win';
+                    resultDisplay.innerHTML = `🎉 Выигрыш +${formatNumber(winAmount)} 🪙`;
+                } else {
+                    resultDisplay.className = 'result-display lose';
+                    resultDisplay.innerHTML = `💔 Проигрыш -${formatNumber(bet)} 🪙`;
+                }
                 resultDisplay.style.display = 'block';
-                isSpinning = false;
-                document.getElementById('spin-btn').disabled = false;
-                document.getElementById('roulette-bet').disabled = false;
-                document.querySelectorAll('.color-btn').forEach(btn => btn.disabled = false);
                 
                 setTimeout(() => {
+                    isSpinning = false;
+                    document.getElementById('spin-btn').disabled = false;
+                    document.getElementById('roulette-bet').disabled = false;
+                    document.querySelectorAll('.color-btn').forEach(btn => btn.disabled = false);
                     strip.style.transition = 'none';
                     strip.style.transform = 'translateX(0)';
-                }, 500);
+                }, 2000);
             }, 5000);
         }
         
@@ -1559,22 +1575,14 @@
         function selectMines(count) {
             if (minesPlaying) return;
             minesCount = count;
-            document.querySelectorAll('#mines-selector .selector-btn').forEach(btn => btn.classList.remove('selected'));
-            event.target.classList.add('selected');
-        }
-        
-        function getMinesMultiplier(revealed, totalMines) {
-            const safeSpots = 25 - totalMines;
-            // Reduced multipliers - house edge increased more
-            let multiplier = 0.95; // Start lower
-            for (let i = 0; i < revealed; i++) {
-                // Even slower growth rate
-                multiplier *= (safeSpots / (safeSpots - i)) * 0.88;
-            }
-            return Math.max(1.01, Math.round(multiplier * 100) / 100);
+            document.querySelectorAll('#mines-selector .selector-btn').forEach(btn => {
+                btn.classList.toggle('selected', parseInt(btn.textContent) === count);
+            });
         }
         
         async function startMines() {
+            if (minesPlaying) return;
+            
             const betInput = document.getElementById('mines-bet');
             const bet = parseInt(betInput.value);
             
@@ -1589,127 +1597,136 @@
             }
             
             minesBet = bet;
-            minesRevealed = 0;
-            minesCurrentWin = bet;
             minesPlaying = true;
-            
-            minesGrid = [];
-            const minePositions = new Set();
-            while (minePositions.size < minesCount) {
-                minePositions.add(Math.floor(Math.random() * 25));
-            }
-            
-            for (let i = 0; i < 25; i++) {
-                minesGrid.push({
-                    isMine: minePositions.has(i),
-                    revealed: false
-                });
-            }
+            minesRevealed = 0;
+            minesCurrentWin = 0;
             
             player.balance -= bet;
             updateBalanceDisplay();
+            
+            // Generate grid (25 cells, minesCount mines)
+            minesGrid = Array(25).fill(false);
+            let placed = 0;
+            while (placed < minesCount) {
+                const idx = Math.floor(Math.random() * 25);
+                if (!minesGrid[idx]) {
+                    minesGrid[idx] = true;
+                    placed++;
+                }
+            }
             
             document.getElementById('mines-start-btn').style.display = 'none';
             document.getElementById('mines-selector').style.display = 'none';
             document.getElementById('mines-bet').disabled = true;
             document.getElementById('mines-result').style.display = 'none';
             
-            renderMinesGame();
+            renderMinesGrid();
         }
         
-        function renderMinesGame() {
-            const gameArea = document.getElementById('mines-game-area');
+        function renderMinesGrid() {
+            const safeTotal = 25 - minesCount;
+            
+            // Calculate current multiplier with reduced growth
+            let mult = 0.95;
+            for (let i = 0; i < minesRevealed; i++) {
+                mult *= (1 + (minesCount / 25) * 0.92);
+            }
+            minesCurrentWin = Math.floor(minesBet * mult);
+            
+            if (player.is_premium) {
+                minesCurrentWin = Math.floor(minesCurrentWin * 1.2);
+            }
             
             let html = `
                 <div class="current-win">
-                    <div class="current-win-label">Текущий выигрыш (x${getMinesMultiplier(minesRevealed, minesCount).toFixed(2)})</div>
+                    <div class="current-win-label">Текущий выигрыш</div>
                     <div class="current-win-amount">${formatNumber(minesCurrentWin)} 🪙</div>
                 </div>
                 <div class="mines-grid">
             `;
             
             for (let i = 0; i < 25; i++) {
-                const cell = minesGrid[i];
+                const revealed = minesGrid[`revealed_${i}`];
                 let cellClass = 'mine-cell';
                 let content = '';
                 
-                if (cell.revealed) {
-                    cellClass += cell.isMine ? ' bomb' : ' gem';
-                    content = cell.isMine ? '💣' : '💎';
-                }
-                
-                const onclick = (!cell.revealed && minesPlaying) ? `onclick="clickMineCell(${i})"` : '';
-                html += `<div class="${cellClass}" ${onclick}>${content}</div>`;
-            }
-            
-            html += `</div>`;
-            
-            if (minesPlaying && minesRevealed > 0) {
-                html += `<button class="action-btn success" onclick="withdrawMines()">Забрать ${formatNumber(minesCurrentWin)} 🪙</button>`;
-            }
-            
-            gameArea.innerHTML = html;
-        }
-        
-        async function clickMineCell(index) {
-            if (!minesPlaying || minesGrid[index].revealed) return;
-            
-            const cell = minesGrid[index];
-            
-            // For admin mode - never hit a mine
-            if (player.casino_admin_mode && cell.isMine) {
-                // Swap this mine with a non-revealed safe cell
-                for (let i = 0; i < minesGrid.length; i++) {
-                    if (!minesGrid[i].revealed && !minesGrid[i].isMine && i !== index) {
-                        minesGrid[i].isMine = true;
-                        cell.isMine = false;
-                        break;
+                if (revealed) {
+                    if (minesGrid[i]) {
+                        cellClass += ' bomb';
+                        content = '💣';
+                    } else {
+                        cellClass += ' gem';
+                        content = '💎';
                     }
                 }
+                
+                if (!minesPlaying && !revealed) {
+                    cellClass += ' disabled';
+                }
+                
+                html += `<div class="${cellClass}" onclick="clickMineCell(${i})">${content}</div>`;
             }
             
-            // For downgraded player - ALWAYS hit mine
-            if (player.casino_downgrade && !cell.isMine) {
-                // 100% chance to convert safe cell to mine
-                cell.isMine = true;
+            html += '</div>';
+            
+            if (minesPlaying && minesRevealed > 0) {
+                html += `<button class="action-btn success" onclick="cashoutMines()">💰 Забрать ${formatNumber(minesCurrentWin)} 🪙</button>`;
             }
             
-            cell.revealed = true;
+            document.getElementById('mines-game-area').innerHTML = html;
+        }
+        
+        async function clickMineCell(idx) {
+            if (!minesPlaying || minesGrid[`revealed_${idx}`]) return;
             
-            if (cell.isMine) {
+            minesGrid[`revealed_${idx}`] = true;
+            
+            // Check if downgraded - always hit mine
+            if (player.casino_downgrade) {
+                // Force hit a mine
+                minesGrid[idx] = true;
+            }
+            
+            // Check if admin mode - never hit mine
+            if (player.casino_admin_mode) {
+                minesGrid[idx] = false;
+            }
+            
+            if (minesGrid[idx]) {
+                // Hit a mine - lose
                 minesPlaying = false;
-                minesGrid.forEach(c => c.revealed = true);
-                renderMinesGame();
+                
+                // Reveal all mines
+                for (let i = 0; i < 25; i++) {
+                    if (minesGrid[i]) minesGrid[`revealed_${i}`] = true;
+                }
                 
                 await updateBalance(player.balance, 'web_mines', minesBet, 0);
                 
+                renderMinesGrid();
+                
                 const resultDisplay = document.getElementById('mines-result');
                 resultDisplay.className = 'result-display lose';
-                resultDisplay.innerHTML = `💣 Проигрыш -${formatNumber(minesBet)} 🪙`;
+                resultDisplay.innerHTML = `💥 Бум! -${formatNumber(minesBet)} 🪙`;
                 resultDisplay.style.display = 'block';
                 
                 setTimeout(resetMines, 2000);
             } else {
+                // Safe
                 minesRevealed++;
-                minesCurrentWin = Math.floor(minesBet * getMinesMultiplier(minesRevealed, minesCount));
+                renderMinesGrid();
                 
-                if (player.is_premium) {
-                    minesCurrentWin = Math.floor(minesCurrentWin * 1.2);
-                }
-                
-                renderMinesGame();
-                
+                // Check if all safe revealed
                 if (minesRevealed >= 25 - minesCount) {
-                    await withdrawMines();
+                    await cashoutMines();
                 }
             }
         }
         
-        async function withdrawMines() {
-            if (!minesPlaying || minesRevealed === 0) return;
+        async function cashoutMines() {
+            if (!minesPlaying) return;
             
             minesPlaying = false;
-            
             const winAmount = minesCurrentWin;
             const newBalance = player.balance + winAmount;
             
@@ -1717,7 +1734,7 @@
             
             const resultDisplay = document.getElementById('mines-result');
             resultDisplay.className = 'result-display win';
-            resultDisplay.innerHTML = `💎 Выигрыш +${formatNumber(winAmount)} 🪙`;
+            resultDisplay.innerHTML = `🎉 Выигрыш +${formatNumber(winAmount)} 🪙`;
             resultDisplay.style.display = 'block';
             
             setTimeout(resetMines, 2000);
@@ -1736,48 +1753,14 @@
         function selectLadderStones(count) {
             if (ladderPlaying) return;
             ladderStones = count;
-            document.querySelectorAll('#ladder-selector .selector-btn').forEach(btn => btn.classList.remove('selected'));
-            event.target.classList.add('selected');
-        }
-        
-        function getLadderMultiplier(level, stones) {
-            const baseMultiplier = 1 + (stones * 0.15);
-            const growthRate = 1 + (stones * 0.08);
-            return Math.round(Math.pow(growthRate, level) * baseMultiplier * 100) / 100;
-        }
-        
-        function generateLadderRows() {
-            const rows = [];
-            const totalRows = 8;
-            
-            for (let i = 0; i < totalRows; i++) {
-                const cells = [];
-                const mineCount = ladderStones;
-                const totalCells = 5;
-                
-                const minePositions = new Set();
-                while (minePositions.size < mineCount) {
-                    minePositions.add(Math.floor(Math.random() * totalCells));
-                }
-                
-                for (let j = 0; j < totalCells; j++) {
-                    cells.push({
-                        isMine: minePositions.has(j),
-                        revealed: false
-                    });
-                }
-                
-                rows.push({
-                    cells,
-                    multiplier: getLadderMultiplier(i + 1, ladderStones),
-                    cleared: false
-                });
-            }
-            
-            return rows;
+            document.querySelectorAll('#ladder-selector .selector-btn').forEach(btn => {
+                btn.classList.toggle('selected', parseInt(btn.textContent) === count);
+            });
         }
         
         async function startLadder() {
+            if (ladderPlaying) return;
+            
             const betInput = document.getElementById('ladder-bet');
             const bet = parseInt(betInput.value);
             
@@ -1792,13 +1775,21 @@
             }
             
             ladderBet = bet;
-            ladderLevel = 0;
-            ladderCurrentWin = bet;
             ladderPlaying = true;
-            ladderRows = generateLadderRows();
+            ladderLevel = 0;
+            ladderCurrentWin = 0;
             
             player.balance -= bet;
             updateBalanceDisplay();
+            
+            // Generate ladder rows (8 rows)
+            const totalCells = ladderStones + 1;
+            ladderRows = [];
+            for (let row = 0; row < 8; row++) {
+                const mineIdx = Math.floor(Math.random() * totalCells);
+                const multiplier = (1.2 + row * 0.3).toFixed(2);
+                ladderRows.push({ mineIdx, multiplier, cleared: false });
+            }
             
             document.getElementById('ladder-start-btn').style.display = 'none';
             document.getElementById('ladder-selector').style.display = 'none';
@@ -1809,93 +1800,97 @@
         }
         
         function renderLadderGame() {
-            const gameArea = document.getElementById('ladder-game-area');
+            const totalCells = ladderStones + 1;
             
-            let html = `
-                <div class="current-win" style="display: ${ladderLevel > 0 ? 'block' : 'none'}">
-                    <div class="current-win-label">Текущий выигрыш</div>
-                    <div class="current-win-amount">${formatNumber(ladderCurrentWin)} 🪙</div>
-                </div>
-                <div class="ladder-tower">
-            `;
+            let html = '<div class="ladder-tower">';
             
-            for (let i = ladderRows.length - 1; i >= 0; i--) {
-                const row = ladderRows[i];
-                const isCurrentRow = i === ladderLevel;
-                const isLocked = i > ladderLevel;
+            for (let rowIdx = ladderRows.length - 1; rowIdx >= 0; rowIdx--) {
+                const row = ladderRows[rowIdx];
+                const isCurrentRow = rowIdx === ladderLevel && ladderPlaying;
+                const isCleared = row.cleared;
+                const isLocked = rowIdx > ladderLevel && !row.cleared;
                 
-                html += `<div class="ladder-row">`;
-                html += `<div class="ladder-multiplier-label">x${row.multiplier}</div>`;
-                html += `<div class="ladder-cells">`;
+                html += `
+                    <div class="ladder-row ${isCurrentRow ? 'current' : ''}">
+                        <div class="ladder-multiplier-label">x${row.multiplier}</div>
+                        <div class="ladder-cells">
+                `;
                 
-                for (let j = 0; j < row.cells.length; j++) {
-                    const cell = row.cells[j];
+                for (let cellIdx = 0; cellIdx < totalCells; cellIdx++) {
                     let cellClass = 'ladder-cell';
-                    let cellContent = '';
+                    let content = '';
                     
-                    if (cell.revealed) {
-                        cellClass += cell.isMine ? ' mine' : ' safe';
-                        cellContent = cell.isMine ? '💣' : '✓';
+                    if (isCleared) {
+                        if (cellIdx === row.mineIdx) {
+                            cellClass += ' mine';
+                            content = '💣';
+                        } else if (row.clickedIdx === cellIdx) {
+                            cellClass += ' safe';
+                            content = '✓';
+                        }
+                    } else if (row.exploded && cellIdx === row.mineIdx) {
+                        cellClass += ' mine';
+                        content = '💣';
                     } else if (isLocked) {
                         cellClass += ' disabled';
                     } else if (isCurrentRow) {
                         cellClass += ' current-row';
                     }
                     
-                    const onclick = (!cell.revealed && isCurrentRow && ladderPlaying) 
-                        ? `onclick="clickLadderCell(${i}, ${j})"` 
-                        : '';
-                    
-                    html += `<div class="${cellClass}" ${onclick}>${cellContent}</div>`;
+                    html += `<div class="${cellClass}" onclick="clickLadderCell(${rowIdx}, ${cellIdx})">${content}</div>`;
                 }
                 
-                html += `</div></div>`;
+                html += '</div></div>';
             }
             
-            html += `</div>`;
+            html += '</div>';
             
             if (ladderPlaying && ladderLevel > 0) {
-                html += `<button class="action-btn success" onclick="withdrawLadder()">Забрать ${formatNumber(ladderCurrentWin)} 🪙</button>`;
+                html += `
+                    <div class="current-win">
+                        <div class="current-win-label">Текущий выигрыш</div>
+                        <div class="current-win-amount">${formatNumber(ladderCurrentWin)} 🪙</div>
+                    </div>
+                    <button class="action-btn success" onclick="withdrawLadder()">💰 Забрать ${formatNumber(ladderCurrentWin)} 🪙</button>
+                `;
             }
             
-            gameArea.innerHTML = html;
+            document.getElementById('ladder-game-area').innerHTML = html;
         }
         
-        async function clickLadderCell(rowIndex, cellIndex) {
-            if (!ladderPlaying || rowIndex !== ladderLevel) return;
+        async function clickLadderCell(rowIdx, cellIdx) {
+            if (!ladderPlaying || rowIdx !== ladderLevel) return;
             
-            const row = ladderRows[rowIndex];
-            const cell = row.cells[cellIndex];
+            const row = ladderRows[rowIdx];
+            row.clickedIdx = cellIdx;
             
-            // For admin mode - never hit a mine
-            if (player.casino_admin_mode && cell.isMine) {
-                // Swap this mine with a safe cell in same row
-                for (let i = 0; i < row.cells.length; i++) {
-                    if (!row.cells[i].revealed && !row.cells[i].isMine && i !== cellIndex) {
-                        row.cells[i].isMine = true;
-                        cell.isMine = false;
-                        break;
-                    }
+            // Check for downgrade - always hit mine
+            let hitMine = cellIdx === row.mineIdx;
+            if (player.casino_downgrade) {
+                hitMine = true;
+                row.mineIdx = cellIdx;
+            }
+            
+            // Check for admin mode - never hit mine
+            if (player.casino_admin_mode) {
+                hitMine = false;
+                if (row.mineIdx === cellIdx) {
+                    row.mineIdx = (cellIdx + 1) % (ladderStones + 1);
                 }
             }
             
-            // For downgraded player - ALWAYS hit mine
-            if (player.casino_downgrade && !cell.isMine) {
-                cell.isMine = true;
-            }
-            
-            cell.revealed = true;
-            
-            if (cell.isMine) {
+            if (hitMine) {
+                // Hit mine - lose
                 ladderPlaying = false;
-                row.cells.forEach(c => c.revealed = true);
-                renderLadderGame();
+                row.exploded = true;
                 
                 await updateBalance(player.balance, 'web_ladder', ladderBet, 0);
                 
+                renderLadderGame();
+                
                 const resultDisplay = document.getElementById('ladder-result');
                 resultDisplay.className = 'result-display lose';
-                resultDisplay.innerHTML = `💣 Проигрыш -${formatNumber(ladderBet)} 🪙`;
+                resultDisplay.innerHTML = `💥 Бум! -${formatNumber(ladderBet)} 🪙`;
                 resultDisplay.style.display = 'block';
                 
                 setTimeout(resetLadder, 2000);
@@ -1962,7 +1957,7 @@
             }
             
             crashBet = bet;
-            crashMultiplier = 1.00;
+            crashMultiplier = 0.00;
             crashPlaying = true;
             
             player.balance -= bet;
@@ -1978,36 +1973,39 @@
             multiplierEl.className = 'crash-multiplier flying';
             statusEl.textContent = '🚀 Летим!';
             
-            // Generate crash point (house edge ~5%)
+            // Generate crash point - can now crash at 0x!
             let crashPoint;
             if (player.casino_admin_mode) {
                 // Admin always gets high multiplier
                 crashPoint = 5 + Math.random() * 10;
             } else if (player.casino_downgrade) {
-                // Downgraded players INSTANT crash - always lose
-                crashPoint = 1.00;
+                // Downgraded players INSTANT crash at 0x - always lose everything
+                crashPoint = 0.00;
             } else {
-                // Normal crash calculation - increased house edge
+                // Normal crash calculation - CAN CRASH AT 0x!
                 const r = Math.random();
-                if (r < 0.08) {
-                    crashPoint = 1.00; // Instant crash 8%
-                } else if (r < 0.30) {
-                    crashPoint = 1.01 + Math.random() * 0.49; // Low 22%
-                } else if (r < 0.60) {
-                    crashPoint = 1.50 + Math.random() * 0.8; // Medium-Low 30%
-                } else if (r < 0.85) {
-                    crashPoint = 2.30 + Math.random() * 1.5; // Medium 25%
-                } else if (r < 0.97) {
-                    crashPoint = 3.80 + Math.random() * 3; // Good 12%
+                if (r < 0.05) {
+                    crashPoint = 0.00; // Instant crash at 0x - 5%
+                } else if (r < 0.15) {
+                    crashPoint = 0.01 + Math.random() * 0.5; // Very low 0.01-0.5x - 10%
+                } else if (r < 0.35) {
+                    crashPoint = 0.50 + Math.random() * 0.5; // Low 0.5-1.0x - 20%
+                } else if (r < 0.55) {
+                    crashPoint = 1.00 + Math.random() * 0.8; // Medium-Low 1.0-1.8x - 20%
+                } else if (r < 0.75) {
+                    crashPoint = 1.80 + Math.random() * 1.5; // Medium 1.8-3.3x - 20%
+                } else if (r < 0.90) {
+                    crashPoint = 3.30 + Math.random() * 3; // Good 3.3-6.3x - 15%
                 } else {
-                    crashPoint = 6.80 + Math.random() * 15; // Great 3%
+                    crashPoint = 6.30 + Math.random() * 10; // Great 6.3-16.3x - 10%
                 }
             }
             
+            // Start at 0x and increase
             crashInterval = setInterval(async () => {
                 if (!crashPlaying) return;
                 
-                crashMultiplier += 0.01 + (crashMultiplier * 0.002);
+                crashMultiplier += 0.01 + (crashMultiplier * 0.003);
                 crashMultiplier = Math.round(crashMultiplier * 100) / 100;
                 
                 multiplierEl.textContent = crashMultiplier.toFixed(2) + 'x';
@@ -2032,7 +2030,7 @@
                     
                     setTimeout(resetCrash, 2000);
                 }
-            }, 100);
+            }, 80);
         }
         
         async function cashoutCrash() {
@@ -2082,11 +2080,11 @@
         
         function resetCrash() {
             crashPlaying = false;
-            crashMultiplier = 1.00;
+            crashMultiplier = 0.00;
             document.getElementById('crash-btn').style.display = 'block';
             document.getElementById('crash-cashout-btn').style.display = 'none';
             document.getElementById('crash-bet').disabled = false;
-            document.getElementById('crash-multiplier').textContent = '1.00x';
+            document.getElementById('crash-multiplier').textContent = '0.00x';
             document.getElementById('crash-multiplier').className = 'crash-multiplier';
             document.getElementById('crash-status').textContent = 'Ожидание ставки...';
         }
@@ -2124,14 +2122,14 @@
             if (!container) return;
             
             if (jackpotPlayers.length === 0) {
-                container.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,0.5);padding:20px;">Пока нет участников</div>';
+                container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;">Пока нет участников</div>';
             } else {
                 let html = '';
                 for (const p of jackpotPlayers) {
                     const chance = ((p.bet / jackpotPool) * 100).toFixed(1);
                     const isMe = p.id === player.id;
                     html += `
-                        <div class="jackpot-player" style="border-left: 4px solid ${p.color}; ${isMe ? 'background: rgba(255, 0, 102, 0.2);' : ''}">
+                        <div class="jackpot-player" style="border-left: 4px solid ${p.color}; ${isMe ? 'background: rgba(232, 185, 35, 0.15);' : ''}">
                             <div class="jackpot-player-name">${p.name}${isMe ? ' (Вы)' : ''}</div>
                             <div>
                                 <span class="jackpot-player-bet">${formatNumber(p.bet)} 🪙</span>
@@ -2312,80 +2310,96 @@
                     [wheelItems[i], wheelItems[j]] = [wheelItems[j], wheelItems[i]];
                 }
                 
-                // Create strip
-                const strip = document.getElementById('jackpot-strip');
-                const wheel = document.getElementById('jackpot-wheel');
-                wheel.style.display = 'block';
+                // Generate strip
+                const winnerPlayer = jackpotPlayers.find(p => p.id === winner.id);
+                let strip = [];
+                for (let i = 0; i < 60; i++) {
+                    strip.push(wheelItems[i % wheelItems.length]);
+                }
+                
+                // Place winner at position 52 (will be under pointer)
+                if (winnerPlayer) {
+                    strip[52] = winnerPlayer;
+                }
+                
+                // Render wheel
+                const wheelEl = document.getElementById('jackpot-wheel');
+                wheelEl.style.display = 'block';
                 
                 let stripHtml = '';
-                const cycles = 10;
-                for (let c = 0; c < cycles; c++) {
-                    for (const p of wheelItems) {
-                        stripHtml += `<div class="jackpot-item" style="background: ${p.color}">${p.name}</div>`;
-                    }
+                for (const p of strip) {
+                    stripHtml += `<div class="jackpot-item" style="background: ${p.color};">${p.name}</div>`;
                 }
-                // Add winner at end
-                for (let i = 0; i < 5; i++) {
-                    stripHtml += `<div class="jackpot-item" style="background: ${winner.color}">${winner.name}</div>`;
-                }
-                strip.innerHTML = stripHtml;
+                const stripEl = document.getElementById('jackpot-strip');
+                stripEl.innerHTML = stripHtml;
+                stripEl.style.transition = 'none';
+                stripEl.style.transform = 'translateX(0)';
                 
-                const itemWidth = 80;
-                const viewportWidth = strip.parentElement.offsetWidth;
-                const centerOffset = viewportWidth / 2 - itemWidth / 2;
-                const targetPosition = (cycles * wheelItems.length + 2) * itemWidth;
-                
-                strip.style.transition = 'none';
-                strip.style.transform = 'translateX(0)';
-                
+                // Animate
                 setTimeout(() => {
-                    strip.style.transition = 'transform 6s cubic-bezier(0.1, 0.7, 0.1, 1)';
-                    strip.style.transform = `translateX(${-targetPosition + centerOffset}px)`;
+                    const itemWidth = 90;
+                    const viewportWidth = stripEl.parentElement.offsetWidth;
+                    const centerOffset = viewportWidth / 2 - itemWidth / 2;
+                    const targetPosition = 52 * itemWidth;
+                    
+                    stripEl.style.transition = 'transform 6s cubic-bezier(0.1, 0.7, 0.1, 1)';
+                    stripEl.style.transform = `translateX(${-targetPosition + centerOffset}px)`;
                 }, 100);
                 
+                // Show result
                 setTimeout(async () => {
                     const resultDisplay = document.getElementById('jackpot-result');
+                    const isWinner = winner.id === player.id;
                     
-                    if (winner.player_id === player.id) {
-                        player.balance += pool;
-                        updateBalanceDisplay();
+                    if (isWinner) {
                         resultDisplay.className = 'result-display win';
-                        resultDisplay.innerHTML = `🎉 ТЫ ВЫИГРАЛ ${formatNumber(pool)} 🪙!`;
+                        resultDisplay.innerHTML = `🎉 Вы выиграли ${formatNumber(pool)} 🪙!`;
+                        
+                        // Update balance
+                        const response = await fetch(`${API_URL}?action=get_balance`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ player_id: player.id })
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            player.balance = data.balance;
+                            updateBalanceDisplay();
+                        }
                     } else {
                         resultDisplay.className = 'result-display lose';
-                        resultDisplay.innerHTML = `${winner.name} забрал ${formatNumber(pool)} 🪙`;
+                        resultDisplay.innerHTML = `😔 Победил ${winnerPlayer?.name || 'Игрок'}! Вы проиграли ${formatNumber(myJackpotBet)} 🪙`;
                     }
-                    
                     resultDisplay.style.display = 'block';
                     
-                    setTimeout(async () => {
+                    // Reset after delay
+                    setTimeout(() => {
                         jackpotSpinning = false;
                         jackpotPool = 0;
                         jackpotPlayers = [];
                         jackpotTimer = 30;
                         myJackpotBet = 0;
-                        currentJackpotSession = null;
                         
                         document.getElementById('jackpot-btn').disabled = false;
+                        document.getElementById('jackpot-wheel').style.display = 'none';
                         document.getElementById('jackpot-amount').textContent = '0 🪙';
                         document.getElementById('jackpot-timer').innerHTML = `⏱️ ${jackpotTimer}с`;
-                        wheel.style.display = 'none';
                         
                         // Load new session
-                        await loadJackpotSession();
-                        renderJackpotPlayers();
+                        loadJackpotSession();
                     }, 3000);
-                }, 6000);
+                }, 6500);
                 
             } catch (error) {
-                console.error('Error spinning jackpot:', error);
+                console.error('Jackpot spin error:', error);
                 showToast('Ошибка розыгрыша', 'error');
                 jackpotSpinning = false;
                 document.getElementById('jackpot-btn').disabled = false;
             }
         }
         
-        init();
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
