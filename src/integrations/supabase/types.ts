@@ -414,6 +414,47 @@ export type Database = {
         }
         Relationships: []
       }
+      squid_case_inventory: {
+        Row: {
+          case_name: string
+          created_at: string | null
+          id: string
+          item_image: string | null
+          item_name: string
+          item_rarity: string
+          item_value: number
+          player_id: string | null
+        }
+        Insert: {
+          case_name: string
+          created_at?: string | null
+          id?: string
+          item_image?: string | null
+          item_name: string
+          item_rarity: string
+          item_value: number
+          player_id?: string | null
+        }
+        Update: {
+          case_name?: string
+          created_at?: string | null
+          id?: string
+          item_image?: string | null
+          item_name?: string
+          item_rarity?: string
+          item_value?: number
+          player_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "squid_case_inventory_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "squid_players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       squid_casino_history: {
         Row: {
           bet_amount: number
