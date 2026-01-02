@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🎁 Ludo Cases</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --common: #8e8e8e;
+            --uncommon: #4ade80;
+            --rare: #3b82f6;
+            --epic: #a855f7;
+            --legendary: #f59e0b;
+            --mythic: #ef4444;
+            --divine: #ec4899;
+            
+            --bg-dark: #0a0a0f;
+            --bg-card: rgba(15, 15, 25, 0.95);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --text-muted: rgba(255, 255, 255, 0.4);
+            --border: rgba(255, 255, 255, 0.1);
+            --primary: #a855f7;
+            --primary-glow: #c084fc;
+        }
+        
+        body {
+            font-family: 'Exo 2', sans-serif;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a0a2e 50%, #0a0a0f 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(168, 85, 247, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(236, 72, 153, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        
+        .container {
+            max-width: 520px;
+            margin: 0 auto;
+            padding: 16px;
+            min-height: 100vh;
+            position: relative;
+        }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 24px 0;
+            margin-bottom: 20px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .logo-icon {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--divine) 100%);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            box-shadow: 0 0 50px rgba(168, 85, 247, 0.5);
+            animation: logo-float 4s ease-in-out infinite;
+        }
+        
+        @keyframes logo-float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(3deg); }
+        }
+        
+        .header h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--divine) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 4px;
+        }
+        
+        /* Balance */
+        .balance-bar {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+        
+        .balance-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 14px 24px;
+            text-align: center;
+        }
+        
+        .balance-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .balance-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        /* Navigation */
+        .nav-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 6px;
+            border-radius: 16px;
+        }
+        
+        .nav-tab {
+            flex: 1;
+            padding: 14px 12px;
+            border: none;
+            border-radius: 12px;
+            background: transparent;
+            color: var(--text-muted);
+            font-family: 'Exo 2', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .nav-tab:hover { color: var(--text-primary); }
+        
+        .nav-tab.active {
+            background: linear-gradient(135deg, var(--primary), var(--divine));
+            color: #fff;
+            box-shadow: 0 0 30px rgba(168, 85, 247, 0.5);
+        }
+        
+        .section { display: none; }
+        .section.active { display: block; animation: fadeIn 0.4s ease; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Cases Grid */
+        .cases-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+        
+        .case-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .case-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--case-color), transparent);
+        }
+        
+        .case-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+        }
+        
+        .case-card.common { --case-color: var(--common); }
+        .case-card.uncommon { --case-color: var(--uncommon); }
+        .case-card.rare { --case-color: var(--rare); }
+        .case-card.epic { --case-color: var(--epic); }
+        .case-card.legendary { --case-color: var(--legendary); }
+        .case-card.mythic { --case-color: var(--mythic); }
+        .case-card.divine { --case-color: var(--divine); }
+        
+        .case-icon {
+            font-size: 3.5rem;
+            margin-bottom: 12px;
+            filter: drop-shadow(0 0 20px var(--case-color));
+        }
+        
+        .case-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--case-color);
+            margin-bottom: 8px;
+        }
+        
+        .case-price {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        .case-best {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+        
+        /* Case Opening Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        
+        .modal.show { display: flex; animation: fadeIn 0.3s ease; }
+        
+        .modal-content {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 24px;
+            padding: 30px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+        }
+        
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        .opening-case {
+            font-size: 5rem;
+            margin-bottom: 20px;
+            animation: case-shake 0.5s ease infinite;
+        }
+        
+        @keyframes case-shake {
+            0%, 100% { transform: rotate(-3deg); }
+            50% { transform: rotate(3deg); }
+        }
+        
+        /* Roulette */
+        .case-roulette {
+            position: relative;
+            margin: 30px 0;
+            overflow: hidden;
+            border-radius: 16px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid var(--border);
+        }
+        
+        .roulette-pointer {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 100%;
+            background: var(--primary);
+            z-index: 10;
+            box-shadow: 0 0 20px var(--primary);
+        }
+        
+        .roulette-pointer::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 12px solid transparent;
+            border-right: 12px solid transparent;
+            border-top: 14px solid var(--primary);
+        }
+        
+        .roulette-viewport {
+            height: 100px;
+            overflow: hidden;
+        }
+        
+        .roulette-strip {
+            display: flex;
+            transition: transform 5s cubic-bezier(0.1, 0.7, 0.1, 1);
+        }
+        
+        .roulette-item {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px;
+        }
+        
+        .roulette-item-icon { font-size: 2.2rem; }
+        .roulette-item-name { font-size: 0.65rem; color: var(--text-secondary); margin-top: 4px; text-align: center; }
+        
+        /* Won Item */
+        .won-item {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px;
+        }
+        
+        .won-item.show { display: flex; animation: itemReveal 0.6s ease; }
+        
+        @keyframes itemReveal {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .won-item-icon {
+            font-size: 5rem;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 30px var(--item-color));
+        }
+        
+        .won-item-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .won-item-rarity {
+            font-size: 0.85rem;
+            padding: 6px 18px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+        }
+        
+        .won-item-value {
+            margin-top: 15px;
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+        }
+        
+        /* Inventory */
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        
+        .inventory-item {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            padding: 14px;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s;
+        }
+        
+        .inventory-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .inventory-item.common { border-color: var(--common); }
+        .inventory-item.uncommon { border-color: var(--uncommon); }
+        .inventory-item.rare { border-color: var(--rare); }
+        .inventory-item.epic { border-color: var(--epic); }
+        .inventory-item.legendary { border-color: var(--legendary); }
+        .inventory-item.mythic { border-color: var(--mythic); }
+        .inventory-item.divine { border-color: var(--divine); }
+        
+        .inventory-item-icon { font-size: 2rem; }
+        
+        .inventory-item-name {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-top: 6px;
+            word-break: break-word;
+        }
+        
+        .inventory-item-value {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        
+        .sell-btn {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            background: rgba(239, 68, 68, 0.9);
+            border: none;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            font-size: 0.7rem;
+            color: #fff;
+            cursor: pointer;
+            display: none;
+        }
+        
+        .inventory-item:hover .sell-btn { display: block; }
+        
+        .empty-inventory {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+        
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 14px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 15px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--divine));
+            color: #fff;
+            box-shadow: 0 0 30px rgba(168, 85, 247, 0.4);
+        }
+        
+        .btn-primary:hover { transform: translateY(-3px); }
+        
+        .btn-primary:disabled {
+            background: rgba(100, 100, 120, 0.5);
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        
+        .btn-sell {
+            background: linear-gradient(135deg, var(--mythic), #b91c1c);
+            color: #fff;
+        }
+        
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--bg-card);
+            border: 2px solid var(--primary);
+            border-radius: 14px;
+            padding: 14px 28px;
+            font-weight: 600;
+            z-index: 1001;
+            opacity: 0;
+            transition: all 0.3s;
+        }
+        
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast.error { border-color: var(--mythic); color: var(--mythic); }
+        .toast.success { border-color: var(--uncommon); color: var(--uncommon); }
+        
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 80px 20px;
+        }
+        
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(168, 85, 247, 0.2);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 25px;
+        }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        /* Particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: var(--primary);
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: float-up 15s infinite;
+        }
+        
+        @keyframes float-up {
+            0%, 100% { transform: translateY(100vh); opacity: 0; }
+            10% { opacity: 0.5; }
+            90% { opacity: 0.5; }
+            100% { transform: translateY(-100vh); opacity: 0; }
+        }
+        
+        .particle:nth-child(1) { left: 10%; animation-delay: 0s; }
+        .particle:nth-child(2) { left: 25%; animation-delay: 2s; background: var(--divine); }
+        .particle:nth-child(3) { left: 40%; animation-delay: 4s; }
+        .particle:nth-child(4) { left: 55%; animation-delay: 1s; background: var(--legendary); }
+        .particle:nth-child(5) { left: 70%; animation-delay: 3s; }
+        .particle:nth-child(6) { left: 85%; animation-delay: 5s; background: var(--epic); }
+    </style>
+</head>
+<body>
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+    
+    <div class="container" id="app">
+        <div class="loading" id="loading">
+            <div class="loading-spinner"></div>
+            <p style="color: var(--primary); font-family: 'Orbitron', sans-serif;">Loading...</p>
+        </div>
+    </div>
+    
+    <div class="modal" id="case-modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">✕</button>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+    
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const API_URL = 'https://qvfhieihrshgcljngpcq.supabase.co/functions/v1/ludo-cases';
+        
+        let player = null;
+        let inventory = [];
+        let currentSection = 'cases';
+        
+        // Все кейсы с предметами
+        const CASES = [
+            {
+                id: 'starter',
+                name: 'Стартовый',
+                icon: '📦',
+                price: 5000,
+                rarity: 'common',
+                items: [
+                    { name: 'Монетка', icon: '🪙', rarity: 'common', value: 100, chance: 40 },
+                    { name: 'Жетон', icon: '🎫', rarity: 'common', value: 200, chance: 30 },
+                    { name: 'Кристалл', icon: '💎', rarity: 'uncommon', value: 500, chance: 20 },
+                    { name: 'Изумруд', icon: '💚', rarity: 'rare', value: 2000, chance: 8 },
+                    { name: 'Рубин', icon: '❤️', rarity: 'epic', value: 8000, chance: 1.8 },
+                    { name: 'Сапфир', icon: '💙', rarity: 'legendary', value: 25000, chance: 0.2 }
+                ]
+            },
+            {
+                id: 'premium',
+                name: 'Премиум',
+                icon: '🎁',
+                price: 25000,
+                rarity: 'uncommon',
+                items: [
+                    { name: 'Золотой слиток', icon: '🥇', rarity: 'uncommon', value: 3000, chance: 35 },
+                    { name: 'Платиновый диск', icon: '💿', rarity: 'rare', value: 8000, chance: 30 },
+                    { name: 'Корона', icon: '👑', rarity: 'epic', value: 20000, chance: 20 },
+                    { name: 'Скипетр', icon: '🏆', rarity: 'legendary', value: 60000, chance: 10 },
+                    { name: 'Артефакт', icon: '🔮', rarity: 'mythic', value: 150000, chance: 4.5 },
+                    { name: 'Реликвия', icon: '⚱️', rarity: 'divine', value: 500000, chance: 0.5 }
+                ]
+            },
+            {
+                id: 'elite',
+                name: 'Элитный',
+                icon: '💎',
+                price: 100000,
+                rarity: 'rare',
+                items: [
+                    { name: 'Бриллиант', icon: '💎', rarity: 'rare', value: 15000, chance: 30 },
+                    { name: 'Золотой меч', icon: '⚔️', rarity: 'epic', value: 40000, chance: 30 },
+                    { name: 'Драконий глаз', icon: '🐉', rarity: 'legendary', value: 120000, chance: 25 },
+                    { name: 'Феникс', icon: '🦅', rarity: 'mythic', value: 350000, chance: 12 },
+                    { name: 'Душа дракона', icon: '🔥', rarity: 'divine', value: 800000, chance: 2.7 },
+                    { name: 'Космический камень', icon: '🌌', rarity: 'divine', value: 2000000, chance: 0.3 }
+                ]
+            },
+            {
+                id: 'legendary',
+                name: 'Легендарный',
+                icon: '⭐',
+                price: 500000,
+                rarity: 'legendary',
+                items: [
+                    { name: 'Звездная пыль', icon: '✨', rarity: 'epic', value: 80000, chance: 25 },
+                    { name: 'Лунный камень', icon: '🌙', rarity: 'legendary', value: 250000, chance: 30 },
+                    { name: 'Солнечный кристалл', icon: '☀️', rarity: 'legendary', value: 400000, chance: 25 },
+                    { name: 'Черная дыра', icon: '🕳️', rarity: 'mythic', value: 800000, chance: 15 },
+                    { name: 'Квазар', icon: '💫', rarity: 'divine', value: 2500000, chance: 4.5 },
+                    { name: 'Бесконечность', icon: '♾️', rarity: 'divine', value: 10000000, chance: 0.5 }
+                ]
+            },
+            {
+                id: 'mythic',
+                name: 'Мифический',
+                icon: '🌟',
+                price: 2000000,
+                rarity: 'mythic',
+                items: [
+                    { name: 'Атлантида', icon: '🏛️', rarity: 'legendary', value: 500000, chance: 20 },
+                    { name: 'Эльдорадо', icon: '🏰', rarity: 'legendary', value: 800000, chance: 25 },
+                    { name: 'Молот Тора', icon: '🔨', rarity: 'mythic', value: 2000000, chance: 30 },
+                    { name: 'Трезубец', icon: '🔱', rarity: 'mythic', value: 3500000, chance: 18 },
+                    { name: 'Эгида Зевса', icon: '⚡', rarity: 'divine', value: 8000000, chance: 6 },
+                    { name: 'Перо Феникса', icon: '🪶', rarity: 'divine', value: 25000000, chance: 1 }
+                ]
+            },
+            {
+                id: 'divine',
+                name: 'Божественный',
+                icon: '👁️',
+                price: 10000000,
+                rarity: 'divine',
+                items: [
+                    { name: 'Амброзия', icon: '🍯', rarity: 'mythic', value: 3000000, chance: 15 },
+                    { name: 'Нектар богов', icon: '🍷', rarity: 'mythic', value: 5000000, chance: 20 },
+                    { name: 'Сердце титана', icon: '💜', rarity: 'divine', value: 12000000, chance: 30 },
+                    { name: 'Око Одина', icon: '👁️', rarity: 'divine', value: 25000000, chance: 20 },
+                    { name: 'Рагнарок', icon: '🌋', rarity: 'divine', value: 50000000, chance: 12 },
+                    { name: 'Создатель миров', icon: '🌍', rarity: 'divine', value: 100000000, chance: 3 }
+                ]
+            },
+            {
+                id: 'chaos',
+                name: 'Хаос',
+                icon: '🌀',
+                price: 50000000,
+                rarity: 'divine',
+                items: [
+                    { name: 'Осколок хаоса', icon: '💔', rarity: 'divine', value: 20000000, chance: 15 },
+                    { name: 'Пустота', icon: '⬛', rarity: 'divine', value: 40000000, chance: 25 },
+                    { name: 'Антиматерия', icon: '⚛️', rarity: 'divine', value: 80000000, chance: 30 },
+                    { name: 'Первозданная тьма', icon: '🖤', rarity: 'divine', value: 150000000, chance: 20 },
+                    { name: 'Абсолют', icon: '🔳', rarity: 'divine', value: 300000000, chance: 8 },
+                    { name: 'Вечность', icon: '🔄', rarity: 'divine', value: 1000000000, chance: 2 }
+                ]
+            },
+            {
+                id: 'ultimate',
+                name: 'Абсолют',
+                icon: '🏆',
+                price: 250000000,
+                rarity: 'divine',
+                items: [
+                    { name: 'Камень времени', icon: '⏳', rarity: 'divine', value: 100000000, chance: 15 },
+                    { name: 'Камень разума', icon: '🧠', rarity: 'divine', value: 150000000, chance: 20 },
+                    { name: 'Камень реальности', icon: '🌈', rarity: 'divine', value: 250000000, chance: 25 },
+                    { name: 'Камень силы', icon: '💪', rarity: 'divine', value: 400000000, chance: 22 },
+                    { name: 'Камень души', icon: '👻', rarity: 'divine', value: 700000000, chance: 15 },
+                    { name: 'ИНФИНИТИ', icon: '✵', rarity: 'divine', value: 5000000000, chance: 3 }
+                ]
+            }
+        ];
+        
+        async function init() {
+            const tg = window.Telegram?.WebApp;
+            if (tg) {
+                tg.ready();
+                tg.expand();
+                
+                const user = tg.initDataUnsafe?.user;
+                if (user) {
+                    await loadPlayer(user.id, user.username, user.first_name, user.is_premium);
+                } else {
+                    showToast('Откройте через Telegram!', 'error');
+                }
+            } else {
+                await loadPlayer(123456789, 'TestUser', 'Test', false);
+            }
+        }
+        
+        async function loadPlayer(telegramId, username, firstName, isPremium) {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'load',
+                        telegram_id: telegramId,
+                        username: username,
+                        first_name: firstName,
+                        is_premium: isPremium
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    player = data.player;
+                    inventory = data.inventory || [];
+                    renderApp();
+                } else {
+                    showToast('Ошибка загрузки!', 'error');
+                }
+            } catch (error) {
+                console.error('Error loading player:', error);
+                // Fallback for dev
+                player = { telegram_id: telegramId, balance: 1000000, first_name: firstName };
+                inventory = [];
+                renderApp();
+            }
+        }
+        
+        function formatNumber(num) {
+            if (num >= 1000000000) return (num / 1000000000).toFixed(2) + 'B';
+            if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+            return num.toString();
+        }
+        
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type + ' show';
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+        
+        function switchSection(section) {
+            currentSection = section;
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.section === section);
+            });
+            document.querySelectorAll('.section').forEach(s => {
+                s.classList.toggle('active', s.id === 'section-' + section);
+            });
+        }
+        
+        function renderApp() {
+            const app = document.getElementById('app');
+            
+            app.innerHTML = `
+                <div class="header">
+                    <div class="logo">
+                        <div class="logo-icon">🎁</div>
+                        <h1>LUDO CASES</h1>
+                    </div>
+                </div>
+                
+                <div class="balance-bar">
+                    <div class="balance-item">
+                        <div class="balance-label">Баланс</div>
+                        <div class="balance-value" id="balance">${formatNumber(player.balance)} 🪙</div>
+                    </div>
+                    <div class="balance-item">
+                        <div class="balance-label">Предметов</div>
+                        <div class="balance-value" id="items-count">${inventory.length}</div>
+                    </div>
+                </div>
+                
+                <div class="nav-tabs">
+                    <button class="nav-tab active" data-section="cases" onclick="switchSection('cases')">🎁 Кейсы</button>
+                    <button class="nav-tab" data-section="inventory" onclick="switchSection('inventory')">📦 Инвентарь</button>
+                </div>
+                
+                <div class="section active" id="section-cases">
+                    <div class="cases-grid">
+                        ${CASES.map(c => `
+                            <div class="case-card ${c.rarity}" onclick="openCaseModal('${c.id}')">
+                                <div class="case-icon">${c.icon}</div>
+                                <div class="case-name">${c.name}</div>
+                                <div class="case-price">${formatNumber(c.price)} 🪙</div>
+                                <div class="case-best">Топ: ${c.items[c.items.length - 1].name}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                
+                <div class="section" id="section-inventory">
+                    ${renderInventory()}
+                </div>
+            `;
+        }
+        
+        function renderInventory() {
+            if (inventory.length === 0) {
+                return `<div class="empty-inventory">
+                    <p style="font-size: 3rem; margin-bottom: 15px;">📦</p>
+                    <p>Инвентарь пуст</p>
+                    <p style="font-size: 0.85rem; margin-top: 10px;">Откройте кейсы чтобы получить предметы!</p>
+                </div>`;
+            }
+            
+            return `
+                <div class="inventory-grid">
+                    ${inventory.map((item, index) => `
+                        <div class="inventory-item ${item.item_rarity}">
+                            <button class="sell-btn" onclick="sellItem('${item.id}', ${item.item_value})">✕</button>
+                            <div class="inventory-item-icon">${getItemIcon(item.item_name)}</div>
+                            <div class="inventory-item-name">${item.item_name}</div>
+                            <div class="inventory-item-value">${formatNumber(item.item_value)} 🪙</div>
+                        </div>
+                    `).join('')}
+                </div>
+                <button class="btn btn-sell" onclick="sellAll()">💰 Продать всё (${formatNumber(inventory.reduce((s, i) => s + i.item_value, 0))} 🪙)</button>
+            `;
+        }
+        
+        function getItemIcon(name) {
+            const allItems = CASES.flatMap(c => c.items);
+            const item = allItems.find(i => i.name === name);
+            return item ? item.icon : '❓';
+        }
+        
+        function openCaseModal(caseId) {
+            const caseData = CASES.find(c => c.id === caseId);
+            if (!caseData) return;
+            
+            if (player.balance < caseData.price) {
+                showToast('Недостаточно монет!', 'error');
+                return;
+            }
+            
+            const modal = document.getElementById('case-modal');
+            const modalBody = document.getElementById('modal-body');
+            
+            modalBody.innerHTML = `
+                <h2 style="font-family: 'Orbitron', sans-serif; margin-bottom: 20px; color: var(--${caseData.rarity});">${caseData.name}</h2>
+                <div class="opening-case">${caseData.icon}</div>
+                <p style="color: var(--text-secondary); margin-bottom: 20px;">Стоимость: ${formatNumber(caseData.price)} 🪙</p>
+                <div style="max-height: 150px; overflow-y: auto; margin-bottom: 20px;">
+                    ${caseData.items.map(item => `
+                        <div style="display: flex; justify-content: space-between; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 8px; margin-bottom: 6px; border-left: 3px solid var(--${item.rarity});">
+                            <span>${item.icon} ${item.name}</span>
+                            <span style="color: var(--text-muted);">${item.chance}%</span>
+                        </div>
+                    `).join('')}
+                </div>
+                <button class="btn btn-primary" onclick="openCase('${caseId}')">🎁 Открыть кейс</button>
+            `;
+            
+            modal.classList.add('show');
+        }
+        
+        function closeModal() {
+            document.getElementById('case-modal').classList.remove('show');
+        }
+        
+        async function openCase(caseId) {
+            const caseData = CASES.find(c => c.id === caseId);
+            if (!caseData) return;
+            
+            if (player.balance < caseData.price) {
+                showToast('Недостаточно монет!', 'error');
+                return;
+            }
+            
+            player.balance -= caseData.price;
+            document.getElementById('balance').textContent = formatNumber(player.balance) + ' 🪙';
+            
+            // Determine won item
+            const random = Math.random() * 100;
+            let cumulative = 0;
+            let wonItem = caseData.items[0];
+            
+            for (const item of caseData.items) {
+                cumulative += item.chance;
+                if (random <= cumulative) {
+                    wonItem = item;
+                    break;
+                }
+            }
+            
+            // Build roulette
+            const modalBody = document.getElementById('modal-body');
+            
+            // Generate strip with items
+            let stripItems = [];
+            for (let i = 0; i < 50; i++) {
+                const randomItem = caseData.items[Math.floor(Math.random() * caseData.items.length)];
+                stripItems.push(randomItem);
+            }
+            // Place won item near the end
+            const winIndex = 45;
+            stripItems[winIndex] = wonItem;
+            
+            modalBody.innerHTML = `
+                <h2 style="font-family: 'Orbitron', sans-serif; margin-bottom: 10px;">Открытие...</h2>
+                <div class="case-roulette">
+                    <div class="roulette-pointer"></div>
+                    <div class="roulette-viewport">
+                        <div class="roulette-strip" id="roulette-strip">
+                            ${stripItems.map(item => `
+                                <div class="roulette-item" style="background: linear-gradient(180deg, rgba(0,0,0,0.3), rgba(0,0,0,0.6)); border-bottom: 3px solid var(--${item.rarity});">
+                                    <div class="roulette-item-icon">${item.icon}</div>
+                                    <div class="roulette-item-name">${item.name}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+                <div class="won-item" id="won-item"></div>
+            `;
+            
+            // Animate roulette
+            const strip = document.getElementById('roulette-strip');
+            const itemWidth = 100;
+            const viewportWidth = strip.parentElement.offsetWidth;
+            const centerOffset = viewportWidth / 2 - itemWidth / 2;
+            const targetPosition = -(winIndex * itemWidth - centerOffset + Math.random() * 40 - 20);
+            
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    strip.style.transform = `translateX(${targetPosition}px)`;
+                });
+            });
+            
+            // Show won item after animation
+            setTimeout(async () => {
+                // Save to inventory via API
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'open_case',
+                            telegram_id: player.telegram_id,
+                            case_id: caseId,
+                            case_price: caseData.price,
+                            item_name: wonItem.name,
+                            item_rarity: wonItem.rarity,
+                            item_value: wonItem.value,
+                            case_name: caseData.name
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    if (data.success) {
+                        player.balance = data.balance;
+                        inventory = data.inventory || [];
+                    }
+                } catch (error) {
+                    console.error('Error saving item:', error);
+                    // Add locally for dev
+                    inventory.push({
+                        id: Date.now().toString(),
+                        item_name: wonItem.name,
+                        item_rarity: wonItem.rarity,
+                        item_value: wonItem.value
+                    });
+                }
+                
+                document.getElementById('balance').textContent = formatNumber(player.balance) + ' 🪙';
+                document.getElementById('items-count').textContent = inventory.length;
+                
+                const wonItemDiv = document.getElementById('won-item');
+                wonItemDiv.innerHTML = `
+                    <div class="won-item-icon" style="--item-color: var(--${wonItem.rarity})">${wonItem.icon}</div>
+                    <div class="won-item-name" style="color: var(--${wonItem.rarity})">${wonItem.name}</div>
+                    <div class="won-item-rarity" style="background: var(--${wonItem.rarity}); color: #000;">${wonItem.rarity}</div>
+                    <div class="won-item-value">${formatNumber(wonItem.value)} 🪙</div>
+                `;
+                wonItemDiv.classList.add('show');
+                
+                modalBody.querySelector('.case-roulette').style.opacity = '0.3';
+                modalBody.querySelector('h2').textContent = 'Поздравляем!';
+                
+                // Add button to open another
+                const btnContainer = document.createElement('div');
+                btnContainer.innerHTML = `
+                    <button class="btn btn-primary" onclick="openCase('${caseId}')" style="margin-top: 20px;">🎁 Ещё раз</button>
+                `;
+                modalBody.appendChild(btnContainer);
+                
+            }, 5500);
+        }
+        
+        async function sellItem(itemId, value) {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'sell_item',
+                        telegram_id: player.telegram_id,
+                        item_id: itemId,
+                        item_value: value
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    player.balance = data.balance;
+                    inventory = data.inventory || [];
+                    showToast(`Продано за ${formatNumber(value)} 🪙`, 'success');
+                }
+            } catch (error) {
+                console.error('Error selling item:', error);
+                // Local fallback
+                inventory = inventory.filter(i => i.id !== itemId);
+                player.balance += value;
+                showToast(`Продано за ${formatNumber(value)} 🪙`, 'success');
+            }
+            
+            document.getElementById('balance').textContent = formatNumber(player.balance) + ' 🪙';
+            document.getElementById('items-count').textContent = inventory.length;
+            document.getElementById('section-inventory').innerHTML = renderInventory();
+        }
+        
+        async function sellAll() {
+            if (inventory.length === 0) return;
+            
+            const totalValue = inventory.reduce((sum, item) => sum + item.item_value, 0);
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'sell_all',
+                        telegram_id: player.telegram_id
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    player.balance = data.balance;
+                    inventory = [];
+                    showToast(`Продано всё за ${formatNumber(totalValue)} 🪙!`, 'success');
+                }
+            } catch (error) {
+                console.error('Error selling all:', error);
+                player.balance += totalValue;
+                inventory = [];
+                showToast(`Продано всё за ${formatNumber(totalValue)} 🪙!`, 'success');
+            }
+            
+            document.getElementById('balance').textContent = formatNumber(player.balance) + ' 🪙';
+            document.getElementById('items-count').textContent = '0';
+            document.getElementById('section-inventory').innerHTML = renderInventory();
+        }
+        
+        init();
+    </script>
+</body>
+</html>
