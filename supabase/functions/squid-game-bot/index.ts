@@ -1903,6 +1903,17 @@ serve(async (req) => {
             ],
           },
         );
+      } else if (text === "/ludo") {
+        // Works in both private and group chats
+        await sendMessage(
+          chat.id,
+          `🎁 <b>Ludo Cases</b>\n\n📦 Открывай кейсы и получай редкие предметы!\n🎰 От обычных до легендарных вещей\n💰 Продавай предметы за монеты\n\nНажми кнопку чтобы открыть:`,
+          {
+            inline_keyboard: [
+              [{ text: "📦 Открыть кейсы", web_app: { url: "https://punelittley.github.io/fashion-nest-creator/ludo/" } }],
+            ],
+          },
+        );
       } else if (text === "/help") {
         await sendMessage(
           chat.id,
