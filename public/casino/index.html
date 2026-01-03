@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>🎰 Royal Casino</title>
+    <title>⚡ Neon Casino</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -14,37 +14,36 @@
         }
         
         :root {
-            --primary: #c9a227;
-            --primary-light: #f4d03f;
-            --primary-dark: #8b6914;
-            --accent: #9b59b6;
-            --accent-light: #bb8fce;
-            --bg-dark: #0d0d1a;
-            --bg-card: rgba(20, 20, 35, 0.95);
-            --bg-card-hover: rgba(30, 30, 50, 0.98);
+            --neon-cyan: #00fff7;
+            --neon-pink: #ff00aa;
+            --neon-purple: #a855f7;
+            --neon-blue: #3b82f6;
+            --neon-green: #22c55e;
+            --neon-red: #ef4444;
+            --neon-orange: #f97316;
+            --neon-yellow: #facc15;
+            --bg-dark: #0a0a0f;
+            --bg-card: rgba(15, 15, 25, 0.9);
+            --bg-card-light: rgba(25, 25, 40, 0.95);
             --text-primary: #ffffff;
-            --text-secondary: rgba(255, 255, 255, 0.75);
-            --text-muted: rgba(255, 255, 255, 0.45);
-            --border: rgba(201, 162, 39, 0.25);
-            --border-accent: rgba(155, 89, 182, 0.35);
-            --success: #27ae60;
-            --danger: #c0392b;
-            --gradient-gold: linear-gradient(135deg, #c9a227 0%, #f4d03f 50%, #c9a227 100%);
-            --gradient-royal: linear-gradient(135deg, #9b59b6 0%, #8e44ad 50%, #9b59b6 100%);
-            --gradient-dark: linear-gradient(180deg, #0d0d1a 0%, #1a1a2e 100%);
-            --shadow-gold: 0 0 40px rgba(201, 162, 39, 0.4);
-            --shadow-royal: 0 0 40px rgba(155, 89, 182, 0.4);
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --text-muted: rgba(255, 255, 255, 0.4);
+            --border: rgba(255, 255, 255, 0.08);
+            --gradient-neon: linear-gradient(135deg, var(--neon-cyan) 0%, var(--neon-pink) 100%);
+            --gradient-purple: linear-gradient(135deg, var(--neon-purple) 0%, var(--neon-pink) 100%);
+            --gradient-cyber: linear-gradient(180deg, #0a0a0f 0%, #15152a 50%, #0a0a0f 100%);
         }
         
         body {
-            font-family: 'Raleway', sans-serif;
-            background: var(--gradient-dark);
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-dark);
             min-height: 100vh;
             color: var(--text-primary);
             overflow-x: hidden;
             position: relative;
         }
         
+        /* Animated background grid */
         body::before {
             content: '';
             position: fixed;
@@ -53,55 +52,59 @@
             right: 0;
             bottom: 0;
             background: 
-                radial-gradient(ellipse at 15% 10%, rgba(201, 162, 39, 0.12) 0%, transparent 45%),
-                radial-gradient(ellipse at 85% 90%, rgba(155, 89, 182, 0.08) 0%, transparent 45%),
-                radial-gradient(ellipse at 50% 50%, rgba(201, 162, 39, 0.03) 0%, transparent 60%);
+                linear-gradient(90deg, rgba(0, 255, 247, 0.03) 1px, transparent 1px),
+                linear-gradient(rgba(0, 255, 247, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
             pointer-events: none;
             z-index: 0;
         }
         
-        /* Floating diamonds */
-        .diamonds {
+        /* Glowing orbs */
+        .orb {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            border-radius: 50%;
+            filter: blur(80px);
             pointer-events: none;
             z-index: 0;
-            overflow: hidden;
+            animation: float 20s ease-in-out infinite;
         }
         
-        .diamond {
-            position: absolute;
-            width: 8px;
-            height: 8px;
-            background: var(--primary);
-            transform: rotate(45deg);
-            opacity: 0.2;
-            animation: float-diamond 18s infinite;
+        .orb-1 {
+            width: 400px;
+            height: 400px;
+            background: rgba(0, 255, 247, 0.15);
+            top: -200px;
+            right: -100px;
+            animation-delay: 0s;
         }
         
-        @keyframes float-diamond {
-            0%, 100% { transform: translateY(100vh) rotate(45deg); opacity: 0; }
-            10% { opacity: 0.4; }
-            90% { opacity: 0.4; }
-            100% { transform: translateY(-100vh) rotate(405deg); opacity: 0; }
+        .orb-2 {
+            width: 300px;
+            height: 300px;
+            background: rgba(255, 0, 170, 0.12);
+            bottom: -150px;
+            left: -100px;
+            animation-delay: -10s;
         }
         
-        .diamond:nth-child(1) { left: 8%; animation-delay: 0s; animation-duration: 14s; }
-        .diamond:nth-child(2) { left: 18%; animation-delay: 2s; animation-duration: 16s; background: var(--accent); }
-        .diamond:nth-child(3) { left: 28%; animation-delay: 4s; animation-duration: 13s; }
-        .diamond:nth-child(4) { left: 38%; animation-delay: 1s; animation-duration: 18s; background: var(--accent); }
-        .diamond:nth-child(5) { left: 48%; animation-delay: 3s; animation-duration: 15s; }
-        .diamond:nth-child(6) { left: 58%; animation-delay: 5s; animation-duration: 17s; background: var(--accent); }
-        .diamond:nth-child(7) { left: 68%; animation-delay: 2.5s; animation-duration: 14s; }
-        .diamond:nth-child(8) { left: 78%; animation-delay: 0.5s; animation-duration: 16s; background: var(--accent); }
-        .diamond:nth-child(9) { left: 88%; animation-delay: 4.5s; animation-duration: 13s; }
-        .diamond:nth-child(10) { left: 95%; animation-delay: 1.5s; animation-duration: 19s; background: var(--accent); }
+        .orb-3 {
+            width: 200px;
+            height: 200px;
+            background: rgba(168, 85, 247, 0.1);
+            top: 50%;
+            right: -50px;
+            animation-delay: -5s;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(-30px, 20px) scale(1.1); }
+            50% { transform: translate(20px, -30px) scale(0.95); }
+            75% { transform: translate(-20px, -20px) scale(1.05); }
+        }
         
         .container {
-            max-width: 500px;
+            max-width: 480px;
             margin: 0 auto;
             padding: 16px;
             min-height: 100vh;
@@ -112,270 +115,220 @@
         /* Header */
         .header {
             text-align: center;
-            padding: 24px 0;
-            margin-bottom: 24px;
+            padding: 20px 0 24px;
         }
         
         .logo {
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            justify-content: center;
-            gap: 16px;
-            margin-bottom: 18px;
+            gap: 14px;
+            margin-bottom: 20px;
         }
         
         .logo-icon {
-            width: 64px;
-            height: 64px;
-            background: var(--gradient-gold);
-            border-radius: 50%;
+            width: 56px;
+            height: 56px;
+            background: var(--gradient-neon);
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2rem;
-            box-shadow: var(--shadow-gold), inset 0 0 20px rgba(255, 255, 255, 0.2);
-            animation: logo-pulse 3s ease-in-out infinite;
-            position: relative;
-            border: 3px solid rgba(255, 255, 255, 0.3);
+            font-size: 1.8rem;
+            box-shadow: 0 0 40px rgba(0, 255, 247, 0.4);
+            animation: pulse-glow 2s ease-in-out infinite;
         }
         
-        .logo-icon::after {
-            content: '';
-            position: absolute;
-            inset: -6px;
-            background: var(--gradient-gold);
-            border-radius: 50%;
-            z-index: -1;
-            opacity: 0.3;
-            filter: blur(15px);
-            animation: logo-glow 3s ease-in-out infinite;
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 40px rgba(0, 255, 247, 0.4); }
+            50% { box-shadow: 0 0 60px rgba(0, 255, 247, 0.6), 0 0 100px rgba(255, 0, 170, 0.3); }
         }
         
-        @keyframes logo-pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-        
-        @keyframes logo-glow {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 0.6; }
-        }
-        
-        .header h1 {
-            font-family: 'Cinzel', serif;
-            font-size: 2rem;
-            font-weight: 900;
-            background: var(--gradient-gold);
+        .logo h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.4rem;
+            letter-spacing: 4px;
+            background: var(--gradient-neon);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            letter-spacing: 4px;
-            text-transform: uppercase;
-            text-shadow: 0 0 30px rgba(201, 162, 39, 0.5);
         }
         
-        .header .subtitle {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 6px;
-            margin-top: 6px;
-        }
-        
-        /* Balance Card */
+        /* Balance card */
         .balance-card {
-            background: linear-gradient(135deg, var(--bg-card) 0%, rgba(30, 30, 50, 0.9) 100%);
+            background: var(--bg-card);
             border: 1px solid var(--border);
-            border-radius: 24px;
-            padding: 24px 36px;
-            display: inline-block;
+            border-radius: 20px;
+            padding: 20px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            backdrop-filter: blur(20px);
             position: relative;
             overflow: hidden;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
         }
         
         .balance-card::before {
             content: '';
             position: absolute;
             top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(201, 162, 39, 0.08), transparent);
-            animation: shimmer 5s ease-in-out infinite;
-        }
-        
-        .balance-card::after {
-            content: '';
-            position: absolute;
-            top: 0;
             left: 0;
             right: 0;
             height: 1px;
-            background: var(--gradient-gold);
+            background: var(--gradient-neon);
         }
         
-        @keyframes shimmer {
-            0% { left: -100%; }
-            50%, 100% { left: 100%; }
+        .balance-left {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
         }
         
         .balance-label {
-            font-size: 0.65rem;
+            font-size: 0.7rem;
             color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 4px;
+            letter-spacing: 2px;
             font-weight: 600;
         }
         
         .balance-amount {
-            font-family: 'Cinzel', serif;
-            font-size: 1.8rem;
-            font-weight: 900;
-            color: var(--primary);
-            text-shadow: 0 0 25px rgba(201, 162, 39, 0.6);
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 30px rgba(0, 255, 247, 0.5);
         }
         
-        /* User Info */
-        .user-info {
-            display: inline-flex;
+        .user-avatar {
+            width: 48px;
+            height: 48px;
+            background: var(--gradient-purple);
+            border-radius: 14px;
+            display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 12px 24px;
-            background: rgba(201, 162, 39, 0.08);
-            border: 1px solid var(--border);
-            border-radius: 50px;
-            font-weight: 500;
-            color: var(--text-primary);
-            font-size: 0.9rem;
-            margin-bottom: 24px;
+            justify-content: center;
+            font-size: 1.3rem;
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+        }
+        
+        .username {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-bottom: 20px;
         }
         
         .premium-badge {
-            background: var(--gradient-gold);
+            background: var(--gradient-neon);
             color: var(--bg-dark);
-            padding: 4px 12px;
+            padding: 3px 10px;
             border-radius: 20px;
             font-size: 0.6rem;
             font-weight: 700;
-            letter-spacing: 2px;
-            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-left: 8px;
         }
         
         /* Game Tabs */
         .game-tabs {
             display: flex;
-            gap: 8px;
-            margin-bottom: 24px;
-            padding: 8px;
-            background: rgba(0, 0, 0, 0.4);
-            border-radius: 20px;
+            gap: 6px;
+            margin-bottom: 20px;
+            padding: 6px;
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border);
             flex-wrap: wrap;
-            border: 1px solid rgba(255, 255, 255, 0.05);
         }
         
         .game-tab {
             flex: 1;
-            min-width: 70px;
-            padding: 14px 10px;
+            min-width: 60px;
+            padding: 12px 8px;
             border: none;
-            border-radius: 14px;
+            border-radius: 12px;
             background: transparent;
             color: var(--text-muted);
-            font-family: 'Raleway', sans-serif;
-            font-size: 0.7rem;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.65rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s ease;
             text-align: center;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
         }
         
         .game-tab:hover {
             color: var(--text-primary);
-            background: rgba(201, 162, 39, 0.1);
+            background: rgba(0, 255, 247, 0.08);
         }
         
         .game-tab.active {
-            background: var(--gradient-gold);
+            background: var(--gradient-neon);
             color: var(--bg-dark);
-            box-shadow: var(--shadow-gold);
             font-weight: 700;
+            box-shadow: 0 0 30px rgba(0, 255, 247, 0.3);
         }
         
         .game-tab-icon {
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
         }
         
         .game-section { display: none; }
-        .game-section.active { display: block; animation: fadeIn 0.4s ease; }
+        .game-section.active { display: block; animation: slideIn 0.3s ease; }
         
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(15px); }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
         
         /* Game Card */
         .game-card {
-            background: var(--bg-card);
-            border-radius: 28px;
-            padding: 28px;
-            margin-bottom: 18px;
+            background: var(--bg-card-light);
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 16px;
             border: 1px solid var(--border);
             position: relative;
             overflow: hidden;
-            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
-        }
-        
-        .game-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: var(--gradient-gold);
         }
         
         .game-title {
-            font-family: 'Cinzel', serif;
-            font-size: 1.3rem;
-            font-weight: 700;
-            margin-bottom: 24px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.4rem;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
             display: flex;
             align-items: center;
-            gap: 14px;
-            color: var(--text-primary);
+            gap: 12px;
         }
         
         .game-icon {
-            width: 50px;
-            height: 50px;
-            background: var(--gradient-gold);
-            border-radius: 14px;
+            width: 44px;
+            height: 44px;
+            background: var(--gradient-neon);
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
-            box-shadow: 0 8px 25px rgba(201, 162, 39, 0.35);
+            font-size: 1.4rem;
         }
         
         /* Roulette */
         .roulette-container {
             position: relative;
-            margin: 24px auto;
+            margin: 20px auto;
             overflow: hidden;
-            border-radius: 18px;
-            background: rgba(0, 0, 0, 0.6);
+            border-radius: 16px;
+            background: rgba(0, 0, 0, 0.5);
             border: 2px solid var(--border);
-            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.5);
         }
         
         .roulette-viewport {
-            height: 85px;
+            height: 80px;
             overflow: hidden;
             position: relative;
         }
@@ -386,62 +339,61 @@
         }
         
         .roulette-number {
-            width: 65px;
-            height: 85px;
+            width: 60px;
+            height: 80px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-family: 'Cinzel', serif;
-            font-size: 1.5rem;
-            font-weight: 700;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.6rem;
             flex-shrink: 0;
         }
         
-        .roulette-number.red { background: linear-gradient(180deg, #c0392b 0%, #922b21 100%); color: #fff; }
-        .roulette-number.black { background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%); color: #fff; }
-        .roulette-number.green { background: linear-gradient(180deg, #27ae60 0%, #1e8449 100%); color: #fff; }
+        .roulette-number.red { background: linear-gradient(180deg, #ef4444 0%, #b91c1c 100%); color: #fff; }
+        .roulette-number.black { background: linear-gradient(180deg, #1f2937 0%, #111827 100%); color: #fff; }
+        .roulette-number.green { background: linear-gradient(180deg, #22c55e 0%, #15803d 100%); color: #fff; }
         
         .roulette-pointer {
             position: absolute;
             top: 0;
             left: 50%;
             transform: translateX(-50%);
-            width: 5px;
+            width: 4px;
             height: 100%;
-            background: var(--primary);
+            background: var(--neon-cyan);
             z-index: 10;
-            box-shadow: 0 0 25px rgba(201, 162, 39, 0.9);
+            box-shadow: 0 0 20px var(--neon-cyan);
         }
         
         .roulette-pointer::before {
             content: '';
             position: absolute;
-            top: -12px;
+            top: -10px;
             left: 50%;
             transform: translateX(-50%);
-            border-left: 14px solid transparent;
-            border-right: 14px solid transparent;
-            border-top: 16px solid var(--primary);
-            filter: drop-shadow(0 0 8px rgba(201, 162, 39, 0.8));
+            border-left: 12px solid transparent;
+            border-right: 12px solid transparent;
+            border-top: 14px solid var(--neon-cyan);
+            filter: drop-shadow(0 0 8px var(--neon-cyan));
         }
         
-        /* Inputs & Buttons */
-        .bet-controls { margin-top: 24px; }
+        /* Inputs & Controls */
+        .bet-controls { margin-top: 20px; }
         
         .bet-input-group {
             display: flex;
-            gap: 12px;
-            margin-bottom: 14px;
+            gap: 10px;
+            margin-bottom: 12px;
         }
         
         .bet-input {
             flex: 1;
-            padding: 16px 20px;
+            padding: 14px 18px;
             border: 2px solid var(--border);
-            border-radius: 16px;
-            background: rgba(0, 0, 0, 0.5);
+            border-radius: 14px;
+            background: rgba(0, 0, 0, 0.4);
             color: var(--text-primary);
-            font-family: 'Raleway', sans-serif;
+            font-family: 'Inter', sans-serif;
             font-size: 1rem;
             font-weight: 600;
             outline: none;
@@ -449,593 +401,510 @@
         }
         
         .bet-input:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 25px rgba(201, 162, 39, 0.25);
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 20px rgba(0, 255, 247, 0.2);
         }
         
         .bet-input:disabled {
             opacity: 0.5;
             cursor: not-allowed;
-            background: rgba(60, 60, 80, 0.5);
         }
         
         .bet-input::placeholder { color: var(--text-muted); }
         
-        .color-buttons {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 18px;
-        }
-        
-        .color-btn {
-            flex: 1;
-            padding: 18px 12px;
-            border: 2px solid transparent;
-            border-radius: 16px;
-            font-family: 'Raleway', sans-serif;
-            font-size: 0.95rem;
-            font-weight: 700;
+        .quick-bet {
+            padding: 14px;
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            background: rgba(0, 0, 0, 0.4);
+            color: var(--text-secondary);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
         }
         
+        .quick-bet:hover {
+            border-color: var(--neon-cyan);
+            color: var(--neon-cyan);
+        }
+        
+        .quick-bet:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .color-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        
+        .color-btn {
+            flex: 1;
+            padding: 16px 10px;
+            border: 2px solid transparent;
+            border-radius: 14px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+        }
+        
         .color-btn.red { 
-            background: linear-gradient(180deg, #c0392b 0%, #922b21 100%); 
+            background: linear-gradient(180deg, #ef4444 0%, #b91c1c 100%); 
             color: #fff;
         }
         .color-btn.black { 
-            background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%); 
+            background: linear-gradient(180deg, #374151 0%, #1f2937 100%); 
             color: #fff;
         }
         .color-btn.green { 
-            background: linear-gradient(180deg, #27ae60 0%, #1e8449 100%); 
+            background: linear-gradient(180deg, #22c55e 0%, #15803d 100%); 
             color: #fff;
+        }
+        
+        .color-btn.selected {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px currentColor;
         }
         
         .color-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            transform: none !important;
         }
         
-        .color-btn.selected {
-            border-color: var(--primary);
-            transform: scale(1.04);
-            box-shadow: 0 0 35px rgba(201, 162, 39, 0.6);
-        }
-        
-        .action-btn {
+        .play-btn {
             width: 100%;
             padding: 18px;
             border: none;
             border-radius: 16px;
-            font-family: 'Cinzel', sans-serif;
-            font-size: 1rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            text-transform: uppercase;
-            letter-spacing: 3px;
-        }
-        
-        .action-btn.primary {
-            background: var(--gradient-gold);
+            background: var(--gradient-neon);
             color: var(--bg-dark);
-            box-shadow: var(--shadow-gold);
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.3rem;
+            letter-spacing: 3px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
         }
         
-        .action-btn.success {
-            background: linear-gradient(135deg, var(--success) 0%, #1e8449 100%);
-            color: #fff;
-            box-shadow: 0 0 35px rgba(39, 174, 96, 0.5);
+        .play-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px rgba(0, 255, 247, 0.4);
         }
         
-        .action-btn.jackpot {
-            background: var(--gradient-royal);
-            color: #fff;
-            box-shadow: var(--shadow-royal);
-        }
-        
-        .action-btn:hover:not(:disabled) { transform: translateY(-4px); }
-        
-        .action-btn:disabled {
-            background: rgba(100, 100, 120, 0.5);
+        .play-btn:disabled {
+            opacity: 0.6;
             cursor: not-allowed;
             transform: none;
-            box-shadow: none;
-            color: var(--text-muted);
         }
         
-        .quick-bets {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
+        .play-btn.secondary {
+            background: var(--gradient-purple);
         }
         
-        .quick-bet-btn {
-            flex: 1;
-            min-width: 55px;
-            padding: 12px 10px;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            background: rgba(201, 162, 39, 0.08);
-            color: var(--primary);
-            font-family: 'Raleway', sans-serif;
-            font-size: 0.75rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
+        .play-btn.danger {
+            background: linear-gradient(135deg, var(--neon-red) 0%, #dc2626 100%);
         }
         
-        .quick-bet-btn:hover {
-            background: rgba(201, 162, 39, 0.18);
-            border-color: var(--primary);
-        }
-        
-        /* Selector Group */
-        .selector-group { margin-bottom: 18px; }
-        
-        .selector-label {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            margin-bottom: 12px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            font-weight: 600;
-        }
-        
-        .selector-buttons {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        
-        .selector-btn {
-            padding: 14px 18px;
-            border: 2px solid var(--border);
-            border-radius: 14px;
-            background: rgba(0, 0, 0, 0.4);
-            color: var(--text-secondary);
-            font-family: 'Raleway', sans-serif;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .selector-btn:hover {
-            background: rgba(201, 162, 39, 0.1);
-            border-color: var(--primary);
-            color: var(--text-primary);
-        }
-        
-        .selector-btn.selected {
-            background: var(--gradient-gold);
-            border-color: var(--primary);
-            color: var(--bg-dark);
-            box-shadow: var(--shadow-gold);
-        }
-        
-        /* Result Display */
-        .result-display {
-            text-align: center;
-            padding: 18px;
-            margin-top: 18px;
-            border-radius: 16px;
-            font-family: 'Cinzel', sans-serif;
-            font-size: 1.05rem;
-            font-weight: 700;
-            display: none;
-            animation: resultPop 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        @keyframes resultPop {
-            0% { transform: scale(0.8); opacity: 0; }
-            50% { transform: scale(1.06); }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        
-        .result-display.win {
-            background: rgba(39, 174, 96, 0.15);
-            border: 2px solid var(--success);
-            color: var(--success);
-        }
-        
-        .result-display.lose {
-            background: rgba(192, 57, 43, 0.15);
-            border: 2px solid var(--danger);
-            color: var(--danger);
+        .play-btn.success {
+            background: linear-gradient(135deg, var(--neon-green) 0%, #16a34a 100%);
         }
         
         /* Mines Grid */
         .mines-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 12px;
-            margin: 24px 0;
+            gap: 8px;
+            margin: 20px 0;
         }
         
         .mine-cell {
             aspect-ratio: 1;
-            background: linear-gradient(135deg, rgba(201, 162, 39, 0.08) 0%, rgba(0, 0, 0, 0.4) 100%);
             border: 2px solid var(--border);
-            border-radius: 14px;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.5);
+            cursor: pointer;
+            transition: all 0.3s;
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            font-size: 1.6rem;
+            font-size: 1.5rem;
         }
         
         .mine-cell:hover:not(.revealed):not(.disabled) {
-            background: linear-gradient(135deg, rgba(201, 162, 39, 0.18) 0%, rgba(0, 0, 0, 0.4) 100%);
-            border-color: var(--primary);
-            transform: scale(1.06);
+            border-color: var(--neon-cyan);
+            background: rgba(0, 255, 247, 0.1);
+            transform: scale(1.05);
         }
         
-        .mine-cell.gem {
-            background: linear-gradient(135deg, var(--success) 0%, #1e8449 100%);
-            border-color: var(--success);
-            animation: cellWin 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        .mine-cell.revealed.safe {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.3) 0%, rgba(22, 163, 74, 0.3) 100%);
+            border-color: var(--neon-green);
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.3);
         }
         
-        .mine-cell.bomb {
-            background: linear-gradient(135deg, var(--danger) 0%, #922b21 100%);
-            border-color: var(--danger);
-            animation: cellLose 0.4s ease;
+        .mine-cell.revealed.mine {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.3) 0%, rgba(185, 28, 28, 0.3) 100%);
+            border-color: var(--neon-red);
+            animation: shake 0.5s ease;
         }
         
-        .mine-cell.disabled { opacity: 0.35; cursor: not-allowed; }
-        
-        @keyframes cellWin {
-            0% { transform: scale(1.35); }
-            100% { transform: scale(1); }
+        .mine-cell.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
         
-        @keyframes cellLose {
-            0%, 20%, 40%, 60%, 80%, 100% { transform: translateX(0); }
-            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
         }
         
-        .current-win {
-            text-align: center;
-            margin: 14px 0;
+        /* Ladder */
+        .ladder-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin: 20px 0;
+        }
+        
+        .ladder-row {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .ladder-cell {
+            flex: 1;
             padding: 16px;
-            background: rgba(39, 174, 96, 0.1);
-            border: 1px solid rgba(39, 174, 96, 0.35);
-            border-radius: 16px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.5);
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.85rem;
         }
         
-        .current-win-label {
+        .ladder-cell:hover:not(.disabled):not(.revealed) {
+            border-color: var(--neon-cyan);
+            background: rgba(0, 255, 247, 0.1);
+        }
+        
+        .ladder-cell.safe {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.3) 0%, rgba(22, 163, 74, 0.3) 100%);
+            border-color: var(--neon-green);
+        }
+        
+        .ladder-cell.wrong {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.3) 0%, rgba(185, 28, 28, 0.3) 100%);
+            border-color: var(--neon-red);
+        }
+        
+        .ladder-cell.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        
+        .ladder-cell.current {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 20px rgba(0, 255, 247, 0.3);
+        }
+        
+        /* Crash */
+        .crash-display {
+            text-align: center;
+            padding: 40px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 20px;
+            margin: 20px 0;
+            border: 2px solid var(--border);
+        }
+        
+        .crash-multiplier {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 4rem;
+            background: var(--gradient-neon);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 40px rgba(0, 255, 247, 0.5);
+        }
+        
+        .crash-multiplier.crashed {
+            background: linear-gradient(135deg, var(--neon-red) 0%, #dc2626 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .crash-status {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        /* Jackpot */
+        .jackpot-pool {
+            text-align: center;
+            padding: 30px;
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(255, 0, 170, 0.1) 100%);
+            border-radius: 20px;
+            margin: 20px 0;
+            border: 2px solid rgba(168, 85, 247, 0.3);
+        }
+        
+        .pool-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+        
+        .pool-amount {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.5rem;
+            background: var(--gradient-purple);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .jackpot-players {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin: 16px 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .jackpot-player {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        
+        .player-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        .player-name {
+            flex: 1;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        
+        .player-bet {
+            color: var(--neon-cyan);
+            font-weight: 600;
+        }
+        
+        .jackpot-wheel {
+            height: 80px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 16px;
+            margin: 16px 0;
+            overflow: hidden;
+            position: relative;
+            border: 2px solid var(--border);
+        }
+        
+        .wheel-strip {
+            display: flex;
+            height: 100%;
+            transition: transform 5s cubic-bezier(0.1, 0.7, 0.1, 1);
+        }
+        
+        .wheel-segment {
+            width: 80px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+        
+        .wheel-pointer {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 4px;
+            height: 100%;
+            background: var(--neon-pink);
+            box-shadow: 0 0 15px var(--neon-pink);
+            z-index: 10;
+        }
+        
+        /* Multiplier display */
+        .multiplier-display {
+            text-align: center;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 14px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border);
+        }
+        
+        .multiplier-label {
             font-size: 0.7rem;
             color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 2px;
         }
         
-        .current-win-amount {
-            font-family: 'Cinzel', serif;
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--success);
+        .multiplier-value {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem;
+            color: var(--neon-green);
         }
         
-        /* Ladder */
-        .ladder-tower {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin: 24px 0;
-            max-height: 380px;
-            overflow-y: auto;
-            padding: 12px;
-            background: rgba(0, 0, 0, 0.35);
-            border-radius: 16px;
+        .potential-win {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
         }
         
-        .ladder-row {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        .ladder-multiplier-label {
-            min-width: 70px;
-            font-family: 'Cinzel', serif;
-            font-size: 0.9rem;
-            font-weight: 700;
-            color: var(--primary);
-            text-align: right;
-            padding-right: 12px;
-        }
-        
-        .ladder-cells { display: flex; gap: 8px; }
-        
-        .ladder-cell {
-            width: 48px;
-            height: 48px;
-            background: linear-gradient(135deg, rgba(201, 162, 39, 0.08) 0%, rgba(0, 0, 0, 0.4) 100%);
-            border: 2px solid var(--border);
-            border-radius: 12px;
+        /* Settings */
+        .settings-row {
             display: flex;
             align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 1.2rem;
+            gap: 12px;
+            margin-bottom: 16px;
         }
         
-        .ladder-cell:hover:not(.disabled):not(.revealed) {
-            background: linear-gradient(135deg, rgba(201, 162, 39, 0.18) 0%, rgba(0, 0, 0, 0.4) 100%);
-            border-color: var(--primary);
-            transform: scale(1.06);
-        }
-        
-        .ladder-cell.safe {
-            background: linear-gradient(135deg, var(--success) 0%, #1e8449 100%);
-            border-color: var(--success);
-        }
-        
-        .ladder-cell.mine {
-            background: linear-gradient(135deg, var(--danger) 0%, #922b21 100%);
-            border-color: var(--danger);
-        }
-        
-        .ladder-cell.disabled { opacity: 0.3; cursor: not-allowed; }
-        
-        .ladder-cell.current-row {
-            border-color: var(--accent);
-            box-shadow: 0 0 18px rgba(155, 89, 182, 0.6);
-        }
-        
-        /* Crash */
-        .crash-display {
-            text-align: center;
-            padding: 45px 24px;
-            background: linear-gradient(135deg, rgba(201, 162, 39, 0.04) 0%, rgba(155, 89, 182, 0.04) 100%);
-            border: 2px solid var(--border);
-            border-radius: 24px;
-            margin-bottom: 24px;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .crash-display::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: radial-gradient(circle at center, rgba(201, 162, 39, 0.08) 0%, transparent 65%);
-            pointer-events: none;
-        }
-        
-        .crash-multiplier {
-            font-family: 'Cinzel', serif;
-            font-size: 4rem;
-            font-weight: 900;
-            color: var(--primary);
-            text-shadow: 0 0 50px rgba(201, 162, 39, 0.7);
-            transition: all 0.1s ease;
-        }
-        
-        .crash-multiplier.crashed {
-            color: var(--danger);
-            text-shadow: 0 0 50px rgba(192, 57, 43, 0.9);
-            animation: crashShake 0.5s ease;
-        }
-        
-        .crash-multiplier.flying {
-            color: var(--success);
-            text-shadow: 0 0 50px rgba(39, 174, 96, 0.7);
-        }
-        
-        @keyframes crashShake {
-            0%, 100% { transform: translateX(0); }
-            10%, 30%, 50%, 70%, 90% { transform: translateX(-8px); }
-            20%, 40%, 60%, 80% { transform: translateX(8px); }
-        }
-        
-        .crash-status {
+        .settings-label {
             font-size: 0.85rem;
             color: var(--text-secondary);
-            margin-top: 14px;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            font-weight: 600;
+            min-width: 80px;
         }
         
-        .crash-history {
+        .settings-options {
             display: flex;
-            gap: 12px;
+            gap: 8px;
+            flex: 1;
             flex-wrap: wrap;
-            justify-content: center;
-            margin-top: 24px;
         }
         
-        .crash-history-item {
+        .settings-option {
             padding: 10px 16px;
-            border-radius: 12px;
-            font-family: 'Raleway', sans-serif;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.4);
+            color: var(--text-secondary);
             font-size: 0.85rem;
             font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
         }
         
-        .crash-history-item.low {
-            background: rgba(192, 57, 43, 0.15);
-            color: var(--danger);
-            border: 1px solid rgba(192, 57, 43, 0.35);
+        .settings-option:hover {
+            border-color: var(--neon-cyan);
+            color: var(--neon-cyan);
         }
         
-        .crash-history-item.medium {
-            background: rgba(201, 162, 39, 0.15);
-            color: var(--primary);
-            border: 1px solid rgba(201, 162, 39, 0.35);
+        .settings-option.selected {
+            background: var(--gradient-neon);
+            border-color: transparent;
+            color: var(--bg-dark);
         }
         
-        .crash-history-item.high {
-            background: rgba(39, 174, 96, 0.15);
-            color: var(--success);
-            border: 1px solid rgba(39, 174, 96, 0.35);
+        .settings-option:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
         
-        /* Jackpot */
-        .jackpot-pool {
-            text-align: center;
-            padding: 28px;
-            background: linear-gradient(135deg, rgba(155, 89, 182, 0.1) 0%, rgba(201, 162, 39, 0.05) 100%);
-            border: 2px solid var(--border-accent);
-            border-radius: 24px;
-            margin-bottom: 24px;
-        }
-        
-        .jackpot-label {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            font-weight: 600;
-        }
-        
-        .jackpot-amount {
-            font-family: 'Cinzel', serif;
-            font-size: 2.4rem;
-            font-weight: 900;
-            color: var(--accent);
-            text-shadow: 0 0 35px rgba(155, 89, 182, 0.7);
-        }
-        
-        .jackpot-timer {
-            text-align: center;
-            font-family: 'Cinzel', serif;
-            font-size: 1.7rem;
-            color: var(--primary);
-            margin: 18px 0;
-        }
-        
-        .jackpot-players {
-            margin: 18px 0;
-            max-height: 220px;
-            overflow-y: auto;
-        }
-        
-        .jackpot-player {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 14px 16px;
-            background: rgba(0, 0, 0, 0.35);
-            border-radius: 14px;
-            margin-bottom: 10px;
-        }
-        
-        .jackpot-player-name {
-            color: var(--text-primary);
-            font-weight: 600;
-        }
-        
-        .jackpot-player-bet {
-            color: var(--primary);
-            font-family: 'Raleway', sans-serif;
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-        
-        .jackpot-player-chance {
-            color: var(--accent);
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-        
-        .jackpot-wheel {
-            position: relative;
-            margin: 24px auto;
-            overflow: hidden;
-            border-radius: 18px;
-            background: rgba(0, 0, 0, 0.6);
-            border: 2px solid var(--border-accent);
-        }
-        
-        .jackpot-wheel-viewport {
-            height: 75px;
-            overflow: hidden;
-            position: relative;
-        }
-        
-        .jackpot-strip {
-            display: flex;
-            transition: transform 6s cubic-bezier(0.1, 0.7, 0.1, 1);
-        }
-        
-        .jackpot-item {
-            width: 95px;
-            height: 75px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            font-size: 0.9rem;
-            font-weight: 600;
-            text-align: center;
-            padding: 8px;
-            border-right: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        /* Loading & Toast */
-        .loading {
-            text-align: center;
-            padding: 90px 24px;
-        }
-        
-        .loading-spinner {
-            width: 65px;
-            height: 65px;
-            border: 4px solid rgba(201, 162, 39, 0.2);
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 28px;
-        }
-        
-        .loading p {
-            font-family: 'Cinzel', serif;
-            font-size: 1.15rem;
-            color: var(--primary);
-            letter-spacing: 3px;
-        }
-        
-        @keyframes spin { to { transform: rotate(360deg); } }
-        
-        .toast {
+        /* Toast */
+        #toast {
             position: fixed;
-            bottom: 28px;
+            bottom: 100px;
             left: 50%;
             transform: translateX(-50%) translateY(100px);
-            background: var(--bg-card);
-            border: 2px solid var(--primary);
-            border-radius: 16px;
-            padding: 16px 32px;
-            font-family: 'Raleway', sans-serif;
+            padding: 14px 28px;
+            border-radius: 14px;
             font-weight: 600;
             z-index: 1000;
             opacity: 0;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.4s ease;
+            backdrop-filter: blur(10px);
+            text-align: center;
+            max-width: 90%;
         }
         
-        .toast.show {
+        #toast.show {
             transform: translateX(-50%) translateY(0);
             opacity: 1;
         }
         
-        .toast.error { border-color: var(--danger); color: var(--danger); }
-        .toast.success { border-color: var(--success); color: var(--success); }
+        #toast.success {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.9) 0%, rgba(22, 163, 74, 0.9) 100%);
+            box-shadow: 0 10px 40px rgba(34, 197, 94, 0.4);
+        }
         
-        .user-wrapper { text-align: center; }
+        #toast.error {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.9) 0%, rgba(185, 28, 28, 0.9) 100%);
+            box-shadow: 0 10px 40px rgba(239, 68, 68, 0.4);
+        }
         
-        /* Win animation */
+        #toast.info {
+            background: linear-gradient(135deg, rgba(0, 255, 247, 0.9) 0%, rgba(59, 130, 246, 0.9) 100%);
+            color: var(--bg-dark);
+            box-shadow: 0 10px 40px rgba(0, 255, 247, 0.4);
+        }
+        
+        /* Loading */
+        #loading {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-dark);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        
+        .loader {
+            width: 60px;
+            height: 60px;
+            border: 4px solid var(--border);
+            border-top-color: var(--neon-cyan);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loader-text {
+            margin-top: 20px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        
+        /* Coin rain effect */
         .coin-rain {
             position: fixed;
             top: 0;
@@ -1043,242 +912,183 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
-            z-index: 999;
+            z-index: 100;
             overflow: hidden;
         }
         
         .coin {
             position: absolute;
+            top: -50px;
             font-size: 2rem;
-            animation: coin-fall 2s ease-in forwards;
+            animation: fall 2s ease-in forwards;
         }
         
-        @keyframes coin-fall {
-            0% { transform: translateY(-50px) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
-        }
-    </style>
-</head>
-<body>
-    <div class="diamonds">
-        <div class="diamond"></div>
-        <div class="diamond"></div>
-        <div class="diamond"></div>
-        <div class="diamond"></div>
-        <div class="diamond"></div>
-        <div class="diamond"></div>
-        <div class="diamond"></div>
-        <div class="diamond"></div>
-        <div class="diamond"></div>
-        <div class="diamond"></div>
-    </div>
-    <div class="container" id="app">
-        <div class="loading" id="loading">
-            <div class="loading-spinner"></div>
-            <p>Connecting...</p>
-        </div>
-    </div>
-    <div class="toast" id="toast"></div>
-
-    <script>
-        const API_URL = 'https://qvfhieihrshgcljngpcq.supabase.co/functions/v1/casino-auth';
-        
-        const ROULETTE_SEQUENCE = [
-            0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10,
-            5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26
-        ];
-        
-        const RED_NUMBERS = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
-        
-        let player = null;
-        let currentGame = 'roulette';
-        
-        // Roulette state
-        let selectedColor = null;
-        let isSpinning = false;
-        
-        // Mines state
-        let minesCount = 5;
-        let minesBet = 0;
-        let minesGrid = [];
-        let minesPlaying = false;
-        let minesRevealed = 0;
-        let minesCurrentWin = 0;
-        
-        // Ladder state
-        let ladderStones = 3;
-        let ladderBet = 0;
-        let ladderLevel = 0;
-        let ladderCurrentWin = 0;
-        let ladderPlaying = false;
-        let ladderRows = [];
-        
-        // Crash state
-        let crashBet = 0;
-        let crashMultiplier = 0.00;
-        let crashPlaying = false;
-        let crashInterval = null;
-        let crashCrashPoint = 0;
-        let crashHistory = [];
-        let crashCashedOut = false;
-        
-        // Jackpot state
-        let jackpotPool = 0;
-        let jackpotPlayers = [];
-        let jackpotTimer = 30;
-        let jackpotInterval = null;
-        let jackpotSpinning = false;
-        let jackpotMyBet = 0;
-        let jackpotSessionId = null;
-        
-        async function init() {
-            const tg = window.Telegram?.WebApp;
-            if (tg) {
-                tg.ready();
-                tg.expand();
-                
-                const user = tg.initDataUnsafe?.user;
-                if (user) {
-                    await loadPlayer(user.id, user.username, user.first_name, user.is_premium);
-                } else {
-                    showToast('Откройте через Telegram!', 'error');
-                }
-            } else {
-                // Dev mode
-                await loadPlayer(123456789, 'TestUser', 'Test', false);
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
             }
         }
         
-        async function loadPlayer(telegramId, username, firstName, isPremium) {
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--neon-cyan); }
+    </style>
+</head>
+<body>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    
+    <div id="loading">
+        <div class="loader"></div>
+        <div class="loader-text">Загрузка...</div>
+    </div>
+    
+    <div id="toast"></div>
+    <div id="coin-rain" class="coin-rain"></div>
+    
+    <div class="container" id="app"></div>
+    
+    <script>
+        const API_URL = 'https://qvfhieihrshgcljngpcq.supabase.co/functions/v1/casino-auth';
+        
+        // Roulette sequence
+        const ROULETTE_SEQUENCE = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
+        const RED_NUMBERS = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
+        
+        let player = null;
+        let tg = null;
+        
+        // Game states
+        let rouletteState = { spinning: false, selectedColor: null };
+        let minesState = { playing: false, bet: 0, minesCount: 3, revealed: [], minePositions: [], multiplier: 1 };
+        let ladderState = { playing: false, bet: 0, currentRow: 0, safeColumn: null, multiplier: 1 };
+        let crashState = { playing: false, bet: 0, multiplier: 1, crashed: false, cashedOut: false };
+        let jackpotState = { players: [], poolAmount: 0, timer: 30, myBet: 0, spinning: false };
+        
+        async function init() {
+            tg = window.Telegram?.WebApp;
+            if (tg) {
+                tg.ready();
+                tg.expand();
+                tg.setHeaderColor('#0a0a0f');
+                tg.setBackgroundColor('#0a0a0f');
+            }
+            await loadPlayer();
+        }
+        
+        async function loadPlayer() {
             try {
+                const initData = tg?.initData || '';
+                const user = tg?.initDataUnsafe?.user;
+                
                 const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        action: 'load',
-                        telegram_id: telegramId,
-                        username: username,
-                        first_name: firstName,
-                        is_premium: isPremium
+                        action: 'auth',
+                        initData: initData,
+                        user: user
                     })
                 });
                 
-                const data = await response.json();
-                if (data.success) {
-                    player = data.player;
+                const result = await response.json();
+                if (result.success) {
+                    player = result.player;
+                    document.getElementById('loading').style.display = 'none';
                     renderApp();
                 } else {
-                    showToast('Ошибка загрузки!', 'error');
+                    throw new Error(result.error || 'Auth failed');
                 }
             } catch (error) {
-                console.error('Error loading player:', error);
-                showToast('Ошибка подключения!', 'error');
+                console.error('Load error:', error);
+                showToast('Ошибка загрузки', 'error');
             }
         }
         
         function formatNumber(num) {
             if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
             if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-            return num.toString();
+            return num.toLocaleString('ru-RU');
         }
         
-        function getNumberColor(num) {
-            if (num === 0) return 'green';
-            return RED_NUMBERS.includes(num) ? 'red' : 'black';
-        }
-        
-        async function updateBalance(change) {
+        async function updateBalance(amount, action = 'update') {
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        action: 'balance',
-                        telegram_id: player.telegram_id,
-                        change: change
+                        action: action,
+                        odairt: player.id,
+                        amount: amount
                     })
                 });
                 
-                const data = await response.json();
-                if (data.success) {
-                    player.balance = data.balance;
-                    updateBalanceDisplay();
+                const result = await response.json();
+                if (result.success) {
+                    player.balance = result.newBalance;
+                    document.getElementById('balance-amount').textContent = formatNumber(player.balance);
+                    return true;
                 }
             } catch (error) {
-                console.error('Error updating balance:', error);
+                console.error('Update error:', error);
             }
-        }
-        
-        function updateBalanceDisplay() {
-            const display = document.getElementById('balance-display');
-            if (display) {
-                display.textContent = formatNumber(player.balance) + ' 🪙';
-            }
+            return false;
         }
         
         function showToast(message, type = 'info') {
             const toast = document.getElementById('toast');
             toast.textContent = message;
-            toast.className = 'toast ' + type + ' show';
-            setTimeout(() => toast.classList.remove('show'), 3000);
+            toast.className = `show ${type}`;
+            setTimeout(() => toast.className = '', 3000);
         }
         
         function showCoinRain() {
-            const container = document.createElement('div');
-            container.className = 'coin-rain';
-            document.body.appendChild(container);
-            
-            for (let i = 0; i < 20; i++) {
-                setTimeout(() => {
-                    const coin = document.createElement('div');
-                    coin.className = 'coin';
-                    coin.textContent = '🪙';
-                    coin.style.left = Math.random() * 100 + '%';
-                    coin.style.animationDelay = Math.random() * 0.5 + 's';
-                    container.appendChild(coin);
-                }, i * 50);
+            const container = document.getElementById('coin-rain');
+            const emojis = ['💰', '🪙', '💎', '⚡'];
+            for (let i = 0; i < 30; i++) {
+                const coin = document.createElement('div');
+                coin.className = 'coin';
+                coin.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                coin.style.left = Math.random() * 100 + '%';
+                coin.style.animationDelay = Math.random() * 0.5 + 's';
+                container.appendChild(coin);
             }
-            
-            setTimeout(() => container.remove(), 3000);
+            setTimeout(() => container.innerHTML = '', 2500);
         }
         
         function switchGame(game) {
-            currentGame = game;
-            document.querySelectorAll('.game-tab').forEach(tab => {
-                tab.classList.toggle('active', tab.dataset.game === game);
-            });
-            document.querySelectorAll('.game-section').forEach(section => {
-                section.classList.toggle('active', section.id === 'game-' + game);
-            });
-        }
-        
-        async function loadJackpotSession() {
-            // Jackpot logic here (simplified)
+            document.querySelectorAll('.game-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.game-section').forEach(s => s.classList.remove('active'));
+            document.querySelector(`[data-game="${game}"]`).classList.add('active');
+            document.getElementById(`section-${game}`).classList.add('active');
         }
         
         function renderApp() {
-            const app = document.getElementById('app');
+            const user = tg?.initDataUnsafe?.user;
+            const firstName = user?.first_name || player.first_name || 'Игрок';
             const isPremium = player.is_premium;
-            const displayName = player.first_name || player.username || 'Игрок';
-            const prefix = player.prefix ? `<span style="color: var(--accent); margin-right: 6px;">[${player.prefix}]</span>` : '';
             
-            app.innerHTML = `
+            document.getElementById('app').innerHTML = `
                 <div class="header">
                     <div class="logo">
-                        <div class="logo-icon">👑</div>
-                        <div>
-                            <h1>Royal Casino</h1>
-                            <div class="subtitle">Premium Gaming</div>
-                        </div>
+                        <div class="logo-icon">⚡</div>
+                        <h1>NEON</h1>
                     </div>
+                    
                     <div class="balance-card">
-                        <div class="balance-label">Your Balance</div>
-                        <div class="balance-amount" id="balance-display">${formatNumber(player.balance)} 🪙</div>
+                        <div class="balance-left">
+                            <div class="balance-label">Баланс</div>
+                            <div class="balance-amount" id="balance-amount">${formatNumber(player.balance || 0)}</div>
+                        </div>
+                        <div class="user-avatar">👤</div>
                     </div>
-                </div>
-                <div class="user-wrapper">
-                    <div class="user-info">
-                        ${prefix}${displayName}
+                    
+                    <div class="username">
+                        ${firstName}
                         ${isPremium ? '<span class="premium-badge">VIP</span>' : ''}
                     </div>
                 </div>
@@ -1286,1045 +1096,762 @@
                 <div class="game-tabs">
                     <button class="game-tab active" data-game="roulette" onclick="switchGame('roulette')">
                         <span class="game-tab-icon">🎰</span>
-                        Roulette
+                        Рулетка
                     </button>
                     <button class="game-tab" data-game="mines" onclick="switchGame('mines')">
-                        <span class="game-tab-icon">💎</span>
-                        Mines
+                        <span class="game-tab-icon">💣</span>
+                        Мины
                     </button>
                     <button class="game-tab" data-game="ladder" onclick="switchGame('ladder')">
                         <span class="game-tab-icon">🪜</span>
-                        Tower
+                        Лестница
                     </button>
                     <button class="game-tab" data-game="crash" onclick="switchGame('crash')">
-                        <span class="game-tab-icon">🚀</span>
-                        Crash
+                        <span class="game-tab-icon">📈</span>
+                        Краш
                     </button>
                     <button class="game-tab" data-game="jackpot" onclick="switchGame('jackpot')">
                         <span class="game-tab-icon">🎁</span>
-                        Jackpot
+                        Джекпот
                     </button>
                 </div>
                 
-                <!-- ROULETTE -->
-                <div id="game-roulette" class="game-section active">
+                <!-- Roulette -->
+                <div class="game-section active" id="section-roulette">
                     <div class="game-card">
                         <div class="game-title">
                             <div class="game-icon">🎰</div>
-                            Roulette
+                            РУЛЕТКА
                         </div>
                         
                         <div class="roulette-container">
-                            <div class="roulette-pointer"></div>
                             <div class="roulette-viewport">
                                 <div class="roulette-strip" id="roulette-strip">
                                     ${generateRouletteStrip()}
                                 </div>
                             </div>
+                            <div class="roulette-pointer"></div>
                         </div>
                         
                         <div class="bet-controls">
                             <div class="bet-input-group">
-                                <input type="number" class="bet-input" id="roulette-bet" placeholder="Bet amount" min="1">
-                            </div>
-                            
-                            <div class="quick-bets">
-                                <button class="quick-bet-btn" onclick="setBet('roulette', 1000)">1K</button>
-                                <button class="quick-bet-btn" onclick="setBet('roulette', 5000)">5K</button>
-                                <button class="quick-bet-btn" onclick="setBet('roulette', 10000)">10K</button>
-                                <button class="quick-bet-btn" onclick="setBet('roulette', 50000)">50K</button>
-                                <button class="quick-bet-btn" onclick="setBetAll('roulette')">ALL</button>
+                                <input type="number" class="bet-input" id="roulette-bet" placeholder="Ставка" min="100">
+                                <button class="quick-bet" onclick="setRouletteBet('half')">½</button>
+                                <button class="quick-bet" onclick="setRouletteBet('all')">MAX</button>
                             </div>
                             
                             <div class="color-buttons">
-                                <button class="color-btn red" onclick="selectColor('red')">🔴 x2</button>
-                                <button class="color-btn green" onclick="selectColor('green')">🟢 x14</button>
-                                <button class="color-btn black" onclick="selectColor('black')">⚫ x2</button>
+                                <button class="color-btn red" id="btn-red" onclick="selectColor('red')">
+                                    КРАСНОЕ<br>x2
+                                </button>
+                                <button class="color-btn green" id="btn-green" onclick="selectColor('green')">
+                                    ЗЕЛЁНОЕ<br>x14
+                                </button>
+                                <button class="color-btn black" id="btn-black" onclick="selectColor('black')">
+                                    ЧЁРНОЕ<br>x2
+                                </button>
                             </div>
                             
-                            <button class="action-btn primary" id="spin-btn" onclick="spinRoulette()">Spin</button>
+                            <button class="play-btn" id="spin-btn" onclick="spinRoulette()">
+                                КРУТИТЬ
+                            </button>
                         </div>
-                        
-                        <div class="result-display" id="roulette-result"></div>
                     </div>
                 </div>
                 
-                <!-- MINES -->
-                <div id="game-mines" class="game-section">
+                <!-- Mines -->
+                <div class="game-section" id="section-mines">
                     <div class="game-card">
                         <div class="game-title">
-                            <div class="game-icon">💎</div>
-                            Mines
+                            <div class="game-icon">💣</div>
+                            МИНЫ
                         </div>
                         
-                        <div class="bet-input-group">
-                            <input type="number" class="bet-input" id="mines-bet" placeholder="Bet amount" min="1">
-                        </div>
-                        
-                        <div class="quick-bets">
-                            <button class="quick-bet-btn" onclick="setBet('mines', 1000)">1K</button>
-                            <button class="quick-bet-btn" onclick="setBet('mines', 5000)">5K</button>
-                            <button class="quick-bet-btn" onclick="setBet('mines', 10000)">10K</button>
-                            <button class="quick-bet-btn" onclick="setBet('mines', 50000)">50K</button>
-                            <button class="quick-bet-btn" onclick="setBetAll('mines')">ALL</button>
-                        </div>
-                        
-                        <div class="selector-group" id="mines-selector">
-                            <div class="selector-label">Number of Mines</div>
-                            <div class="selector-buttons">
-                                <button class="selector-btn" onclick="selectMines(4)">4</button>
-                                <button class="selector-btn selected" onclick="selectMines(5)">5</button>
-                                <button class="selector-btn" onclick="selectMines(7)">7</button>
-                                <button class="selector-btn" onclick="selectMines(10)">10</button>
-                                <button class="selector-btn" onclick="selectMines(15)">15</button>
-                                <button class="selector-btn" onclick="selectMines(20)">20</button>
+                        <div id="mines-setup">
+                            <div class="settings-row">
+                                <span class="settings-label">Мины:</span>
+                                <div class="settings-options" id="mines-count-options">
+                                    ${[1,3,5,10,15,20].map(n => `
+                                        <button class="settings-option ${n === 3 ? 'selected' : ''}" onclick="setMinesCount(${n})">${n}</button>
+                                    `).join('')}
+                                </div>
                             </div>
+                            
+                            <div class="bet-input-group">
+                                <input type="number" class="bet-input" id="mines-bet" placeholder="Ставка" min="100">
+                                <button class="quick-bet" onclick="setMinesBet('half')">½</button>
+                                <button class="quick-bet" onclick="setMinesBet('all')">MAX</button>
+                            </div>
+                            
+                            <button class="play-btn" onclick="startMines()">НАЧАТЬ ИГРУ</button>
                         </div>
                         
-                        <div id="mines-game-area"></div>
-                        
-                        <button class="action-btn primary" id="mines-start-btn" onclick="startMines()">Play</button>
-                        
-                        <div class="result-display" id="mines-result"></div>
+                        <div id="mines-game" style="display: none;">
+                            <div class="multiplier-display">
+                                <div class="multiplier-label">Множитель</div>
+                                <div class="multiplier-value" id="mines-multiplier">x1.00</div>
+                                <div class="potential-win" id="mines-potential">Выигрыш: 0 💰</div>
+                            </div>
+                            
+                            <div class="mines-grid" id="mines-grid"></div>
+                            
+                            <button class="play-btn success" id="mines-cashout" onclick="cashoutMines()">
+                                ЗАБРАТЬ
+                            </button>
+                        </div>
                     </div>
                 </div>
                 
-                <!-- LADDER -->
-                <div id="game-ladder" class="game-section">
+                <!-- Ladder -->
+                <div class="game-section" id="section-ladder">
                     <div class="game-card">
                         <div class="game-title">
                             <div class="game-icon">🪜</div>
-                            Tower
+                            ЛЕСТНИЦА
                         </div>
                         
-                        <div class="bet-input-group">
-                            <input type="number" class="bet-input" id="ladder-bet" placeholder="Bet amount" min="1">
-                        </div>
-                        
-                        <div class="quick-bets">
-                            <button class="quick-bet-btn" onclick="setBet('ladder', 1000)">1K</button>
-                            <button class="quick-bet-btn" onclick="setBet('ladder', 5000)">5K</button>
-                            <button class="quick-bet-btn" onclick="setBet('ladder', 10000)">10K</button>
-                            <button class="quick-bet-btn" onclick="setBet('ladder', 50000)">50K</button>
-                            <button class="quick-bet-btn" onclick="setBetAll('ladder')">ALL</button>
-                        </div>
-                        
-                        <div class="selector-group" id="ladder-selector">
-                            <div class="selector-label">Traps per Row</div>
-                            <div class="selector-buttons">
-                                <button class="selector-btn" onclick="selectLadderStones(1)">1</button>
-                                <button class="selector-btn" onclick="selectLadderStones(2)">2</button>
-                                <button class="selector-btn selected" onclick="selectLadderStones(3)">3</button>
-                                <button class="selector-btn" onclick="selectLadderStones(4)">4</button>
+                        <div id="ladder-setup">
+                            <div class="bet-input-group">
+                                <input type="number" class="bet-input" id="ladder-bet" placeholder="Ставка" min="100">
+                                <button class="quick-bet" onclick="setLadderBet('half')">½</button>
+                                <button class="quick-bet" onclick="setLadderBet('all')">MAX</button>
                             </div>
+                            
+                            <button class="play-btn" onclick="startLadder()">НАЧАТЬ ИГРУ</button>
                         </div>
                         
-                        <div id="ladder-game-area"></div>
-                        
-                        <button class="action-btn primary" id="ladder-start-btn" onclick="startLadder()">Play</button>
-                        
-                        <div class="result-display" id="ladder-result"></div>
+                        <div id="ladder-game" style="display: none;">
+                            <div class="multiplier-display">
+                                <div class="multiplier-label">Множитель</div>
+                                <div class="multiplier-value" id="ladder-multiplier">x1.00</div>
+                                <div class="potential-win" id="ladder-potential">Выигрыш: 0 💰</div>
+                            </div>
+                            
+                            <div class="ladder-container" id="ladder-grid"></div>
+                            
+                            <button class="play-btn success" id="ladder-cashout" onclick="cashoutLadder()">
+                                ЗАБРАТЬ
+                            </button>
+                        </div>
                     </div>
                 </div>
                 
-                <!-- CRASH -->
-                <div id="game-crash" class="game-section">
+                <!-- Crash -->
+                <div class="game-section" id="section-crash">
                     <div class="game-card">
                         <div class="game-title">
-                            <div class="game-icon" style="background: linear-gradient(135deg, #c9a227, #9b59b6);">🚀</div>
-                            Crash
+                            <div class="game-icon">📈</div>
+                            КРАШ
                         </div>
                         
-                        <div class="crash-display" id="crash-display">
-                            <div class="crash-multiplier" id="crash-multiplier">0.00x</div>
-                            <div class="crash-status" id="crash-status">Waiting for bet...</div>
+                        <div class="crash-display">
+                            <div class="crash-multiplier" id="crash-multiplier">x1.00</div>
+                            <div class="crash-status" id="crash-status">Сделайте ставку</div>
                         </div>
                         
-                        <div class="bet-input-group">
-                            <input type="number" class="bet-input" id="crash-bet" placeholder="Bet amount" min="1">
+                        <div id="crash-setup">
+                            <div class="bet-input-group">
+                                <input type="number" class="bet-input" id="crash-bet" placeholder="Ставка" min="100">
+                                <button class="quick-bet" onclick="setCrashBet('half')">½</button>
+                                <button class="quick-bet" onclick="setCrashBet('all')">MAX</button>
+                            </div>
+                            
+                            <button class="play-btn" id="crash-play-btn" onclick="startCrash()">ИГРАТЬ</button>
                         </div>
                         
-                        <div class="quick-bets">
-                            <button class="quick-bet-btn" onclick="setBet('crash', 1000)">1K</button>
-                            <button class="quick-bet-btn" onclick="setBet('crash', 5000)">5K</button>
-                            <button class="quick-bet-btn" onclick="setBet('crash', 10000)">10K</button>
-                            <button class="quick-bet-btn" onclick="setBet('crash', 50000)">50K</button>
-                            <button class="quick-bet-btn" onclick="setBetAll('crash')">ALL</button>
+                        <div id="crash-game" style="display: none;">
+                            <button class="play-btn success" id="crash-cashout" onclick="cashoutCrash()">
+                                ЗАБРАТЬ
+                            </button>
                         </div>
-                        
-                        <button class="action-btn primary" id="crash-btn" onclick="startCrash()">🚀 Launch</button>
-                        <button class="action-btn success" id="crash-cashout-btn" style="display:none;" onclick="cashoutCrash()">💰 Cash Out</button>
-                        
-                        <div class="result-display" id="crash-result"></div>
-                        
-                        <div class="crash-history" id="crash-history"></div>
                     </div>
                 </div>
                 
-                <!-- JACKPOT -->
-                <div id="game-jackpot" class="game-section">
+                <!-- Jackpot -->
+                <div class="game-section" id="section-jackpot">
                     <div class="game-card">
                         <div class="game-title">
-                            <div class="game-icon" style="background: var(--gradient-royal);">🎁</div>
-                            Jackpot
+                            <div class="game-icon">🎁</div>
+                            ДЖЕКПОТ
                         </div>
                         
                         <div class="jackpot-pool">
-                            <div class="jackpot-label">Total Pool</div>
-                            <div class="jackpot-amount" id="jackpot-amount">${formatNumber(jackpotPool)} 🪙</div>
+                            <div class="pool-label">Банк</div>
+                            <div class="pool-amount" id="jackpot-pool">0 💰</div>
                         </div>
                         
-                        <div class="jackpot-timer" id="jackpot-timer">⏱️ ${jackpotTimer}s</div>
-                        
-                        <div class="jackpot-wheel" id="jackpot-wheel" style="display: none;">
-                            <div class="roulette-pointer"></div>
-                            <div class="jackpot-wheel-viewport">
-                                <div class="jackpot-strip" id="jackpot-strip"></div>
+                        <div class="jackpot-players" id="jackpot-players">
+                            <div style="text-align: center; color: var(--text-muted); padding: 20px;">
+                                Ожидание игроков...
                             </div>
                         </div>
                         
-                        <div class="jackpot-players" id="jackpot-players"></div>
+                        <div class="jackpot-wheel" style="display: none;" id="jackpot-wheel-container">
+                            <div class="wheel-strip" id="jackpot-wheel"></div>
+                            <div class="wheel-pointer"></div>
+                        </div>
                         
                         <div class="bet-input-group">
-                            <input type="number" class="bet-input" id="jackpot-bet" placeholder="Bet amount" min="1">
+                            <input type="number" class="bet-input" id="jackpot-bet" placeholder="Ставка" min="100">
+                            <button class="quick-bet" onclick="setJackpotBet('half')">½</button>
+                            <button class="quick-bet" onclick="setJackpotBet('all')">MAX</button>
                         </div>
                         
-                        <div class="quick-bets">
-                            <button class="quick-bet-btn" onclick="setBet('jackpot', 1000)">1K</button>
-                            <button class="quick-bet-btn" onclick="setBet('jackpot', 5000)">5K</button>
-                            <button class="quick-bet-btn" onclick="setBet('jackpot', 10000)">10K</button>
-                            <button class="quick-bet-btn" onclick="setBet('jackpot', 50000)">50K</button>
-                            <button class="quick-bet-btn" onclick="setBetAll('jackpot')">ALL</button>
-                        </div>
-                        
-                        <button class="action-btn jackpot" id="jackpot-btn" onclick="joinJackpot()">Join Game</button>
-                        <button class="action-btn" id="jackpot-cancel-btn" onclick="cancelJackpotBet()" style="display: none; background: var(--danger); margin-top: 10px;">Cancel Bet</button>
-                        
-                        <div class="result-display" id="jackpot-result"></div>
+                        <button class="play-btn secondary" id="jackpot-join-btn" onclick="joinJackpot()">
+                            ПРИСОЕДИНИТЬСЯ
+                        </button>
                     </div>
                 </div>
             `;
-            
-            loadJackpotSession();
         }
         
         function generateRouletteStrip() {
             let html = '';
-            for (let cycle = 0; cycle < 12; cycle++) {
-                for (const num of ROULETTE_SEQUENCE) {
-                    const color = getNumberColor(num);
-                    html += `<div class="roulette-number ${color}">${num}</div>`;
-                }
+            for (let i = 0; i < 100; i++) {
+                const num = ROULETTE_SEQUENCE[i % ROULETTE_SEQUENCE.length];
+                const color = num === 0 ? 'green' : (RED_NUMBERS.includes(num) ? 'red' : 'black');
+                html += `<div class="roulette-number ${color}">${num}</div>`;
             }
             return html;
         }
         
-        function setBet(game, amount) {
-            document.getElementById(`${game}-bet`).value = Math.min(amount, player.balance);
-        }
-        
-        function setBetAll(game) {
-            document.getElementById(`${game}-bet`).value = player.balance;
+        function setRouletteBet(type) {
+            const input = document.getElementById('roulette-bet');
+            if (type === 'half') input.value = Math.floor(player.balance / 2);
+            else if (type === 'all') input.value = player.balance;
         }
         
         function selectColor(color) {
-            if (isSpinning) return;
-            selectedColor = color;
+            if (rouletteState.spinning) return;
+            rouletteState.selectedColor = color;
             document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('selected'));
-            document.querySelector(`.color-btn.${color}`).classList.add('selected');
+            document.getElementById(`btn-${color}`).classList.add('selected');
         }
         
-        // ============ ROULETTE ============
         async function spinRoulette() {
-            if (isSpinning) return;
+            if (rouletteState.spinning) return;
             
-            const betInput = document.getElementById('roulette-bet');
-            const bet = parseInt(betInput.value);
+            const bet = parseInt(document.getElementById('roulette-bet').value);
+            if (!bet || bet < 100) return showToast('Минимальная ставка: 100', 'error');
+            if (bet > player.balance) return showToast('Недостаточно средств', 'error');
+            if (!rouletteState.selectedColor) return showToast('Выберите цвет', 'error');
             
-            if (!bet || bet <= 0) {
-                showToast('Enter bet amount!', 'error');
-                return;
-            }
+            rouletteState.spinning = true;
             
-            if (!selectedColor) {
-                showToast('Select a color!', 'error');
-                return;
-            }
-            
-            if (bet > player.balance) {
-                showToast('Not enough coins!', 'error');
-                return;
-            }
-            
-            isSpinning = true;
-            document.getElementById('spin-btn').disabled = true;
+            // Disable controls
             document.getElementById('roulette-bet').disabled = true;
-            document.querySelectorAll('.color-btn').forEach(btn => btn.disabled = true);
-            document.getElementById('roulette-result').style.display = 'none';
+            document.querySelectorAll('.color-btn').forEach(b => b.disabled = true);
+            document.querySelectorAll('.quick-bet').forEach(b => b.disabled = true);
+            document.getElementById('spin-btn').disabled = true;
             
-            player.balance -= bet;
-            updateBalanceDisplay();
+            await updateBalance(-bet);
             
-            // Determine result based on player flags
-            let resultColor;
-            if (player.casino_admin_mode) {
-                resultColor = selectedColor;
-            } else if (player.casino_downgrade) {
-                const otherColors = ['red', 'black', 'green'].filter(c => c !== selectedColor);
-                resultColor = otherColors[Math.floor(Math.random() * otherColors.length)];
-            } else {
-                // Reduced chances: red 46%, black 46%, green 0.05%
-                const random = Math.random() * 100;
-                if (random < 46) resultColor = 'red';
-                else if (random < 92) resultColor = 'black';
-                else if (random < 92.05) resultColor = 'green';
-                else resultColor = Math.random() < 0.5 ? 'red' : 'black';
+            // Determine result with low green chance (0.05%)
+            const rand = Math.random();
+            let resultNum;
+            if (rand < 0.0005) { // 0.05% chance for green
+                resultNum = 0;
+            } else if (rand < 0.48) { // ~48% for red
+                const redNums = RED_NUMBERS;
+                resultNum = redNums[Math.floor(Math.random() * redNums.length)];
+            } else { // ~52% for black
+                const blackNums = ROULETTE_SEQUENCE.filter(n => n !== 0 && !RED_NUMBERS.includes(n));
+                resultNum = blackNums[Math.floor(Math.random() * blackNums.length)];
             }
             
-            let resultNumber;
-            if (resultColor === 'green') {
-                resultNumber = 0;
-            } else {
-                const colorNumbers = ROULETTE_SEQUENCE.filter(n => getNumberColor(n) === resultColor);
-                resultNumber = colorNumbers[Math.floor(Math.random() * colorNumbers.length)];
-            }
+            const resultColor = resultNum === 0 ? 'green' : (RED_NUMBERS.includes(resultNum) ? 'red' : 'black');
             
+            // Animate
             const strip = document.getElementById('roulette-strip');
-            const numberWidth = 65;
-            const viewportWidth = strip.parentElement.offsetWidth;
-            const centerOffset = viewportWidth / 2 - numberWidth / 2;
-            
-            let targetIndex = -1;
-            for (let i = ROULETTE_SEQUENCE.length * 6; i < ROULETTE_SEQUENCE.length * 8; i++) {
-                const seqIndex = i % ROULETTE_SEQUENCE.length;
-                if (ROULETTE_SEQUENCE[seqIndex] === resultNumber) {
-                    targetIndex = i;
-                    break;
-                }
-            }
-            
-            const randomOffset = Math.random() * (numberWidth * 0.6) - (numberWidth * 0.3);
-            const targetPosition = -(targetIndex * numberWidth - centerOffset + randomOffset);
-            
-            strip.style.transition = 'none';
-            strip.style.transform = 'translateX(0)';
-            
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    strip.style.transition = 'transform 5s cubic-bezier(0.1, 0.7, 0.1, 1)';
-                    strip.style.transform = `translateX(${targetPosition}px)`;
-                });
-            });
+            const targetIndex = 60 + ROULETTE_SEQUENCE.indexOf(resultNum);
+            const offset = -(targetIndex * 60) + 150;
+            strip.style.transform = `translateX(${offset}px)`;
             
             setTimeout(async () => {
-                const resultDisplay = document.getElementById('roulette-result');
+                const multipliers = { red: 2, black: 2, green: 14 };
                 
-                if (resultColor === selectedColor) {
-                    const multiplier = resultColor === 'green' ? 14 : 2;
-                    const winAmount = bet * multiplier;
+                if (resultColor === rouletteState.selectedColor) {
+                    const winAmount = bet * multipliers[resultColor];
                     await updateBalance(winAmount);
-                    resultDisplay.className = 'result-display win';
-                    resultDisplay.innerHTML = `🎉 WIN! +${formatNumber(winAmount)} 🪙`;
+                    showToast(`+${formatNumber(winAmount)} 💰`, 'success');
                     showCoinRain();
                 } else {
-                    await updateBalance(0);
-                    resultDisplay.className = 'result-display lose';
-                    resultDisplay.innerHTML = `😔 Loss: -${formatNumber(bet)} 🪙`;
+                    showToast(`Выпало ${resultNum} (${resultColor === 'red' ? '🔴' : resultColor === 'black' ? '⚫' : '🟢'})`, 'error');
                 }
                 
-                resultDisplay.style.display = 'block';
-                
-                isSpinning = false;
-                document.getElementById('spin-btn').disabled = false;
-                document.getElementById('roulette-bet').disabled = false;
-                document.querySelectorAll('.color-btn').forEach(btn => btn.disabled = false);
-            }, 5500);
+                // Reset
+                setTimeout(() => {
+                    strip.style.transition = 'none';
+                    strip.style.transform = 'translateX(0)';
+                    setTimeout(() => {
+                        strip.style.transition = 'transform 5s cubic-bezier(0.1, 0.7, 0.1, 1)';
+                    }, 50);
+                    
+                    rouletteState.spinning = false;
+                    document.getElementById('roulette-bet').disabled = false;
+                    document.querySelectorAll('.color-btn').forEach(b => b.disabled = false);
+                    document.querySelectorAll('.quick-bet').forEach(b => b.disabled = false);
+                    document.getElementById('spin-btn').disabled = false;
+                }, 1000);
+            }, 5000);
         }
         
-        // ============ MINES ============
-        function selectMines(count) {
-            if (minesPlaying) return;
-            minesCount = count;
-            document.querySelectorAll('#mines-selector .selector-btn').forEach(btn => {
+        // Mines game
+        function setMinesCount(count) {
+            minesState.minesCount = count;
+            document.querySelectorAll('#mines-count-options .settings-option').forEach(btn => {
                 btn.classList.toggle('selected', parseInt(btn.textContent) === count);
             });
         }
         
+        function setMinesBet(type) {
+            const input = document.getElementById('mines-bet');
+            if (type === 'half') input.value = Math.floor(player.balance / 2);
+            else if (type === 'all') input.value = player.balance;
+        }
+        
         async function startMines() {
-            if (minesPlaying) return;
+            const bet = parseInt(document.getElementById('mines-bet').value);
+            if (!bet || bet < 100) return showToast('Минимальная ставка: 100', 'error');
+            if (bet > player.balance) return showToast('Недостаточно средств', 'error');
             
-            const betInput = document.getElementById('mines-bet');
-            const bet = parseInt(betInput.value);
+            await updateBalance(-bet);
             
-            if (!bet || bet <= 0) {
-                showToast('Enter bet amount!', 'error');
-                return;
-            }
+            minesState.playing = true;
+            minesState.bet = bet;
+            minesState.revealed = [];
+            minesState.multiplier = 1;
             
-            if (bet > player.balance) {
-                showToast('Not enough coins!', 'error');
-                return;
-            }
-            
-            minesBet = bet;
-            player.balance -= bet;
-            updateBalanceDisplay();
-            
-            minesPlaying = true;
-            minesRevealed = 0;
-            minesCurrentWin = 0;
-            
-            // Disable inputs during game
-            betInput.disabled = true;
-            document.querySelectorAll('#mines-selector .selector-btn').forEach(btn => btn.disabled = true);
-            
-            // Generate grid
-            minesGrid = Array(25).fill(false);
-            const minePositions = [];
-            while (minePositions.length < minesCount) {
+            // Generate mine positions
+            const positions = [];
+            while (positions.length < minesState.minesCount) {
                 const pos = Math.floor(Math.random() * 25);
-                if (!minePositions.includes(pos)) {
-                    minePositions.push(pos);
-                    minesGrid[pos] = true;
+                if (!positions.includes(pos)) positions.push(pos);
+            }
+            minesState.minePositions = positions;
+            
+            document.getElementById('mines-setup').style.display = 'none';
+            document.getElementById('mines-game').style.display = 'block';
+            
+            renderMinesGrid();
+            updateMinesMultiplier();
+        }
+        
+        function renderMinesGrid() {
+            const grid = document.getElementById('mines-grid');
+            grid.innerHTML = '';
+            
+            for (let i = 0; i < 25; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'mine-cell';
+                if (minesState.revealed.includes(i)) {
+                    cell.classList.add('revealed');
+                    if (minesState.minePositions.includes(i)) {
+                        cell.classList.add('mine');
+                        cell.textContent = '💣';
+                    } else {
+                        cell.classList.add('safe');
+                        cell.textContent = '💎';
+                    }
+                } else if (!minesState.playing) {
+                    cell.classList.add('disabled');
                 }
+                cell.onclick = () => clickMine(i);
+                grid.appendChild(cell);
+            }
+        }
+        
+        function updateMinesMultiplier() {
+            const safeCount = 25 - minesState.minesCount;
+            const revealed = minesState.revealed.length;
+            
+            if (revealed === 0) {
+                minesState.multiplier = 1;
+            } else {
+                let mult = 1;
+                for (let i = 0; i < revealed; i++) {
+                    mult *= (safeCount - i) / (25 - minesState.minesCount - i);
+                    mult = 1 / mult;
+                }
+                mult = Math.max(1, mult * 0.97);
+                minesState.multiplier = mult;
             }
             
-            const gameArea = document.getElementById('mines-game-area');
-            gameArea.innerHTML = `
-                <div class="mines-grid" id="mines-grid">
-                    ${Array(25).fill(0).map((_, i) => `<div class="mine-cell" data-index="${i}" onclick="clickMine(${i})">❓</div>`).join('')}
-                </div>
-                <div class="current-win">
-                    <div class="current-win-label">Current Win</div>
-                    <div class="current-win-amount" id="mines-current-win">0 🪙</div>
-                </div>
-                <button class="action-btn success" onclick="cashoutMines()">💰 Cash Out</button>
-            `;
-            
-            document.getElementById('mines-start-btn').style.display = 'none';
-            document.getElementById('mines-result').style.display = 'none';
+            document.getElementById('mines-multiplier').textContent = `x${minesState.multiplier.toFixed(2)}`;
+            document.getElementById('mines-potential').textContent = `Выигрыш: ${formatNumber(Math.floor(minesState.bet * minesState.multiplier))} 💰`;
         }
         
         async function clickMine(index) {
-            if (!minesPlaying) return;
+            if (!minesState.playing || minesState.revealed.includes(index)) return;
             
-            const cell = document.querySelector(`.mine-cell[data-index="${index}"]`);
-            if (cell.classList.contains('revealed')) return;
+            minesState.revealed.push(index);
             
-            cell.classList.add('revealed');
-            
-            // Check for admin mode (always safe) or downgrade mode (always bomb)
-            let isBomb = minesGrid[index];
-            if (player.casino_admin_mode) {
-                isBomb = false;
-            } else if (player.casino_downgrade) {
-                isBomb = true;
-            }
-            
-            if (isBomb) {
-                cell.classList.add('bomb');
-                cell.textContent = '💣';
+            if (minesState.minePositions.includes(index)) {
+                minesState.playing = false;
+                showToast('Бум! 💥 Вы проиграли', 'error');
                 
-                // Show all bombs
-                minesGrid.forEach((isMine, i) => {
-                    if (isMine) {
-                        const mineCell = document.querySelector(`.mine-cell[data-index="${i}"]`);
-                        mineCell.classList.add('bomb', 'revealed');
-                        mineCell.textContent = '💣';
+                // Reveal all mines
+                minesState.minePositions.forEach(pos => {
+                    if (!minesState.revealed.includes(pos)) {
+                        minesState.revealed.push(pos);
                     }
                 });
                 
-                minesPlaying = false;
-                await updateBalance(0);
-                
-                const resultDisplay = document.getElementById('mines-result');
-                resultDisplay.className = 'result-display lose';
-                resultDisplay.innerHTML = `💥 BOOM! Lost ${formatNumber(minesBet)} 🪙`;
-                resultDisplay.style.display = 'block';
+                renderMinesGrid();
                 
                 setTimeout(() => {
-                    resetMines();
+                    document.getElementById('mines-setup').style.display = 'block';
+                    document.getElementById('mines-game').style.display = 'none';
                 }, 2000);
             } else {
-                cell.classList.add('gem');
-                cell.textContent = '💎';
-                minesRevealed++;
+                updateMinesMultiplier();
+                renderMinesGrid();
                 
-                // Calculate win with reduced multipliers
-                const safeSpots = 25 - minesCount;
-                const baseMultiplier = 0.95;
-                const multiplier = baseMultiplier * Math.pow(0.92, minesRevealed);
-                minesCurrentWin = Math.floor(minesBet * (1 + (minesRevealed / safeSpots) * (minesCount / 5) * multiplier));
-                
-                const premiumBonus = player.is_premium ? 1.2 : 1;
-                minesCurrentWin = Math.floor(minesCurrentWin * premiumBonus);
-                
-                document.getElementById('mines-current-win').textContent = formatNumber(minesCurrentWin) + ' 🪙';
-                
-                if (minesRevealed >= safeSpots) {
+                // Check if all safe cells are revealed
+                if (minesState.revealed.length === 25 - minesState.minesCount) {
                     await cashoutMines();
                 }
             }
         }
         
         async function cashoutMines() {
-            if (!minesPlaying || minesRevealed === 0) return;
+            if (!minesState.playing) return;
             
-            minesPlaying = false;
-            await updateBalance(minesCurrentWin);
+            minesState.playing = false;
+            const winAmount = Math.floor(minesState.bet * minesState.multiplier);
+            await updateBalance(winAmount);
             
-            const resultDisplay = document.getElementById('mines-result');
-            resultDisplay.className = 'result-display win';
-            resultDisplay.innerHTML = `🎉 WIN! +${formatNumber(minesCurrentWin)} 🪙`;
-            resultDisplay.style.display = 'block';
+            showToast(`+${formatNumber(winAmount)} 💰`, 'success');
             showCoinRain();
             
             setTimeout(() => {
-                resetMines();
-            }, 2000);
+                document.getElementById('mines-setup').style.display = 'block';
+                document.getElementById('mines-game').style.display = 'none';
+            }, 1500);
         }
         
-        function resetMines() {
-            minesPlaying = false;
-            minesRevealed = 0;
-            minesCurrentWin = 0;
-            
-            document.getElementById('mines-bet').disabled = false;
-            document.querySelectorAll('#mines-selector .selector-btn').forEach(btn => btn.disabled = false);
-            
-            document.getElementById('mines-game-area').innerHTML = '';
-            document.getElementById('mines-start-btn').style.display = 'block';
-        }
-        
-        // ============ LADDER ============
-        function selectLadderStones(count) {
-            if (ladderPlaying) return;
-            ladderStones = count;
-            document.querySelectorAll('#ladder-selector .selector-btn').forEach(btn => {
-                btn.classList.toggle('selected', parseInt(btn.textContent) === count);
-            });
+        // Ladder game
+        function setLadderBet(type) {
+            const input = document.getElementById('ladder-bet');
+            if (type === 'half') input.value = Math.floor(player.balance / 2);
+            else if (type === 'all') input.value = player.balance;
         }
         
         async function startLadder() {
-            if (ladderPlaying) return;
+            const bet = parseInt(document.getElementById('ladder-bet').value);
+            if (!bet || bet < 100) return showToast('Минимальная ставка: 100', 'error');
+            if (bet > player.balance) return showToast('Недостаточно средств', 'error');
             
-            const betInput = document.getElementById('ladder-bet');
-            const bet = parseInt(betInput.value);
+            await updateBalance(-bet);
             
-            if (!bet || bet <= 0) {
-                showToast('Enter bet amount!', 'error');
-                return;
+            ladderState.playing = true;
+            ladderState.bet = bet;
+            ladderState.currentRow = 0;
+            ladderState.multiplier = 1;
+            ladderState.safeColumns = [];
+            
+            // Generate safe column for each row
+            for (let i = 0; i < 8; i++) {
+                ladderState.safeColumns.push(Math.floor(Math.random() * 3));
             }
             
-            if (bet > player.balance) {
-                showToast('Not enough coins!', 'error');
-                return;
-            }
+            document.getElementById('ladder-setup').style.display = 'none';
+            document.getElementById('ladder-game').style.display = 'block';
             
-            ladderBet = bet;
-            player.balance -= bet;
-            updateBalanceDisplay();
-            
-            ladderPlaying = true;
-            ladderLevel = 0;
-            ladderCurrentWin = bet;
-            
-            // Disable inputs
-            betInput.disabled = true;
-            document.querySelectorAll('#ladder-selector .selector-btn').forEach(btn => btn.disabled = true);
-            
-            // Generate tower rows
-            const cellsPerRow = 5;
-            const rows = 8;
-            ladderRows = [];
-            
-            for (let r = 0; r < rows; r++) {
-                const row = [];
-                const mineCount = ladderStones;
-                const minePositions = [];
-                
-                while (minePositions.length < mineCount) {
-                    const pos = Math.floor(Math.random() * cellsPerRow);
-                    if (!minePositions.includes(pos)) {
-                        minePositions.push(pos);
-                    }
-                }
-                
-                for (let c = 0; c < cellsPerRow; c++) {
-                    row.push(minePositions.includes(c));
-                }
-                ladderRows.push(row);
-            }
-            
-            renderLadder();
-            document.getElementById('ladder-start-btn').style.display = 'none';
-            document.getElementById('ladder-result').style.display = 'none';
+            renderLadderGrid();
+            updateLadderMultiplier();
         }
         
-        function renderLadder() {
-            const gameArea = document.getElementById('ladder-game-area');
-            const multipliers = [1.2, 1.5, 1.9, 2.5, 3.2, 4.5, 6.5, 10.0];
+        function renderLadderGrid() {
+            const grid = document.getElementById('ladder-grid');
+            const multipliers = [1.5, 2, 3, 4.5, 6.5, 9, 13, 20];
             
-            let html = `
-                <div class="current-win">
-                    <div class="current-win-label">Current Win</div>
-                    <div class="current-win-amount" id="ladder-current-win">${formatNumber(ladderCurrentWin)} 🪙</div>
-                </div>
-                <div class="ladder-tower">
-            `;
-            
-            for (let r = ladderRows.length - 1; r >= 0; r--) {
-                const isCurrentRow = r === ladderLevel;
-                const isCompleted = r < ladderLevel;
-                const isFuture = r > ladderLevel;
-                
-                html += `<div class="ladder-row">`;
-                html += `<div class="ladder-multiplier-label">${multipliers[r]}x</div>`;
-                html += `<div class="ladder-cells">`;
-                
-                for (let c = 0; c < ladderRows[r].length; c++) {
-                    let cellClass = 'ladder-cell';
-                    let cellContent = '❓';
+            let html = '';
+            for (let row = 7; row >= 0; row--) {
+                html += '<div class="ladder-row">';
+                for (let col = 0; col < 3; col++) {
+                    let className = 'ladder-cell';
+                    let content = `x${multipliers[row]}`;
                     
-                    if (isCompleted) {
-                        cellClass += ladderRows[r][c] ? ' mine revealed' : ' safe revealed';
-                        cellContent = ladderRows[r][c] ? '💣' : '✅';
-                    } else if (isFuture) {
-                        cellClass += ' disabled';
-                    } else if (isCurrentRow) {
-                        cellClass += ' current-row';
+                    if (row < ladderState.currentRow) {
+                        if (col === ladderState.safeColumns[row]) {
+                            className += ' safe';
+                            content = '✓';
+                        } else {
+                            className += ' wrong disabled';
+                        }
+                    } else if (row === ladderState.currentRow && ladderState.playing) {
+                        className += ' current';
+                    } else if (row > ladderState.currentRow || !ladderState.playing) {
+                        className += ' disabled';
                     }
                     
-                    const onclick = isCurrentRow ? `onclick="clickLadder(${r}, ${c})"` : '';
-                    html += `<div class="${cellClass}" ${onclick}>${cellContent}</div>`;
+                    html += `<div class="${className}" onclick="clickLadder(${row}, ${col})">${content}</div>`;
                 }
-                
-                html += `</div></div>`;
+                html += '</div>';
             }
+            grid.innerHTML = html;
+        }
+        
+        function updateLadderMultiplier() {
+            const multipliers = [1, 1.5, 2, 3, 4.5, 6.5, 9, 13, 20];
+            ladderState.multiplier = multipliers[ladderState.currentRow];
             
-            html += `</div>`;
-            
-            if (ladderPlaying && ladderLevel > 0) {
-                html += `<button class="action-btn success" onclick="cashoutLadder()">💰 Cash Out</button>`;
-            }
-            
-            gameArea.innerHTML = html;
+            document.getElementById('ladder-multiplier').textContent = `x${ladderState.multiplier.toFixed(2)}`;
+            document.getElementById('ladder-potential').textContent = `Выигрыш: ${formatNumber(Math.floor(ladderState.bet * ladderState.multiplier))} 💰`;
         }
         
         async function clickLadder(row, col) {
-            if (!ladderPlaying || row !== ladderLevel) return;
+            if (!ladderState.playing || row !== ladderState.currentRow) return;
             
-            let isMine = ladderRows[row][col];
-            
-            if (player.casino_admin_mode) {
-                isMine = false;
-            } else if (player.casino_downgrade) {
-                isMine = true;
-            }
-            
-            ladderRows[row][col] = isMine;
-            
-            if (isMine) {
-                ladderPlaying = false;
-                renderLadder();
+            if (col === ladderState.safeColumns[row]) {
+                ladderState.currentRow++;
+                updateLadderMultiplier();
+                renderLadderGrid();
                 
-                await updateBalance(0);
+                if (ladderState.currentRow >= 8) {
+                    await cashoutLadder();
+                }
+            } else {
+                ladderState.playing = false;
+                showToast('Неверный выбор! 💔', 'error');
                 
-                const resultDisplay = document.getElementById('ladder-result');
-                resultDisplay.className = 'result-display lose';
-                resultDisplay.innerHTML = `💥 BOOM! Lost ${formatNumber(ladderBet)} 🪙`;
-                resultDisplay.style.display = 'block';
+                renderLadderGrid();
                 
                 setTimeout(() => {
-                    resetLadder();
+                    document.getElementById('ladder-setup').style.display = 'block';
+                    document.getElementById('ladder-game').style.display = 'none';
                 }, 2000);
-            } else {
-                ladderLevel++;
-                const multipliers = [1.2, 1.5, 1.9, 2.5, 3.2, 4.5, 6.5, 10.0];
-                ladderCurrentWin = Math.floor(ladderBet * multipliers[row]);
-                
-                if (ladderLevel >= ladderRows.length) {
-                    await cashoutLadder();
-                } else {
-                    renderLadder();
-                }
             }
         }
         
         async function cashoutLadder() {
-            if (!ladderPlaying) return;
+            if (!ladderState.playing || ladderState.currentRow === 0) return;
             
-            ladderPlaying = false;
+            ladderState.playing = false;
+            const winAmount = Math.floor(ladderState.bet * ladderState.multiplier);
+            await updateBalance(winAmount);
             
-            const premiumBonus = player.is_premium ? 1.5 : 1;
-            const finalWin = Math.floor(ladderCurrentWin * premiumBonus);
-            
-            await updateBalance(finalWin);
-            
-            const resultDisplay = document.getElementById('ladder-result');
-            resultDisplay.className = 'result-display win';
-            resultDisplay.innerHTML = `🎉 WIN! +${formatNumber(finalWin)} 🪙`;
-            resultDisplay.style.display = 'block';
+            showToast(`+${formatNumber(winAmount)} 💰`, 'success');
             showCoinRain();
             
             setTimeout(() => {
-                resetLadder();
-            }, 2000);
+                document.getElementById('ladder-setup').style.display = 'block';
+                document.getElementById('ladder-game').style.display = 'none';
+            }, 1500);
         }
         
-        function resetLadder() {
-            ladderPlaying = false;
-            ladderLevel = 0;
-            ladderCurrentWin = 0;
-            
-            document.getElementById('ladder-bet').disabled = false;
-            document.querySelectorAll('#ladder-selector .selector-btn').forEach(btn => btn.disabled = false);
-            
-            document.getElementById('ladder-game-area').innerHTML = '';
-            document.getElementById('ladder-start-btn').style.display = 'block';
+        // Crash game
+        function setCrashBet(type) {
+            const input = document.getElementById('crash-bet');
+            if (type === 'half') input.value = Math.floor(player.balance / 2);
+            else if (type === 'all') input.value = player.balance;
         }
         
-        // ============ CRASH ============
         async function startCrash() {
-            if (crashPlaying) return;
+            const bet = parseInt(document.getElementById('crash-bet').value);
+            if (!bet || bet < 100) return showToast('Минимальная ставка: 100', 'error');
+            if (bet > player.balance) return showToast('Недостаточно средств', 'error');
             
-            const betInput = document.getElementById('crash-bet');
-            const bet = parseInt(betInput.value);
+            await updateBalance(-bet);
             
-            if (!bet || bet <= 0) {
-                showToast('Enter bet amount!', 'error');
-                return;
-            }
+            crashState.playing = true;
+            crashState.bet = bet;
+            crashState.multiplier = 1;
+            crashState.crashed = false;
+            crashState.cashedOut = false;
             
-            if (bet > player.balance) {
-                showToast('Not enough coins!', 'error');
-                return;
-            }
+            // Disable controls
+            document.getElementById('crash-bet').disabled = true;
+            document.querySelectorAll('#section-crash .quick-bet').forEach(b => b.disabled = true);
             
-            crashBet = bet;
-            player.balance -= bet;
-            updateBalanceDisplay();
+            // Determine crash point (biased towards lower values)
+            const crashPoint = 1 + Math.pow(Math.random(), 2) * 9; // 1x to ~10x
             
-            crashPlaying = true;
-            crashCashedOut = false;
-            crashMultiplier = 0.00;
+            document.getElementById('crash-setup').style.display = 'none';
+            document.getElementById('crash-game').style.display = 'block';
+            document.getElementById('crash-status').textContent = 'Растёт...';
             
-            // Disable input
-            betInput.disabled = true;
+            const multiplierEl = document.getElementById('crash-multiplier');
             
-            // Determine crash point
-            if (player.casino_admin_mode) {
-                crashCrashPoint = 50 + Math.random() * 50;
-            } else if (player.casino_downgrade) {
-                crashCrashPoint = 0;
-            } else {
-                // 5% instant crash at 0.00x
-                if (Math.random() < 0.05) {
-                    crashCrashPoint = 0;
-                } else {
-                    const rand = Math.random();
-                    if (rand < 0.35) crashCrashPoint = 0.5 + Math.random() * 0.5;
-                    else if (rand < 0.65) crashCrashPoint = 1.0 + Math.random() * 1.0;
-                    else if (rand < 0.85) crashCrashPoint = 2.0 + Math.random() * 2.0;
-                    else crashCrashPoint = 4.0 + Math.random() * 6.0;
+            const interval = setInterval(() => {
+                if (!crashState.playing) {
+                    clearInterval(interval);
+                    return;
                 }
-            }
-            
-            document.getElementById('crash-btn').style.display = 'none';
-            document.getElementById('crash-cashout-btn').style.display = 'block';
-            document.getElementById('crash-result').style.display = 'none';
-            
-            const multiplierDisplay = document.getElementById('crash-multiplier');
-            const statusDisplay = document.getElementById('crash-status');
-            
-            multiplierDisplay.className = 'crash-multiplier flying';
-            statusDisplay.textContent = 'FLYING...';
-            
-            crashInterval = setInterval(() => {
-                if (!crashPlaying || crashCashedOut) return;
                 
-                crashMultiplier += 0.01;
-                multiplierDisplay.textContent = crashMultiplier.toFixed(2) + 'x';
+                crashState.multiplier += 0.01;
+                multiplierEl.textContent = `x${crashState.multiplier.toFixed(2)}`;
                 
-                if (crashMultiplier >= crashCrashPoint) {
-                    clearInterval(crashInterval);
-                    crashPlaying = false;
+                if (crashState.multiplier >= crashPoint) {
+                    clearInterval(interval);
+                    crashState.playing = false;
+                    crashState.crashed = true;
                     
-                    multiplierDisplay.textContent = crashCrashPoint.toFixed(2) + 'x';
-                    multiplierDisplay.className = 'crash-multiplier crashed';
-                    statusDisplay.textContent = 'CRASHED!';
-                    
-                    if (!crashCashedOut) {
-                        updateBalance(0);
-                        
-                        const resultDisplay = document.getElementById('crash-result');
-                        resultDisplay.className = 'result-display lose';
-                        resultDisplay.innerHTML = `💥 Crashed at ${crashCrashPoint.toFixed(2)}x! Lost ${formatNumber(crashBet)} 🪙`;
-                        resultDisplay.style.display = 'block';
-                    }
-                    
-                    crashHistory.unshift(crashCrashPoint);
-                    if (crashHistory.length > 8) crashHistory.pop();
-                    renderCrashHistory();
+                    multiplierEl.classList.add('crashed');
+                    document.getElementById('crash-status').textContent = 'КРАШ!';
+                    showToast('Краш! 💥', 'error');
                     
                     setTimeout(() => {
-                        resetCrash();
+                        multiplierEl.classList.remove('crashed');
+                        multiplierEl.textContent = 'x1.00';
+                        document.getElementById('crash-setup').style.display = 'block';
+                        document.getElementById('crash-game').style.display = 'none';
+                        document.getElementById('crash-status').textContent = 'Сделайте ставку';
+                        document.getElementById('crash-bet').disabled = false;
+                        document.querySelectorAll('#section-crash .quick-bet').forEach(b => b.disabled = false);
                     }, 2000);
                 }
             }, 50);
         }
         
         async function cashoutCrash() {
-            if (!crashPlaying || crashCashedOut) return;
+            if (!crashState.playing || crashState.cashedOut) return;
             
-            crashCashedOut = true;
-            clearInterval(crashInterval);
+            crashState.playing = false;
+            crashState.cashedOut = true;
             
-            const winAmount = Math.floor(crashBet * crashMultiplier);
+            const winAmount = Math.floor(crashState.bet * crashState.multiplier);
+            await updateBalance(winAmount);
             
-            const premiumBonus = player.is_premium ? 1.5 : 1;
-            const finalWin = Math.floor(winAmount * premiumBonus);
-            
-            await updateBalance(finalWin);
-            
-            const resultDisplay = document.getElementById('crash-result');
-            resultDisplay.className = 'result-display win';
-            resultDisplay.innerHTML = `🎉 Cashed out at ${crashMultiplier.toFixed(2)}x! +${formatNumber(finalWin)} 🪙`;
-            resultDisplay.style.display = 'block';
+            showToast(`+${formatNumber(winAmount)} 💰`, 'success');
             showCoinRain();
             
-            document.getElementById('crash-multiplier').className = 'crash-multiplier';
-            document.getElementById('crash-status').textContent = 'CASHED OUT!';
-            
-            crashHistory.unshift(crashMultiplier);
-            if (crashHistory.length > 8) crashHistory.pop();
-            renderCrashHistory();
+            document.getElementById('crash-status').textContent = `Выиграно: ${formatNumber(winAmount)} 💰`;
             
             setTimeout(() => {
-                resetCrash();
+                document.getElementById('crash-multiplier').textContent = 'x1.00';
+                document.getElementById('crash-setup').style.display = 'block';
+                document.getElementById('crash-game').style.display = 'none';
+                document.getElementById('crash-status').textContent = 'Сделайте ставку';
+                document.getElementById('crash-bet').disabled = false;
+                document.querySelectorAll('#section-crash .quick-bet').forEach(b => b.disabled = false);
             }, 2000);
         }
         
-        function resetCrash() {
-            crashPlaying = false;
-            crashCashedOut = false;
-            crashMultiplier = 0.00;
-            
-            document.getElementById('crash-bet').disabled = false;
-            document.getElementById('crash-btn').style.display = 'block';
-            document.getElementById('crash-cashout-btn').style.display = 'none';
-            document.getElementById('crash-multiplier').textContent = '0.00x';
-            document.getElementById('crash-multiplier').className = 'crash-multiplier';
-            document.getElementById('crash-status').textContent = 'Waiting for bet...';
+        // Jackpot game
+        const JACKPOT_COLORS = ['#ef4444', '#22c55e', '#3b82f6', '#f97316', '#a855f7', '#ec4899'];
+        
+        function setJackpotBet(type) {
+            const input = document.getElementById('jackpot-bet');
+            if (type === 'half') input.value = Math.floor(player.balance / 2);
+            else if (type === 'all') input.value = player.balance;
         }
         
-        function renderCrashHistory() {
-            const container = document.getElementById('crash-history');
-            container.innerHTML = crashHistory.map(mult => {
-                let cls = 'low';
-                if (mult >= 2) cls = 'high';
-                else if (mult >= 1) cls = 'medium';
-                return `<div class="crash-history-item ${cls}">${mult.toFixed(2)}x</div>`;
-            }).join('');
-        }
-        
-        // ============ JACKPOT ============
         async function joinJackpot() {
-            const betInput = document.getElementById('jackpot-bet');
-            const bet = parseInt(betInput.value);
+            const bet = parseInt(document.getElementById('jackpot-bet').value);
+            if (!bet || bet < 100) return showToast('Минимальная ставка: 100', 'error');
+            if (bet > player.balance) return showToast('Недостаточно средств', 'error');
             
-            if (!bet || bet <= 0) {
-                showToast('Enter bet amount!', 'error');
-                return;
-            }
+            await updateBalance(-bet);
             
-            if (bet > player.balance) {
-                showToast('Not enough coins!', 'error');
-                return;
-            }
+            const user = tg?.initDataUnsafe?.user;
+            const playerName = user?.first_name || player.first_name || 'Игрок';
             
-            // Disable input
-            betInput.disabled = true;
-            
-            player.balance -= bet;
-            updateBalanceDisplay();
-            
-            jackpotMyBet = bet;
-            jackpotPool += bet;
-            
-            const colors = ['#c9a227', '#9b59b6', '#27ae60', '#3498db', '#e74c3c', '#1abc9c'];
-            const color = colors[jackpotPlayers.length % colors.length];
-            
-            jackpotPlayers.push({
+            jackpotState.players.push({
                 id: player.id,
-                name: player.first_name || player.username || 'Player',
+                name: playerName,
                 bet: bet,
-                color: color
+                color: JACKPOT_COLORS[jackpotState.players.length % JACKPOT_COLORS.length]
             });
+            jackpotState.poolAmount += bet;
+            jackpotState.myBet += bet;
             
-            document.getElementById('jackpot-btn').style.display = 'none';
-            document.getElementById('jackpot-cancel-btn').style.display = 'block';
-            
-            renderJackpotPlayers();
-            updateJackpotPool();
-            
-            if (jackpotPlayers.length >= 2 && !jackpotInterval) {
-                startJackpotTimer();
-            }
-        }
-        
-        function cancelJackpotBet() {
-            if (jackpotSpinning) return;
-            
-            player.balance += jackpotMyBet;
-            updateBalanceDisplay();
-            
-            jackpotPool -= jackpotMyBet;
-            jackpotPlayers = jackpotPlayers.filter(p => p.id !== player.id);
-            
-            jackpotMyBet = 0;
-            
-            document.getElementById('jackpot-bet').disabled = false;
-            document.getElementById('jackpot-btn').style.display = 'block';
-            document.getElementById('jackpot-cancel-btn').style.display = 'none';
-            
-            renderJackpotPlayers();
-            updateJackpotPool();
-        }
-        
-        function startJackpotTimer() {
-            jackpotTimer = 30;
-            document.getElementById('jackpot-timer').textContent = `⏱️ ${jackpotTimer}s`;
-            
-            jackpotInterval = setInterval(() => {
-                jackpotTimer--;
-                document.getElementById('jackpot-timer').textContent = `⏱️ ${jackpotTimer}s`;
-                
-                if (jackpotTimer <= 0) {
-                    clearInterval(jackpotInterval);
-                    jackpotInterval = null;
-                    spinJackpot();
-                }
-            }, 1000);
-        }
-        
-        async function spinJackpot() {
-            if (jackpotPlayers.length < 2) {
-                showToast('Need at least 2 players!', 'error');
-                return;
-            }
-            
-            jackpotSpinning = true;
-            
-            // Determine winner
-            let winner;
-            if (player.casino_admin_mode && jackpotMyBet > 0) {
-                winner = jackpotPlayers.find(p => p.id === player.id);
-            } else {
-                const totalBets = jackpotPlayers.reduce((sum, p) => sum + p.bet, 0);
-                let random = Math.random() * totalBets;
-                
-                for (const p of jackpotPlayers) {
-                    random -= p.bet;
-                    if (random <= 0) {
-                        winner = p;
-                        break;
-                    }
-                }
-            }
-            
-            // Build wheel
-            const wheel = document.getElementById('jackpot-wheel');
-            const strip = document.getElementById('jackpot-strip');
-            wheel.style.display = 'block';
-            
-            let stripHtml = '';
-            for (let i = 0; i < 50; i++) {
-                const player = jackpotPlayers[i % jackpotPlayers.length];
-                stripHtml += `<div class="jackpot-item" style="background: ${player.color}">${player.name}</div>`;
-            }
-            // Add winner at the end
-            for (let i = 0; i < 5; i++) {
-                stripHtml += `<div class="jackpot-item" style="background: ${winner.color}">${winner.name}</div>`;
-            }
-            
-            strip.innerHTML = stripHtml;
-            
-            const itemWidth = 95;
-            const viewportWidth = strip.parentElement.offsetWidth;
-            const centerOffset = viewportWidth / 2 - itemWidth / 2;
-            const targetIndex = 50 + 2;
-            const targetPosition = -(targetIndex * itemWidth - centerOffset);
-            
-            strip.style.transition = 'none';
-            strip.style.transform = 'translateX(0)';
-            
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    strip.style.transition = 'transform 6s cubic-bezier(0.1, 0.7, 0.1, 1)';
-                    strip.style.transform = `translateX(${targetPosition}px)`;
+            // Add bots
+            const botCount = Math.floor(Math.random() * 3) + 1;
+            for (let i = 0; i < botCount; i++) {
+                const botBet = Math.floor(bet * (0.5 + Math.random() * 1.5));
+                jackpotState.players.push({
+                    id: `bot_${i}`,
+                    name: ['Алекс', 'Макс', 'Виктор', 'Денис', 'Артём'][Math.floor(Math.random() * 5)],
+                    bet: botBet,
+                    color: JACKPOT_COLORS[(jackpotState.players.length) % JACKPOT_COLORS.length]
                 });
-            });
-            
-            setTimeout(async () => {
-                const resultDisplay = document.getElementById('jackpot-result');
-                
-                if (winner.id === player.id) {
-                    await updateBalance(jackpotPool);
-                    resultDisplay.className = 'result-display win';
-                    resultDisplay.innerHTML = `🎉 YOU WON! +${formatNumber(jackpotPool)} 🪙`;
-                    showCoinRain();
-                } else {
-                    resultDisplay.className = 'result-display lose';
-                    resultDisplay.innerHTML = `${winner.name} won ${formatNumber(jackpotPool)} 🪙`;
-                }
-                
-                resultDisplay.style.display = 'block';
-                
-                setTimeout(() => {
-                    resetJackpot();
-                }, 3000);
-            }, 6500);
-        }
-        
-        function resetJackpot() {
-            jackpotSpinning = false;
-            jackpotPool = 0;
-            jackpotPlayers = [];
-            jackpotMyBet = 0;
-            jackpotTimer = 30;
-            
-            document.getElementById('jackpot-bet').disabled = false;
-            document.getElementById('jackpot-wheel').style.display = 'none';
-            document.getElementById('jackpot-btn').style.display = 'block';
-            document.getElementById('jackpot-cancel-btn').style.display = 'none';
-            document.getElementById('jackpot-timer').textContent = '⏱️ 30s';
+                jackpotState.poolAmount += botBet;
+            }
             
             renderJackpotPlayers();
-            updateJackpotPool();
+            
+            document.getElementById('jackpot-join-btn').disabled = true;
+            document.getElementById('jackpot-bet').disabled = true;
+            document.querySelectorAll('#section-jackpot .quick-bet').forEach(b => b.disabled = true);
+            
+            // Start timer
+            setTimeout(() => spinJackpot(), 3000);
         }
         
         function renderJackpotPlayers() {
             const container = document.getElementById('jackpot-players');
-            const totalBets = jackpotPlayers.reduce((sum, p) => sum + p.bet, 0) || 1;
+            document.getElementById('jackpot-pool').textContent = `${formatNumber(jackpotState.poolAmount)} 💰`;
             
-            container.innerHTML = jackpotPlayers.map(p => {
-                const chance = ((p.bet / totalBets) * 100).toFixed(1);
-                return `
-                    <div class="jackpot-player" style="border-left: 4px solid ${p.color}">
-                        <span class="jackpot-player-name">${p.name}</span>
-                        <span class="jackpot-player-bet">${formatNumber(p.bet)} 🪙</span>
-                        <span class="jackpot-player-chance">${chance}%</span>
-                    </div>
-                `;
-            }).join('');
+            container.innerHTML = jackpotState.players.map(p => `
+                <div class="jackpot-player">
+                    <div class="player-color" style="background: ${p.color}"></div>
+                    <div class="player-name">${p.name}</div>
+                    <div class="player-bet">${formatNumber(p.bet)} 💰</div>
+                </div>
+            `).join('');
         }
         
-        function updateJackpotPool() {
-            document.getElementById('jackpot-amount').textContent = formatNumber(jackpotPool) + ' 🪙';
+        async function spinJackpot() {
+            jackpotState.spinning = true;
+            
+            document.getElementById('jackpot-wheel-container').style.display = 'block';
+            
+            // Build wheel
+            const wheel = document.getElementById('jackpot-wheel');
+            let segments = '';
+            const totalBet = jackpotState.poolAmount;
+            
+            for (let i = 0; i < 50; i++) {
+                const player = jackpotState.players[i % jackpotState.players.length];
+                segments += `<div class="wheel-segment" style="background: ${player.color}">${player.name}</div>`;
+            }
+            wheel.innerHTML = segments;
+            
+            // Determine winner (slightly favor player for demo)
+            const rand = Math.random();
+            let winner;
+            if (rand < 0.4) { // 40% player wins
+                winner = jackpotState.players.find(p => p.id === player.id);
+            } else {
+                winner = jackpotState.players[Math.floor(Math.random() * jackpotState.players.length)];
+            }
+            
+            const winnerIndex = jackpotState.players.indexOf(winner);
+            const targetOffset = -(40 * 80 + winnerIndex * 80);
+            
+            wheel.style.transform = `translateX(${targetOffset}px)`;
+            
+            setTimeout(async () => {
+                if (winner.id === player.id) {
+                    await updateBalance(jackpotState.poolAmount);
+                    showToast(`Вы выиграли ${formatNumber(jackpotState.poolAmount)} 💰!`, 'success');
+                    showCoinRain();
+                } else {
+                    showToast(`${winner.name} выиграл!`, 'info');
+                }
+                
+                // Reset
+                setTimeout(() => {
+                    jackpotState.players = [];
+                    jackpotState.poolAmount = 0;
+                    jackpotState.myBet = 0;
+                    jackpotState.spinning = false;
+                    
+                    document.getElementById('jackpot-wheel-container').style.display = 'none';
+                    wheel.style.transition = 'none';
+                    wheel.style.transform = 'translateX(0)';
+                    setTimeout(() => wheel.style.transition = 'transform 5s cubic-bezier(0.1, 0.7, 0.1, 1)', 50);
+                    
+                    document.getElementById('jackpot-join-btn').disabled = false;
+                    document.getElementById('jackpot-bet').disabled = false;
+                    document.querySelectorAll('#section-jackpot .quick-bet').forEach(b => b.disabled = false);
+                    renderJackpotPlayers();
+                }, 2000);
+            }, 5000);
         }
         
-        // Initialize
         init();
     </script>
 </body>
