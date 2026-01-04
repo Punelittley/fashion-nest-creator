@@ -1910,7 +1910,7 @@ serve(async (req) => {
           `🎁 <b>Ludo Cases</b>\n\n📦 Открывай кейсы и получай редкие предметы!\n🎰 От обычных до легендарных вещей\n💰 Продавай предметы за монеты\n\nНажми кнопку чтобы открыть:`,
           {
             inline_keyboard: [
-              [{ text: "📦 Открыть кейсы", web_app: { url: "https://punelittley.github.io/fashion-nest-creator/ludo/" } }],
+              [{ text: "📦 Открыть кейсы", web_app: { url: "https://punelittley.github.io/fashion-nest-creator/casino/?mode=ludo" } }],
             ],
           },
         );
