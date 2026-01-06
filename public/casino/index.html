@@ -203,6 +203,26 @@
             color: var(--text-secondary);
         }
         
+        .game-tab.cases-tab {
+            background: linear-gradient(135deg, var(--epic), var(--legendary));
+            color: #fff;
+        }
+        
+        .game-tab.cases-tab:hover {
+            opacity: 0.9;
+        }
+        
+        .nav-tab.back-btn {
+            background: var(--bg-elevated);
+            border: 1px solid var(--gold);
+            color: var(--gold);
+        }
+        
+        .nav-tab.back-btn:hover {
+            background: var(--gold);
+            color: #000;
+        }
+        
         /* Game containers */
         .game-container {
             display: none;
@@ -1445,6 +1465,16 @@
         }
         
         // ==================== CASINO RENDERING ====================
+        function goToLudo() {
+            isLudoMode = true;
+            renderLudoApp();
+        }
+        
+        function goToCasino() {
+            isLudoMode = false;
+            renderCasinoApp();
+        }
+        
         function switchGame(game) {
             currentGame = game;
             document.querySelectorAll('.game-tab').forEach(t => t.classList.remove('active'));
@@ -1478,6 +1508,7 @@
                         <button class="game-tab" data-game="ladder" onclick="switchGame('ladder')">🪜 Лестница</button>
                         <button class="game-tab" data-game="crash" onclick="switchGame('crash')">📈 Краш</button>
                         <button class="game-tab" data-game="jackpot" onclick="switchGame('jackpot')">🎯 Джекпот</button>
+                        <button class="game-tab cases-tab" onclick="goToLudo()">📦 Кейсы</button>
                     </div>
                     
                     <div id="rouletteGame" class="game-container active">${renderRoulette()}</div>
@@ -1523,6 +1554,7 @@
                     </div>
                     
                     <div class="nav-tabs">
+                        <button class="nav-tab back-btn" onclick="goToCasino()">⬅️ Казино</button>
                         <button class="nav-tab active" data-section="cases" onclick="switchLudoSection('cases')">🎁 Кейсы</button>
                         <button class="nav-tab" data-section="inventory" onclick="switchLudoSection('inventory')">📦 Инвентарь</button>
                     </div>
