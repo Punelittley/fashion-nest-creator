@@ -424,6 +424,7 @@ export type Database = {
           item_rarity: string
           item_value: number
           player_id: string | null
+          source: string | null
         }
         Insert: {
           case_name: string
@@ -434,6 +435,7 @@ export type Database = {
           item_rarity: string
           item_value: number
           player_id?: string | null
+          source?: string | null
         }
         Update: {
           case_name?: string
@@ -444,6 +446,7 @@ export type Database = {
           item_rarity?: string
           item_value?: number
           player_id?: string | null
+          source?: string | null
         }
         Relationships: [
           {
@@ -628,6 +631,50 @@ export type Database = {
           },
         ]
       }
+      squid_item_marketplace: {
+        Row: {
+          created_at: string | null
+          id: string
+          item_icon: string | null
+          item_id: string
+          item_name: string
+          item_rarity: string
+          item_source: string | null
+          price: number
+          seller_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          item_icon?: string | null
+          item_id: string
+          item_name: string
+          item_rarity: string
+          item_source?: string | null
+          price: number
+          seller_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          item_icon?: string | null
+          item_id?: string
+          item_name?: string
+          item_rarity?: string
+          item_source?: string | null
+          price?: number
+          seller_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "squid_item_marketplace_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "squid_players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       squid_jackpot_bets: {
         Row: {
           bet_amount: number
@@ -776,6 +823,7 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          item_icon: string | null
           item_name: string
           item_rarity: string
           player_id: string
@@ -784,6 +832,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           id?: string
+          item_icon?: string | null
           item_name: string
           item_rarity: string
           player_id: string
@@ -792,6 +841,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           id?: string
+          item_icon?: string | null
           item_name?: string
           item_rarity?: string
           player_id?: string
