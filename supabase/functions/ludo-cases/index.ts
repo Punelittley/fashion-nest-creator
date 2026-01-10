@@ -21,7 +21,6 @@ serve(async (req) => {
     const { action, telegram_id, username, first_name, is_premium } = body;
 
     if (action === "load") {
-      // Get or create player
       let { data: player } = await supabase
         .from("squid_players")
         .select("*")
@@ -37,7 +36,6 @@ serve(async (req) => {
         player = newPlayer;
       }
 
-      // Get inventory
       const { data: inventory } = await supabase
         .from("squid_case_inventory")
         .select("*")
@@ -50,9 +48,8 @@ serve(async (req) => {
     }
 
     if (action === "open_case") {
-      const { case_id, case_price, item_name, item_rarity, item_value, case_name } = body;
+      const { case_name, case_price, item_name, item_rarity, item_value, item_image } = body;
 
-      // Get player
       const { data: player } = await supabase
         .from("squid_players")
         .select("*")
@@ -72,9 +69,10 @@ serve(async (req) => {
         item_rarity,
         item_value,
         case_name,
+        item_image,
+        source: 'case'
       });
 
-      // Get updated inventory
       const { data: inventory } = await supabase
         .from("squid_case_inventory")
         .select("*")
@@ -101,7 +99,6 @@ serve(async (req) => {
         });
       }
 
-      // Delete item and update balance
       await supabase.from("squid_case_inventory").delete().eq("id", item_id);
       await supabase.from("squid_players").update({ balance: player.balance + item_value }).eq("id", player.id);
 
@@ -129,7 +126,6 @@ serve(async (req) => {
         });
       }
 
-      // Get total value
       const { data: items } = await supabase
         .from("squid_case_inventory")
         .select("item_value")
@@ -137,11 +133,63 @@ serve(async (req) => {
 
       const totalValue = (items || []).reduce((sum: number, i: any) => sum + i.item_value, 0);
 
-      // Delete all and update balance
       await supabase.from("squid_case_inventory").delete().eq("player_id", player.id);
       await supabase.from("squid_players").update({ balance: player.balance + totalValue }).eq("id", player.id);
 
       return new Response(JSON.stringify({ success: true, balance: player.balance + totalValue, inventory: [] }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Withdraw item from web to bot inventory
+    if (action === "withdraw_item") {
+      const { item_id } = body;
+
+      const { data: player } = await supabase
+        .from("squid_players")
+        .select("*")
+        .eq("telegram_id", telegram_id)
+        .single();
+
+      if (!player) {
+        return new Response(JSON.stringify({ success: false, error: "Player not found" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Get item from case inventory
+      const { data: item } = await supabase
+        .from("squid_case_inventory")
+        .select("*")
+        .eq("id", item_id)
+        .eq("player_id", player.id)
+        .single();
+
+      if (!item) {
+        return new Response(JSON.stringify({ success: false, error: "Item not found" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Add to bot inventory
+      await supabase.from("squid_player_items").insert({
+        player_id: player.id,
+        item_name: item.item_name,
+        item_rarity: item.item_rarity,
+        sell_price: item.item_value,
+        item_icon: item.item_image
+      });
+
+      // Remove from case inventory
+      await supabase.from("squid_case_inventory").delete().eq("id", item_id);
+
+      const { data: inventory } = await supabase
+        .from("squid_case_inventory")
+        .select("*")
+        .eq("player_id", player.id)
+        .order("created_at", { ascending: false });
+
+      return new Response(JSON.stringify({ success: true, inventory: inventory || [] }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
