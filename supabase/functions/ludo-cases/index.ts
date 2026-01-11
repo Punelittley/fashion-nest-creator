@@ -62,6 +62,16 @@ serve(async (req) => {
         });
       }
 
+      if (player.balance < case_price) {
+        return new Response(JSON.stringify({ success: false, error: "Insufficient balance" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Deduct balance
+      const newBalance = player.balance - case_price;
+      await supabase.from("squid_players").update({ balance: newBalance }).eq("id", player.id);
+
       // Add item to inventory
       await supabase.from("squid_case_inventory").insert({
         player_id: player.id,
@@ -79,7 +89,7 @@ serve(async (req) => {
         .eq("player_id", player.id)
         .order("created_at", { ascending: false });
 
-      return new Response(JSON.stringify({ success: true, balance: player.balance, inventory: inventory || [] }), {
+      return new Response(JSON.stringify({ success: true, balance: newBalance, inventory: inventory || [] }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
