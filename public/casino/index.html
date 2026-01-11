@@ -1592,7 +1592,8 @@
                 }
             } catch (error) {
                 console.error('Load player error:', error);
-                document.getElementById('app').innerHTML = '<div class="loading"><div class="loading-text">❌ Ошибка соединения</div></div>';
+                console.error('Error details:', error.message, error.stack);
+                document.getElementById('app').innerHTML = `<div class="loading"><div class="loading-text">❌ ${error.message || 'Ошибка соединения'}</div><div style="font-size:12px;margin-top:10px;color:#888;">${CASINO_API}</div></div>`;
             }
         }
         
@@ -1632,11 +1633,11 @@
                     inventory = data.inventory || [];
                     renderLudoApp();
                 } else {
-                    document.getElementById('app').innerHTML = '<div class="loading"><div class="loading-text">❌ Ошибка загрузки</div></div>';
+                    document.getElementById('app').innerHTML = `<div class="loading"><div class="loading-text">❌ ${data.error || 'Ошибка загрузки'}</div></div>`;
                 }
             } catch (error) {
                 console.error('Error loading player:', error);
-                document.getElementById('app').innerHTML = '<div class="loading"><div class="loading-text">❌ Ошибка соединения</div></div>';
+                document.getElementById('app').innerHTML = `<div class="loading"><div class="loading-text">❌ ${error.message || 'Ошибка соединения'}</div><div style="font-size:12px;margin-top:10px;color:#888;">${LUDO_API}</div></div>`;
             }
         }
         
