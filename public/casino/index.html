@@ -1557,10 +1557,19 @@
         
         async function loadCasinoPlayer() {
             try {
+                let telegramId, username, firstName;
+                
                 const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-                if (!tgUser) {
-                    document.getElementById('app').innerHTML = '<div class="loading"><div class="loading-text">⚠️ Откройте через Telegram</div></div>';
-                    return;
+                if (tgUser) {
+                    telegramId = tgUser.id;
+                    username = tgUser.username;
+                    firstName = tgUser.first_name;
+                } else {
+                    // Test mode - use fallback
+                    telegramId = 123456789;
+                    username = 'test_user';
+                    firstName = 'Тестер';
+                    console.log('Using test mode - no Telegram user detected');
                 }
                 
                 const response = await fetch(CASINO_API, {
@@ -1568,9 +1577,9 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         action: 'auth',
-                        telegram_id: tgUser.id,
-                        username: tgUser.username,
-                        first_name: tgUser.first_name
+                        telegram_id: telegramId,
+                        username: username,
+                        first_name: firstName
                     })
                 });
                 
@@ -1579,20 +1588,30 @@
                     player = data.player;
                     renderCasinoApp();
                 } else {
-                    throw new Error(data.error);
+                    throw new Error(data.error || 'Unknown error');
                 }
             } catch (error) {
                 console.error('Load player error:', error);
-                showToast('Ошибка авторизации', 'error');
+                document.getElementById('app').innerHTML = '<div class="loading"><div class="loading-text">❌ Ошибка соединения</div></div>';
             }
         }
         
         async function loadLudoPlayer() {
             try {
+                let telegramId, username, firstName, isPremium;
+                
                 const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-                if (!tgUser) {
-                    document.getElementById('app').innerHTML = '<div class="loading"><div class="loading-text">⚠️ Откройте через Telegram</div></div>';
-                    return;
+                if (tgUser) {
+                    telegramId = tgUser.id;
+                    username = tgUser.username;
+                    firstName = tgUser.first_name;
+                    isPremium = tgUser.is_premium;
+                } else {
+                    // Test mode
+                    telegramId = 123456789;
+                    username = 'test_user';
+                    firstName = 'Тестер';
+                    isPremium = false;
                 }
                 
                 const response = await fetch(LUDO_API, {
@@ -1600,10 +1619,10 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         action: 'load',
-                        telegram_id: tgUser.id,
-                        username: tgUser.username,
-                        first_name: tgUser.first_name,
-                        is_premium: tgUser.is_premium
+                        telegram_id: telegramId,
+                        username: username,
+                        first_name: firstName,
+                        is_premium: isPremium
                     })
                 });
                 
@@ -1613,11 +1632,11 @@
                     inventory = data.inventory || [];
                     renderLudoApp();
                 } else {
-                    showToast('Ошибка загрузки!', 'error');
+                    document.getElementById('app').innerHTML = '<div class="loading"><div class="loading-text">❌ Ошибка загрузки</div></div>';
                 }
             } catch (error) {
                 console.error('Error loading player:', error);
-                showToast('Ошибка загрузки', 'error');
+                document.getElementById('app').innerHTML = '<div class="loading"><div class="loading-text">❌ Ошибка соединения</div></div>';
             }
         }
         
