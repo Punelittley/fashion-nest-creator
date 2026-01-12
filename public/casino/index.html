@@ -1572,18 +1572,29 @@
                     console.log('Using test mode - no Telegram user detected');
                 }
                 
+                console.log('Calling CASINO_API:', CASINO_API);
+                console.log('Request data:', { telegram_id: telegramId, username, first_name: firstName });
+                
                 const response = await fetch(CASINO_API, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        action: 'auth',
                         telegram_id: telegramId,
                         username: username,
                         first_name: firstName
                     })
                 });
                 
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+                
                 const data = await response.json();
+                console.log('Response data:', data);
+                
                 if (data.success) {
                     player = data.player;
                     renderCasinoApp();
@@ -1592,8 +1603,21 @@
                 }
             } catch (error) {
                 console.error('Load player error:', error);
-                console.error('Error details:', error.message, error.stack);
-                document.getElementById('app').innerHTML = `<div class="loading"><div class="loading-text">❌ ${error.message || 'Ошибка соединения'}</div><div style="font-size:12px;margin-top:10px;color:#888;">${CASINO_API}</div></div>`;
+                console.error('Error name:', error.name);
+                console.error('Error message:', error.message);
+                console.error('Error stack:', error.stack);
+                
+                let errorMsg = error.message || 'Ошибка соединения';
+                if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+                    errorMsg = 'Сеть недоступна или CORS заблокирован';
+                }
+                
+                document.getElementById('app').innerHTML = `
+                    <div class="loading">
+                        <div class="loading-text">❌ ${errorMsg}</div>
+                        <div style="font-size:11px;margin-top:10px;color:#888;word-break:break-all;padding:0 20px;">${CASINO_API}</div>
+                        <button onclick="location.reload()" style="margin-top:20px;padding:10px 20px;background:var(--neon-cyan);border:none;border-radius:8px;color:#000;font-weight:bold;cursor:pointer;">🔄 Повторить</button>
+                    </div>`;
             }
         }
         
