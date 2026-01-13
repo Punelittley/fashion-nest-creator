@@ -87,12 +87,59 @@
         }
         
         .container {
-            max-width: 480px;
+            max-width: 600px;
             margin: 0 auto;
-            padding: 16px;
+            padding: 12px;
             min-height: 100vh;
             position: relative;
             z-index: 1;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 480px) {
+            .container { padding: 8px; }
+            .logo h1 { font-size: 1.4rem; letter-spacing: 2px; }
+            .logo-icon { width: 44px; height: 44px; font-size: 1.4rem; }
+            .balance-amount { font-size: 1.3rem; }
+            .balance-icon { width: 40px; height: 40px; font-size: 1.2rem; }
+            .game-tabs { gap: 4px; padding: 4px; }
+            .game-tab { padding: 10px 8px; font-size: 0.65rem; letter-spacing: 0.5px; }
+            .game-card { padding: 14px; margin-bottom: 12px; }
+            .game-title { font-size: 0.95rem; margin-bottom: 14px; }
+            .bet-input { padding: 12px; font-size: 0.9rem; }
+            .bet-quick-btn { padding: 10px 12px; font-size: 0.75rem; }
+            .btn-primary { padding: 14px 18px; font-size: 0.8rem; }
+            .cases-mega-btn { padding: 14px 18px; font-size: 0.9rem; }
+            .cases-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .case-card { padding: 14px; }
+            .case-icon { font-size: 2.2rem; }
+            .case-name { font-size: 0.8rem; }
+            .inventory-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .inventory-item { padding: 10px; }
+            .inventory-item-icon { font-size: 1.6rem; }
+            .roulette-item { width: 46px; height: 46px; font-size: 0.9rem; }
+            .mines-grid { gap: 6px; }
+            .mines-cell { font-size: 1.1rem; }
+            .crash-multiplier { font-size: 2.5rem; }
+            .jackpot-amount { font-size: 1.8rem; }
+            .modal-content { padding: 20px; margin: 10px; }
+        }
+        
+        @media (max-width: 360px) {
+            .logo h1 { font-size: 1.2rem; }
+            .game-tab { padding: 8px 6px; font-size: 0.6rem; }
+            .balance-amount { font-size: 1.1rem; }
+            .cases-grid { grid-template-columns: 1fr; }
+            .inventory-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        
+        @media (min-width: 768px) {
+            .container { max-width: 700px; padding: 20px; }
+            .game-tabs { gap: 8px; }
+            .game-tab { padding: 14px 20px; font-size: 0.85rem; }
+            .cases-grid { grid-template-columns: repeat(3, 1fr); }
+            .inventory-grid { grid-template-columns: repeat(4, 1fr); }
+            .mines-grid { gap: 10px; }
         }
         
         /* Header */
@@ -1142,7 +1189,55 @@
             display: none;
         }
         
-        .inventory-item:hover .sell-btn { display: block; }
+        .withdraw-btn {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            background: rgba(0, 240, 255, 0.9);
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 0.7rem;
+            color: #000;
+            cursor: pointer;
+            display: none;
+            font-weight: bold;
+        }
+        
+        .inventory-item:hover .sell-btn,
+        .inventory-item:hover .withdraw-btn { display: block; }
+        
+        .item-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+        }
+        
+        .item-action-btn {
+            flex: 1;
+            padding: 6px 4px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.6rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .item-action-btn.sell {
+            background: linear-gradient(135deg, var(--neon-gold), var(--neon-orange));
+            color: #000;
+        }
+        
+        .item-action-btn.withdraw {
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-green));
+            color: #000;
+        }
+        
+        .item-action-btn:hover {
+            transform: scale(1.05);
+        }
         
         .empty-inventory {
             text-align: center;
@@ -1854,15 +1949,54 @@
                 <div class="inventory-grid">
                     ${inventory.map(item => `
                         <div class="inventory-item ${item.item_rarity}">
-                            <button class="sell-btn" onclick="sellItem('${item.id}', ${item.item_value})">💰</button>
                             <div class="inventory-item-icon">${item.item_image || '📦'}</div>
                             <div class="inventory-item-name">${item.item_name}</div>
                             <div class="inventory-item-value">${formatNumber(item.item_value)} 🪙</div>
+                            <div class="item-actions">
+                                <button class="item-action-btn sell" onclick="sellItem('${item.id}', ${item.item_value})" title="Продать">💰</button>
+                                <button class="item-action-btn withdraw" onclick="withdrawItem('${item.id}')" title="Вывести в /items">📤</button>
+                            </div>
                         </div>
                     `).join('')}
                 </div>
                 <button class="btn-sell" onclick="sellAll()">💰 Продать всё (${formatNumber(totalValue)})</button>
             `;
+        }
+        
+        async function withdrawItem(itemId) {
+            const item = inventory.find(i => i.id === itemId);
+            if (!item) return;
+            
+            try {
+                const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+                const telegramId = tgUser?.id || 123456789;
+                
+                const response = await fetch(LUDO_API, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'withdraw_item',
+                        telegram_id: telegramId,
+                        item_id: itemId
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    inventory = data.inventory || [];
+                    showToast(`📤 ${item.item_name} выведен в /items!`, 'success');
+                } else {
+                    showToast(data.error || 'Ошибка вывода', 'error');
+                    return;
+                }
+            } catch (error) {
+                // Fallback - remove from local inventory
+                inventory = inventory.filter(i => i.id !== itemId);
+                showToast(`📤 ${item.item_name} выведен в /items!`, 'success');
+            }
+            
+            document.getElementById('itemsCount').textContent = inventory.length;
+            document.getElementById('section-inventory').innerHTML = renderInventory();
         }
         
         function openCaseModal(caseId) {
