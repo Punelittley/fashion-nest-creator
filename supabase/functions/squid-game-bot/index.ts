@@ -210,6 +210,9 @@ async function answerCallbackQuery(callbackQueryId: string, text?: string) {
   });
 }
 
+// Track processed update IDs to prevent duplicate processing
+const processedUpdates = new Set<number>();
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -221,8 +224,22 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
 
-    const update: TelegramUpdate = await req.json();
+    const update: TelegramUpdate & { update_id?: number } = await req.json();
     console.log("Received update:", JSON.stringify(update));
+    
+    // Deduplicate updates to prevent double processing
+    if (update.update_id) {
+      if (processedUpdates.has(update.update_id)) {
+        console.log(`Skipping duplicate update_id: ${update.update_id}`);
+        return new Response("OK", { headers: corsHeaders });
+      }
+      processedUpdates.add(update.update_id);
+      // Keep set size manageable - only store last 1000 update IDs
+      if (processedUpdates.size > 1000) {
+        const firstItems = Array.from(processedUpdates).slice(0, 500);
+        firstItems.forEach(id => processedUpdates.delete(id));
+      }
+    }
 
     // Get user telegram ID for admin check
     const telegramUserId = update.message?.from?.id || update.callback_query?.from?.id;

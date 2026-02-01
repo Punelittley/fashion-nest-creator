@@ -2096,12 +2096,15 @@
                 showCoinRain();
                 
                 try {
+                    const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+                    const telegramId = tgUser?.id || 123456789;
+                    
                     const response = await fetch(LUDO_API, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             action: 'open_case',
-                            player_id: player.id,
+                            telegram_id: telegramId,
                             case_name: caseData.name,
                             item_name: winItem.name,
                             item_rarity: winItem.rarity,
@@ -2113,8 +2116,10 @@
                     
                     const data = await response.json();
                     if (data.success) {
-                        player.balance = data.new_balance;
-                        inventory = data.inventory || inventory;
+                        player.balance = data.balance;
+                        inventory = data.inventory || [];
+                    } else {
+                        // Fallback on error - still show item locally
                         inventory.push({
                             id: Date.now().toString(),
                             item_name: winItem.name,
@@ -2124,6 +2129,7 @@
                         });
                     }
                 } catch (error) {
+                    // Fallback on network error
                     inventory.push({
                         id: Date.now().toString(),
                         item_name: winItem.name,
@@ -2144,22 +2150,28 @@
             if (!item) return;
             
             try {
+                const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+                const telegramId = tgUser?.id || 123456789;
+                
                 const response = await fetch(LUDO_API, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         action: 'sell_item',
-                        player_id: player.id,
+                        telegram_id: telegramId,
                         item_id: itemId,
-                        value: value
+                        item_value: value
                     })
                 });
                 
                 const data = await response.json();
                 if (data.success) {
-                    player.balance = data.new_balance;
-                    inventory = inventory.filter(i => i.id !== itemId);
+                    player.balance = data.balance;
+                    inventory = data.inventory || [];
                     showToast(`Продано за ${formatNumber(value)} 🪙!`, 'success');
+                } else {
+                    showToast(data.error || 'Ошибка продажи', 'error');
+                    return;
                 }
             } catch (error) {
                 player.balance += value;
@@ -2178,20 +2190,26 @@
             const totalValue = inventory.reduce((sum, item) => sum + item.item_value, 0);
             
             try {
+                const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+                const telegramId = tgUser?.id || 123456789;
+                
                 const response = await fetch(LUDO_API, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         action: 'sell_all',
-                        player_id: player.id
+                        telegram_id: telegramId
                     })
                 });
                 
                 const data = await response.json();
                 if (data.success) {
-                    player.balance = data.new_balance;
+                    player.balance = data.balance;
                     inventory = [];
                     showToast(`Продано за ${formatNumber(totalValue)} 🪙!`, 'success');
+                } else {
+                    showToast(data.error || 'Ошибка продажи', 'error');
+                    return;
                 }
             } catch (error) {
                 player.balance += totalValue;
