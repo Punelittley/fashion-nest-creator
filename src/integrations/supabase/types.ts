@@ -961,6 +961,21 @@ export type Database = {
         }
         Relationships: []
       }
+      squid_processed_updates: {
+        Row: {
+          processed_at: string | null
+          update_id: number
+        }
+        Insert: {
+          processed_at?: string | null
+          update_id: number
+        }
+        Update: {
+          processed_at?: string | null
+          update_id?: number
+        }
+        Relationships: []
+      }
       squid_promo_codes: {
         Row: {
           code: string
