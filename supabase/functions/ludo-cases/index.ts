@@ -49,18 +49,40 @@ serve(async (req) => {
 
     if (action === "open_case") {
       const { case_name, case_price, item_name, item_rarity, item_value, item_image } = body;
+      console.log(`Opening case: ${case_name} for telegram_id: ${telegram_id}`);
 
-      const { data: player } = await supabase
+      const { data: player, error: playerError } = await supabase
         .from("squid_players")
         .select("*")
         .eq("telegram_id", telegram_id)
         .single();
 
+      if (playerError) {
+        console.error("Player lookup error:", playerError);
+      }
+
       if (!player) {
-        return new Response(JSON.stringify({ success: false, error: "Player not found" }), {
+        console.log("Player not found, creating new one...");
+        // Create player if not exists
+        const { data: newPlayer, error: createError } = await supabase
+          .from("squid_players")
+          .insert({ telegram_id, balance: 10000 })
+          .select()
+          .single();
+        
+        if (createError) {
+          console.error("Failed to create player:", createError);
+          return new Response(JSON.stringify({ success: false, error: "Failed to create player" }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        
+        return new Response(JSON.stringify({ success: false, error: "Player created, please try again" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+
+      console.log(`Player found: ${player.id}, balance: ${player.balance}`);
 
       if (player.balance < case_price) {
         return new Response(JSON.stringify({ success: false, error: "Insufficient balance" }), {
@@ -70,10 +92,14 @@ serve(async (req) => {
 
       // Deduct balance
       const newBalance = player.balance - case_price;
-      await supabase.from("squid_players").update({ balance: newBalance }).eq("id", player.id);
+      const { error: updateError } = await supabase.from("squid_players").update({ balance: newBalance }).eq("id", player.id);
+      
+      if (updateError) {
+        console.error("Balance update error:", updateError);
+      }
 
       // Add item to inventory
-      await supabase.from("squid_case_inventory").insert({
+      const { error: insertError } = await supabase.from("squid_case_inventory").insert({
         player_id: player.id,
         item_name,
         item_rarity,
@@ -83,11 +109,26 @@ serve(async (req) => {
         source: 'case'
       });
 
-      const { data: inventory } = await supabase
+      if (insertError) {
+        console.error("Item insert error:", insertError);
+        return new Response(JSON.stringify({ success: false, error: "Failed to add item: " + insertError.message }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      console.log(`Item added: ${item_name} (${item_rarity})`);
+
+      const { data: inventory, error: inventoryError } = await supabase
         .from("squid_case_inventory")
         .select("*")
         .eq("player_id", player.id)
         .order("created_at", { ascending: false });
+
+      if (inventoryError) {
+        console.error("Inventory fetch error:", inventoryError);
+      }
+
+      console.log(`Inventory count: ${inventory?.length || 0}`);
 
       return new Response(JSON.stringify({ success: true, balance: newBalance, inventory: inventory || [] }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

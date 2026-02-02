@@ -210,8 +210,23 @@ async function answerCallbackQuery(callbackQueryId: string, text?: string) {
   });
 }
 
-// Track processed update IDs to prevent duplicate processing
-const processedUpdates = new Set<number>();
+// Helper function to check if update was already processed (using database)
+async function isUpdateProcessed(supabase: any, updateId: number): Promise<boolean> {
+  const { data } = await supabase
+    .from("squid_processed_updates")
+    .select("update_id")
+    .eq("update_id", updateId)
+    .single();
+  return !!data;
+}
+
+async function markUpdateProcessed(supabase: any, updateId: number): Promise<void> {
+  await supabase.from("squid_processed_updates").upsert({ update_id: updateId });
+  
+  // Clean up old entries (older than 1 hour) to prevent table bloat
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  await supabase.from("squid_processed_updates").delete().lt("processed_at", oneHourAgo);
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -227,18 +242,14 @@ serve(async (req) => {
     const update: TelegramUpdate & { update_id?: number } = await req.json();
     console.log("Received update:", JSON.stringify(update));
     
-    // Deduplicate updates to prevent double processing
+    // Deduplicate updates using database to prevent double processing across serverless instances
     if (update.update_id) {
-      if (processedUpdates.has(update.update_id)) {
+      const alreadyProcessed = await isUpdateProcessed(supabaseClient, update.update_id);
+      if (alreadyProcessed) {
         console.log(`Skipping duplicate update_id: ${update.update_id}`);
         return new Response("OK", { headers: corsHeaders });
       }
-      processedUpdates.add(update.update_id);
-      // Keep set size manageable - only store last 1000 update IDs
-      if (processedUpdates.size > 1000) {
-        const firstItems = Array.from(processedUpdates).slice(0, 500);
-        firstItems.forEach(id => processedUpdates.delete(id));
-      }
+      await markUpdateProcessed(supabaseClient, update.update_id);
     }
 
     // Get user telegram ID for admin check
@@ -2895,7 +2906,7 @@ serve(async (req) => {
 
         await sendMessage(
           chat.id,
-          `👑 <b>Команды администратора</b>\n\n<b>💰 Управление балансом:</b>\n/admin_add_coins [ID] [сумма] - добавить монеты\n/admin_set_balance [ID] [сумма] - установить баланс\n\n<b>✨ Префиксы:</b>\n/create_prefix [название] [цена] - создать префикс\n/prefix_delete [название] - удалить префикс\n/get_prefix [название] [ID] - выдать префикс\n/prefix_delete_player [ID] [название] - удалить префикс у игрока\n\n<b>🎟️ Промокоды:</b>\n/admin_create_promo [код] [сумма] [кол-во]\n/admin_delete_promo [код]\n\n<b>🎁 Подарки:</b>\n/gift [ID] [кол-во] - выдать подарки игроку\n/gift_all [кол-во] [текст] - подарки всем (можно прикрепить медиа)\n\n<b>📢 Рассылка:</b>\n/all [текст] - сообщение всем в ЛС\n/dep_all [сумма] [текст] - монеты + сообщение всем (можно прикрепить медиа)\n\n<b>🎰 Казино:</b>\n/casino_admin - режим всегда выигрывать (работает и в веб-казино)\n/casino_down [ID] - ухудшить шансы игроку\n\n<b>🏭 Бизнесы:</b>\n/admin_del_bus [ID] [тип] - удалить бизнес\n\n<b>⚙️ Управление ботом:</b>\n/off - выключить бот для всех\n/on - включить бот для всех\n\n<b>📊 Информация:</b>\n/servers - список чатов\n/admin_search [страница] - список игроков\n/admin_commands - эта справка`,
+          `👑 <b>Команды администратора</b>\n\n<b>💰 Управление балансом:</b>\n/admin_add_coins [ID] [сумма] - добавить монеты\n/admin_set_balance [ID] [сумма] - установить баланс\n\n<b>✨ Префиксы:</b>\n/create_prefix [название] [цена] - создать префикс\n/prefix_delete [название] - удалить префикс\n/get_prefix [название] [ID] - выдать префикс\n/prefix_delete_player [ID] [название] - удалить префикс у игрока\n\n<b>🎟️ Промокоды:</b>\n/admin_create_promo [код] [сумма] [кол-во]\n/admin_delete_promo [код]\n\n<b>🎁 Подарки:</b>\n/gift [ID] [кол-во] - выдать подарки игроку\n/gift_all [кол-во] [текст] - подарки всем (можно прикрепить медиа)\n/remove_gifts [кол-во] - убрать подарки у всех игроков\n\n<b>📢 Рассылка:</b>\n/all [текст] - сообщение всем в ЛС\n/dep_all [сумма] [текст] - монеты + сообщение всем (можно прикрепить медиа)\n\n<b>🎰 Казино:</b>\n/casino_admin - режим всегда выигрывать (работает и в веб-казино)\n/casino_down [ID] - ухудшить шансы игроку\n\n<b>🏭 Бизнесы:</b>\n/admin_del_bus [ID] [тип] - удалить бизнес\n\n<b>⚙️ Управление ботом:</b>\n/off - выключить бот для всех\n/on - включить бот для всех\n\n<b>📊 Информация:</b>\n/servers - список чатов\n/admin_search [страница] - список игроков\n/admin_commands - эта справка`,
         );
       } else if (text === "/admin_search" || text.startsWith("/admin_search ")) {
         const { data: admin } = await supabaseClient
@@ -4368,6 +4379,55 @@ serve(async (req) => {
             `👤 Игрок: ${targetPlayer.first_name} (${targetId})\n` +
             `🎁 Выдано: ${amount} ${amount === 1 ? "подарок" : amount < 5 ? "подарка" : "подарков"}\n` +
             `🎁 Всего подарков у игрока: ${(targetPlayer.gift_count || 0) + amount}`,
+        );
+      } else if (text.startsWith("/remove_gifts ")) {
+        // Admin command to remove gifts from all players
+        const { data: admin } = await supabaseClient
+          .from("squid_admins")
+          .select("*")
+          .eq("telegram_id", from.id)
+          .single();
+
+        if (!admin) {
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const amount = parseInt(text.replace("/remove_gifts ", "").trim());
+
+        if (isNaN(amount) || amount <= 0) {
+          await sendMessage(chat.id, "❌ Формат: /remove_gifts [количество]\n\nУберёт указанное количество подарков у всех игроков.");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const { data: allPlayers } = await supabaseClient.from("squid_players").select("id, gift_count");
+
+        if (!allPlayers || allPlayers.length === 0) {
+          await sendMessage(chat.id, "❌ Нет игроков");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        let affected = 0;
+        let totalRemoved = 0;
+
+        for (const player of allPlayers) {
+          const currentGifts = player.gift_count || 0;
+          if (currentGifts > 0) {
+            const toRemove = Math.min(amount, currentGifts);
+            await supabaseClient
+              .from("squid_players")
+              .update({ gift_count: currentGifts - toRemove })
+              .eq("id", player.id);
+            affected++;
+            totalRemoved += toRemove;
+          }
+        }
+
+        await sendMessage(
+          chat.id,
+          `✅ <b>Подарки убраны!</b>\n\n` +
+            `🎁 Убрано у каждого: до ${amount} ${amount === 1 ? "подарок" : amount < 5 ? "подарка" : "подарков"}\n` +
+            `👥 Затронуто игроков: ${affected}\n` +
+            `🎁 Всего убрано: ${totalRemoved} подарков`,
         );
       } else if (text.startsWith("/prefix_delete_player ")) {
         const { data: admin } = await supabaseClient
