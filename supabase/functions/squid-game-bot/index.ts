@@ -11,6 +11,7 @@ const corsHeaders = {
 
 interface TelegramUpdate {
   message?: {
+    message_id: number;
     chat: {
       id: number;
       type?: string;
@@ -226,6 +227,24 @@ async function markUpdateProcessed(supabase: any, updateId: number): Promise<voi
   // Clean up old entries (older than 1 hour) to prevent table bloat
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
   await supabase.from("squid_processed_updates").delete().lt("processed_at", oneHourAgo);
+}
+
+// Secondary deduplication for broadcast commands using message_id
+// This prevents duplicates when Telegram sends same message with different update_ids
+const broadcastProcessedMessages = new Set<string>();
+
+function isBroadcastProcessed(chatId: number, messageId: number): boolean {
+  const key = `${chatId}_${messageId}`;
+  if (broadcastProcessedMessages.has(key)) {
+    return true;
+  }
+  broadcastProcessedMessages.add(key);
+  // Keep set size manageable
+  if (broadcastProcessedMessages.size > 500) {
+    const entries = Array.from(broadcastProcessedMessages);
+    entries.slice(0, 250).forEach(k => broadcastProcessedMessages.delete(k));
+  }
+  return false;
 }
 
 serve(async (req) => {
@@ -2951,6 +2970,13 @@ serve(async (req) => {
 
         await sendMessage(chat.id, searchText);
       } else if (text.startsWith("/all ")) {
+        // Secondary deduplication using message_id to prevent duplicate broadcasts
+        const messageId = update.message?.message_id;
+        if (messageId && isBroadcastProcessed(chat.id, messageId)) {
+          console.log(`Skipping duplicate broadcast /all - chat:${chat.id} msg:${messageId}`);
+          return new Response("OK", { headers: corsHeaders });
+        }
+
         const { data: admin } = await supabaseClient
           .from("squid_admins")
           .select("*")
@@ -2993,6 +3019,13 @@ serve(async (req) => {
           `✅ <b>Рассылка завершена!</b>\n\n📤 Отправлено: ${sent}\n❌ Не доставлено: ${failed}`,
         );
       } else if (text.startsWith("/dep_all ") || (update.message?.caption?.startsWith("/dep_all ") && (update.message?.photo || update.message?.video || update.message?.animation))) {
+        // Secondary deduplication using message_id to prevent duplicate broadcasts
+        const messageId = update.message?.message_id;
+        if (messageId && isBroadcastProcessed(chat.id, messageId)) {
+          console.log(`Skipping duplicate broadcast /dep_all - chat:${chat.id} msg:${messageId}`);
+          return new Response("OK", { headers: corsHeaders });
+        }
+
         const { data: admin } = await supabaseClient
           .from("squid_admins")
           .select("*")
@@ -4207,6 +4240,13 @@ serve(async (req) => {
           `🎁 <b>Открытие подарка</b>\n\n${rewardText}\n\n💵 Баланс: ${newBalance.toLocaleString()} монет\n🎁 Осталось подарков: ${remainingGifts}`,
         );
       } else if (text.startsWith("/gift_all ") || (update.message?.caption?.startsWith("/gift_all ") && (update.message?.photo || update.message?.video || update.message?.animation))) {
+        // Secondary deduplication using message_id to prevent duplicate broadcasts
+        const messageId = update.message?.message_id;
+        if (messageId && isBroadcastProcessed(chat.id, messageId)) {
+          console.log(`Skipping duplicate broadcast /gift_all - chat:${chat.id} msg:${messageId}`);
+          return new Response("OK", { headers: corsHeaders });
+        }
+
         const { data: admin } = await supabaseClient
           .from("squid_admins")
           .select("*")

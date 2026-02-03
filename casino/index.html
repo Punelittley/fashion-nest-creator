@@ -1067,68 +1067,191 @@
         .cases-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 14px;
+            gap: 16px;
+            perspective: 1000px;
         }
         
         .case-card {
-            background: var(--bg-card);
-            border: 2px solid var(--border);
-            border-radius: 18px;
-            padding: 20px;
+            background: linear-gradient(145deg, var(--bg-card), rgba(20, 20, 35, 0.95));
+            border: 2px solid transparent;
+            border-radius: 20px;
+            padding: 24px 16px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             position: relative;
             overflow: hidden;
+            transform-style: preserve-3d;
         }
         
         .case-card::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: var(--case-color);
+            inset: 0;
+            border-radius: 18px;
+            padding: 2px;
+            background: linear-gradient(135deg, var(--case-color), transparent 60%, var(--case-color));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0.7;
+        }
+        
+        .case-card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                transparent 40%,
+                rgba(255, 255, 255, 0.05) 45%,
+                rgba(255, 255, 255, 0.1) 50%,
+                rgba(255, 255, 255, 0.05) 55%,
+                transparent 60%
+            );
+            transform: rotate(45deg) translateY(100%);
+            transition: transform 0.6s ease;
+        }
+        
+        .case-card:hover::after {
+            transform: rotate(45deg) translateY(-100%);
         }
         
         .case-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+            transform: translateY(-8px) rotateX(5deg);
+            box-shadow: 
+                0 25px 60px rgba(0, 0, 0, 0.5),
+                0 0 50px rgba(var(--case-color-rgb), 0.3);
             border-color: var(--case-color);
         }
         
-        .case-card.common { --case-color: var(--common); }
-        .case-card.uncommon { --case-color: var(--uncommon); }
-        .case-card.rare { --case-color: var(--rare); }
-        .case-card.epic { --case-color: var(--epic); }
-        .case-card.legendary { --case-color: var(--legendary); }
-        .case-card.mythic { --case-color: var(--mythic); }
-        .case-card.divine { --case-color: var(--divine); }
+        .case-card:active {
+            transform: translateY(-2px) scale(0.98);
+        }
+        
+        .case-card.common { --case-color: var(--common); --case-color-rgb: 107, 114, 128; }
+        .case-card.uncommon { --case-color: var(--uncommon); --case-color-rgb: 34, 197, 94; }
+        .case-card.rare { --case-color: var(--rare); --case-color-rgb: 59, 130, 246; }
+        .case-card.epic { --case-color: var(--epic); --case-color-rgb: 168, 85, 247; }
+        .case-card.legendary { --case-color: var(--legendary); --case-color-rgb: 245, 158, 11; }
+        .case-card.mythic { --case-color: var(--mythic); --case-color-rgb: 239, 68, 68; }
+        .case-card.divine { --case-color: var(--divine); --case-color-rgb: 236, 72, 153; }
+        
+        .case-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 120%;
+            height: 120%;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(ellipse, var(--case-color) 0%, transparent 70%);
+            opacity: 0.15;
+            z-index: -1;
+            filter: blur(30px);
+            animation: case-pulse 3s ease-in-out infinite;
+        }
+        
+        @keyframes case-pulse {
+            0%, 100% { opacity: 0.15; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.25; transform: translate(-50%, -50%) scale(1.1); }
+        }
+        
+        .case-icon-wrapper {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 14px;
+        }
         
         .case-icon {
-            font-size: 3rem;
-            margin-bottom: 12px;
-            filter: drop-shadow(0 0 20px var(--case-color));
+            font-size: 3.5rem;
+            filter: drop-shadow(0 0 25px var(--case-color)) drop-shadow(0 5px 15px rgba(0, 0, 0, 0.5));
+            animation: case-float 3s ease-in-out infinite;
+            display: block;
+        }
+        
+        @keyframes case-float {
+            0%, 100% { transform: translateY(0) rotateY(0deg); }
+            50% { transform: translateY(-8px) rotateY(10deg); }
+        }
+        
+        .case-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 70px;
+            height: 70px;
+            border: 2px solid var(--case-color);
+            border-radius: 50%;
+            transform: translate(-50%, -50%) rotateX(70deg);
+            opacity: 0.5;
+            animation: case-ring-spin 4s linear infinite;
+        }
+        
+        @keyframes case-ring-spin {
+            from { transform: translate(-50%, -50%) rotateX(70deg) rotateZ(0deg); }
+            to { transform: translate(-50%, -50%) rotateX(70deg) rotateZ(360deg); }
         }
         
         .case-name {
             font-family: 'Orbitron', sans-serif;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             font-weight: 700;
-            color: var(--case-color);
+            color: var(--text-primary);
             margin-bottom: 8px;
+            text-shadow: 0 0 20px var(--case-color);
+            background: linear-gradient(180deg, var(--text-primary), var(--case-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
         
         .case-price {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            color: var(--neon-gold);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
         }
         
         .case-best {
             font-size: 0.7rem;
             color: var(--text-muted);
-            margin-top: 6px;
+            margin-top: 8px;
+            padding: 4px 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            display: inline-block;
+        }
+        
+        .case-rarity-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 0.55rem;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 10px;
+            background: var(--case-color);
+            color: #000;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .case-card.legendary .case-rarity-badge,
+        .case-card.mythic .case-rarity-badge,
+        .case-card.divine .case-rarity-badge {
+            animation: badge-shimmer 2s ease-in-out infinite;
+        }
+        
+        @keyframes badge-shimmer {
+            0%, 100% { box-shadow: 0 0 10px var(--case-color); }
+            50% { box-shadow: 0 0 25px var(--case-color), 0 0 40px var(--case-color); }
         }
         
         /* Inventory */
@@ -1920,14 +2043,29 @@
                     
                     <div id="section-cases" class="ludo-section active">
                         <div class="cases-grid">
-                            ${CASES.map(c => `
+                            ${CASES.map(c => {
+                                const rarityLabels = {
+                                    common: 'Обычный',
+                                    uncommon: 'Необычный', 
+                                    rare: 'Редкий',
+                                    epic: 'Эпик',
+                                    legendary: 'Легенда',
+                                    mythic: 'Мифик',
+                                    divine: 'Божеств.'
+                                };
+                                return `
                                 <div class="case-card ${c.rarity}" onclick="openCaseModal('${c.id}')">
-                                    <div class="case-icon">${c.icon}</div>
+                                    <div class="case-glow"></div>
+                                    <div class="case-rarity-badge">${rarityLabels[c.rarity] || c.rarity}</div>
+                                    <div class="case-icon-wrapper">
+                                        <div class="case-ring"></div>
+                                        <div class="case-icon">${c.icon}</div>
+                                    </div>
                                     <div class="case-name">${c.name}</div>
                                     <div class="case-price">${formatNumber(c.price)} 🪙</div>
-                                    <div class="case-best">Макс: ${formatNumber(c.items[c.items.length - 1].value)}</div>
+                                    <div class="case-best">🏆 Макс: ${formatNumber(c.items[c.items.length - 1].value)}</div>
                                 </div>
-                            `).join('')}
+                            `}).join('')}
                         </div>
                     </div>
                     
