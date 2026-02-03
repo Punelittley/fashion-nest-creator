@@ -790,7 +790,17 @@ serve(async (req) => {
         await editMessage(
           chatId,
           message!.message_id,
-          `🦑 <b>Игра в Кальмара (PvP)</b>\n\nЧтобы пригласить игрока, отправь:\n<code>/challenge [Telegram_ID] [ставка]</code>\n\nНапример:\n<code>/challenge 123456789 100</code>\n\nИли жди приглашения от других игроков!`,
+          `🔫 <b>Русская Рулетка (Buckshot Roulette)</b>\n\n` +
+          `Правила:\n` +
+          `• В барабане смешаны холостые и боевые патроны\n` +
+          `• Игроки по очереди выбирают: стрелять в себя или в противника\n` +
+          `• Выстрел в себя холостым = ещё один ход\n` +
+          `• Выстрел в противника боевым = урон\n` +
+          `• Проигравший тот, у кого закончились жизни\n\n` +
+          `<b>Чтобы вызвать на дуэль:</b>\n` +
+          `<code>/challenge [ставка]</code> — ответом на сообщение\n` +
+          `<code>/challenge [ID] [ставка]</code> — напрямую\n\n` +
+          `🎮 Работает и в беседах с инлайн-кнопками!`,
           {
             inline_keyboard: [[{ text: "⬅️ Главное меню", callback_data: "main_menu" }]],
           },
@@ -858,11 +868,28 @@ serve(async (req) => {
           .update({ balance: (player1Data?.balance || 0) - session.bet_amount })
           .eq("id", session.player1_id);
 
-        // Initialize game with 3 lives each
+        // Generate shells for Buckshot Roulette: 2-4 live + 2-4 blank = 4-8 total
+        const liveCount = Math.floor(Math.random() * 3) + 2; // 2-4 боевых
+        const blankCount = Math.floor(Math.random() * 3) + 2; // 2-4 холостых
+        const shells: ("live" | "blank")[] = [
+          ...Array(liveCount).fill("live"),
+          ...Array(blankCount).fill("blank"),
+        ];
+        // Shuffle shells
+        for (let i = shells.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shells[i], shells[j]] = [shells[j], shells[i]];
+        }
+
+        // Initialize Buckshot Roulette game
         const gameData = {
           player1_hp: 3,
           player2_hp: 3,
           current_turn: "player1",
+          shells: shells,
+          shell_index: 0,
+          initial_live: liveCount,
+          initial_blank: blankCount,
           moves: [],
         };
 
@@ -877,1050 +904,303 @@ serve(async (req) => {
 
         const player1Name = (session.player1 as any).first_name;
         const player2Name = playerData.first_name;
+        const player1TgId = (session.player1 as any).telegram_id;
 
-        // Send interactive buttons to both players
+        const shellInfo = `🔴 Боевых: ${liveCount} | ⚪ Холостых: ${blankCount}`;
+        const gameInfo = 
+          `🔫 <b>РУССКАЯ РУЛЕТКА</b>\n\n` +
+          `👤 ${player1Name} VS ${player2Name}\n` +
+          `💰 Ставка: ${session.bet_amount.toLocaleString()} монет\n\n` +
+          `📦 В барабане ${shells.length} патронов:\n${shellInfo}\n\n` +
+          `❤️ Твоё HP: ${gameData.player1_hp}\n` +
+          `❤️ HP противника: ${gameData.player2_hp}`;
+
+        // Send to player1 (their turn first)
         await sendMessage(
-          (session.player1 as any).telegram_id,
-          `⚔️ <b>Игра началась!</b>\n\nТы против ${player2Name}\nСтавка: ${session.bet_amount} монет\n\n❤️ Твоё HP: ${gameData.player1_hp}\n❤️ HP противника: ${gameData.player2_hp}\n\n🎯 <b>Твой ход!</b>`,
+          player1TgId,
+          gameInfo + `\n\n🎯 <b>Твой ход! Выбери действие:</b>`,
           {
-            inline_keyboard: [[{ text: "⚔️ Ударить", callback_data: `squid_attack_${sessionId}_p1` }]],
+            inline_keyboard: [
+              [
+                { text: "🔫 Стрелять в себя", callback_data: `br_shoot_self_${sessionId}_p1_u${player1TgId}` },
+                { text: "💀 Стрелять в противника", callback_data: `br_shoot_enemy_${sessionId}_p1_u${player1TgId}` },
+              ],
+            ],
           },
         );
 
+        // Update the challenge message in chat
         await editMessage(
           chatId,
           message!.message_id,
-          `⚔️ <b>Игра началась!</b>\n\nТы против ${player1Name}\nСтавка: ${session.bet_amount} монет\n\n❤️ Твоё HP: ${gameData.player2_hp}\n❤️ HP противника: ${gameData.player1_hp}\n\n⏳ Ожидание хода противника...`,
+          gameInfo.replace(`❤️ Твоё HP: ${gameData.player1_hp}`, `❤️ HP ${player1Name}: ${gameData.player1_hp}`)
+            .replace(`❤️ HP противника: ${gameData.player2_hp}`, `❤️ HP ${player2Name}: ${gameData.player2_hp}`) +
+          `\n\n⏳ Ход игрока ${player1Name}...`,
         );
-      } else if (data.startsWith("squid_attack_")) {
-        const parts = data.split("_");
-        const sessionId = parts[2];
-        const player = parts[3]; // p1 or p2
+      } else if (data.startsWith("br_shoot_")) {
+        // Buckshot Roulette - shooting logic
+        const brParts = data.split("_");
+        const brAction = brParts[2]; // "self" or "enemy"
+        const brSessionId = brParts[3];
+        const brPlayerNum = brParts[4]; // p1 or p2
 
-        const { data: session } = await supabaseClient
+        const { data: brSession } = await supabaseClient
           .from("squid_game_sessions")
           .select(
             "*, player1:squid_players!player1_id(telegram_id, first_name), player2:squid_players!player2_id(telegram_id, first_name)",
           )
-          .eq("id", sessionId)
+          .eq("id", brSessionId)
           .eq("status", "active")
           .single();
 
-        if (!session) {
+        if (!brSession) {
           await answerCallbackQuery(callbackId, "Игра не найдена или уже завершена");
           return new Response("OK", { headers: corsHeaders });
         }
 
-        const gameData = session.game_data as any;
+        const brGameData = brSession.game_data as any;
 
-        // Check if it's the correct player's turn
-        if (
-          (player === "p1" && gameData.current_turn !== "player1") ||
-          (player === "p2" && gameData.current_turn !== "player2")
-        ) {
+        // Verify it's this player's turn
+        const brExpectedTurn = brPlayerNum === "p1" ? "player1" : "player2";
+        if (brGameData.current_turn !== brExpectedTurn) {
           await answerCallbackQuery(callbackId, "Не твой ход!");
           return new Response("OK", { headers: corsHeaders });
         }
 
-        // 60% hit chance
-        const hit = Math.random() < 0.6;
-        const hitText = hit ? "✅ попал" : "❌ промазал";
+        const brP1Name = (brSession.player1 as any).first_name;
+        const brP2Name = (brSession.player2 as any).first_name;
+        const brP1TgId = (brSession.player1 as any).telegram_id;
+        const brP2TgId = (brSession.player2 as any).telegram_id;
 
-        if (hit) {
-          if (player === "p1") {
-            gameData.player2_hp -= 1;
+        // Get current shell
+        const brCurrentShell = brGameData.shells[brGameData.shell_index];
+        brGameData.shell_index++;
+
+        let brShotResult = "";
+        let brExtraTurn = false;
+        let brGameOver = false;
+        let brWinnerId: string | null = null;
+        let brWinnerName = "";
+        let brLoserId: string | null = null;
+
+        if (brAction === "self") {
+          if (brCurrentShell === "live") {
+            if (brPlayerNum === "p1") {
+              brGameData.player1_hp -= 1;
+              brShotResult = `💥 ${brP1Name} выстрелил в себя — <b>БОЕВОЙ!</b> (-1 HP)`;
+            } else {
+              brGameData.player2_hp -= 1;
+              brShotResult = `💥 ${brP2Name} выстрелил в себя — <b>БОЕВОЙ!</b> (-1 HP)`;
+            }
+            brGameData.current_turn = brGameData.current_turn === "player1" ? "player2" : "player1";
           } else {
-            gameData.player1_hp -= 1;
+            brShotResult = brPlayerNum === "p1" 
+              ? `💨 ${brP1Name} выстрелил в себя — <b>холостой!</b> Ещё один ход!`
+              : `💨 ${brP2Name} выстрелил в себя — <b>холостой!</b> Ещё один ход!`;
+            brExtraTurn = true;
           }
+        } else {
+          if (brCurrentShell === "live") {
+            if (brPlayerNum === "p1") {
+              brGameData.player2_hp -= 1;
+              brShotResult = `💥 ${brP1Name} выстрелил в ${brP2Name} — <b>БОЕВОЙ!</b> (-1 HP)`;
+            } else {
+              brGameData.player1_hp -= 1;
+              brShotResult = `💥 ${brP2Name} выстрелил в ${brP1Name} — <b>БОЕВОЙ!</b> (-1 HP)`;
+            }
+          } else {
+            brShotResult = brPlayerNum === "p1"
+              ? `💨 ${brP1Name} выстрелил в ${brP2Name} — <b>холостой!</b>`
+              : `💨 ${brP2Name} выстрелил в ${brP1Name} — <b>холостой!</b>`;
+          }
+          brGameData.current_turn = brGameData.current_turn === "player1" ? "player2" : "player1";
         }
 
-        gameData.moves.push({ player, hit });
+        brGameData.moves.push({ player: brPlayerNum, action: brAction, shell: brCurrentShell });
 
-        const player1Name = (session.player1 as any).first_name;
-        const player2Name = (session.player2 as any).first_name;
-        const player1Id = (session.player1 as any).telegram_id;
-        const player2Id = (session.player2 as any).telegram_id;
+        if (brGameData.player1_hp <= 0) {
+          brGameOver = true;
+          brWinnerId = brSession.player2_id;
+          brLoserId = brSession.player1_id;
+          brWinnerName = brP2Name;
+        } else if (brGameData.player2_hp <= 0) {
+          brGameOver = true;
+          brWinnerId = brSession.player1_id;
+          brLoserId = brSession.player2_id;
+          brWinnerName = brP1Name;
+        }
 
-        // Check if game over
-        if (gameData.player1_hp <= 0 || gameData.player2_hp <= 0) {
-          const winnerId = gameData.player1_hp > 0 ? session.player1_id : session.player2_id;
-          const loserHp = gameData.player1_hp > 0 ? gameData.player2_hp : gameData.player1_hp;
-          const winnerName = gameData.player1_hp > 0 ? player1Name : player2Name;
-          const winAmount = session.bet_amount * 2;
+        // Reload if barrel is empty
+        if (!brGameOver && brGameData.shell_index >= brGameData.shells.length) {
+          const newLive = Math.floor(Math.random() * 3) + 2;
+          const newBlank = Math.floor(Math.random() * 3) + 2;
+          const newShellsArr: ("live" | "blank")[] = [
+            ...Array(newLive).fill("live"),
+            ...Array(newBlank).fill("blank"),
+          ];
+          for (let i = newShellsArr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [newShellsArr[i], newShellsArr[j]] = [newShellsArr[j], newShellsArr[i]];
+          }
+          brGameData.shells = newShellsArr;
+          brGameData.shell_index = 0;
+          brGameData.initial_live = newLive;
+          brGameData.initial_blank = newBlank;
+          brShotResult += `\n\n🔄 <b>Перезарядка!</b>\n📦 Новый барабан: 🔴 ${newLive} боевых | ⚪ ${newBlank} холостых`;
+        }
+
+        if (brGameOver) {
+          const brWinAmount = brSession.bet_amount * 2;
 
           await supabaseClient
             .from("squid_game_sessions")
-            .update({ status: "finished", winner_id: winnerId, finished_at: new Date().toISOString() })
-            .eq("id", sessionId);
+            .update({ status: "finished", winner_id: brWinnerId, finished_at: new Date().toISOString() })
+            .eq("id", brSessionId);
 
-          // Update winner balance
-          const { data: winnerData } = await supabaseClient
+          const { data: brWinnerData } = await supabaseClient
             .from("squid_players")
             .select("balance, total_wins")
-            .eq("id", winnerId)
+            .eq("id", brWinnerId)
             .single();
 
           await supabaseClient
             .from("squid_players")
             .update({
-              balance: (winnerData?.balance || 0) + winAmount,
-              total_wins: (winnerData?.total_wins || 0) + 1,
+              balance: (brWinnerData?.balance || 0) + brWinAmount,
+              total_wins: (brWinnerData?.total_wins || 0) + 1,
             })
-            .eq("id", winnerId);
+            .eq("id", brWinnerId);
 
-          // Update loser stats
-          const loserId = gameData.player1_hp > 0 ? session.player2_id : session.player1_id;
-          const { data: loserData } = await supabaseClient
+          const { data: brLoserData } = await supabaseClient
             .from("squid_players")
             .select("total_losses")
-            .eq("id", loserId)
+            .eq("id", brLoserId)
             .single();
 
           await supabaseClient
             .from("squid_players")
-            .update({ total_losses: (loserData?.total_losses || 0) + 1 })
-            .eq("id", loserId);
+            .update({ total_losses: (brLoserData?.total_losses || 0) + 1 })
+            .eq("id", brLoserId);
 
-          await sendMessage(
-            player1Id,
-            `🎮 <b>Игра окончена!</b>\n\n🏆 Победитель: ${winnerName}\n💰 Выигрыш: ${winAmount} монет\n\n${hitText}`,
-          );
+          const brEndMessage = 
+            `🔫 <b>ИГРА ОКОНЧЕНА!</b>\n\n` +
+            `${brShotResult}\n\n` +
+            `🏆 Победитель: <b>${brWinnerName}</b>\n` +
+            `💰 Выигрыш: ${brWinAmount.toLocaleString()} монет`;
 
-          await sendMessage(
-            player2Id,
-            `🎮 <b>Игра окончена!</b>\n\n🏆 Победитель: ${winnerName}\n💰 Выигрыш: ${winAmount} монет\n\n${hitText}`,
-          );
+          await sendMessage(brP1TgId, brEndMessage);
+          await sendMessage(brP2TgId, brEndMessage);
         } else {
-          // Switch turn
-          gameData.current_turn = gameData.current_turn === "player1" ? "player2" : "player1";
+          await supabaseClient.from("squid_game_sessions").update({ game_data: brGameData }).eq("id", brSessionId);
 
-          await supabaseClient.from("squid_game_sessions").update({ game_data: gameData }).eq("id", sessionId);
+          const brRemaining = brGameData.shells.slice(brGameData.shell_index);
+          const brRemLive = brRemaining.filter((s: string) => s === "live").length;
+          const brRemBlank = brRemaining.filter((s: string) => s === "blank").length;
 
-          const nextPlayerId = gameData.current_turn === "player1" ? player1Id : player2Id;
-          const waitingPlayerId = gameData.current_turn === "player1" ? player2Id : player1Id;
+          const brShellStatus = `📦 Осталось: 🔴 ${brRemLive} боевых | ⚪ ${brRemBlank} холостых`;
 
-          // Update message for current player with hit result
-          if (player === "p1") {
+          const brNextIsP1 = brGameData.current_turn === "player1";
+          const brNextPlayerId = brNextIsP1 ? brP1TgId : brP2TgId;
+          const brNextPlayerName = brNextIsP1 ? brP1Name : brP2Name;
+          const brNextPlayerNum = brNextIsP1 ? "p1" : "p2";
+
+          const brStatusMsg = 
+            `🔫 <b>Русская Рулетка</b>\n\n` +
+            `${brShotResult}\n\n` +
+            `❤️ HP ${brP1Name}: ${brGameData.player1_hp}\n` +
+            `❤️ HP ${brP2Name}: ${brGameData.player2_hp}\n\n` +
+            brShellStatus;
+
+          if (brExtraTurn) {
             await editMessage(
-              player1Id,
+              chatId,
               message!.message_id,
-              `⚔️ Твой удар: ${hitText}\n\n❤️ Твоё HP: ${gameData.player1_hp}\n❤️ HP противника: ${gameData.player2_hp}\n\n⏳ Ожидание хода противника...`,
-            );
-          } else {
-            await editMessage(
-              player2Id,
-              message!.message_id,
-              `⚔️ Твой удар: ${hitText}\n\n❤️ Твоё HP: ${gameData.player2_hp}\n❤️ HP противника: ${gameData.player1_hp}\n\n⏳ Ожидание хода противника...`,
-            );
-          }
-
-          // Send attack button to next player
-          await sendMessage(
-            nextPlayerId,
-            `⚔️ <b>Твой ход!</b>\n\n❤️ Твоё HP: ${gameData.current_turn === "player1" ? gameData.player1_hp : gameData.player2_hp}\n❤️ HP противника: ${gameData.current_turn === "player1" ? gameData.player2_hp : gameData.player1_hp}`,
-            {
-              inline_keyboard: [
-                [
-                  {
-                    text: "⚔️ Ударить",
-                    callback_data: `squid_attack_${sessionId}_${gameData.current_turn === "player1" ? "p1" : "p2"}`,
-                  },
+              brStatusMsg + `\n\n🎯 <b>Твой ход снова!</b>`,
+              {
+                inline_keyboard: [
+                  [
+                    { text: "🔫 Стрелять в себя", callback_data: `br_shoot_self_${brSessionId}_${brPlayerNum}_u${from.id}` },
+                    { text: "💀 Стрелять в противника", callback_data: `br_shoot_enemy_${brSessionId}_${brPlayerNum}_u${from.id}` },
+                  ],
                 ],
-              ],
-            },
-          );
-        }
-      } else if (data.startsWith("buy_prefix_")) {
-        const prefixName = data.split("_u")[0].replace("buy_prefix_", "");
-
-        // Get prefix from database
-        const { data: prefixData } = await supabaseClient
-          .from("squid_prefixes")
-          .select("*")
-          .eq("name", prefixName)
-          .maybeSingle();
-
-        if (!prefixData) {
-          await answerCallbackQuery(callbackId, "Префикс не найден");
-          return new Response("OK", { headers: corsHeaders });
-        }
-
-        const { data: player } = await supabaseClient
-          .from("squid_players")
-          .select("id, balance, owned_prefixes")
-          .eq("telegram_id", from.id)
-          .single();
-
-        const ownedPrefixes = player?.owned_prefixes || [];
-
-        if (ownedPrefixes.includes(prefixName)) {
-          await answerCallbackQuery(callbackId, "Ты уже владеешь этим префиксом!");
-          return new Response("OK", { headers: corsHeaders });
-        }
-
-        if ((player?.balance || 0) < prefixData.price) {
-          await answerCallbackQuery(callbackId, `Недостаточно монет! Нужно ${prefixData.price.toLocaleString()} монет`);
-          return new Response("OK", { headers: corsHeaders });
-        }
-
-        await supabaseClient
-          .from("squid_players")
-          .update({
-            balance: (player?.balance || 0) - prefixData.price,
-            owned_prefixes: [...ownedPrefixes, prefixName],
-          })
-          .eq("id", player!.id);
-
-        await editMessage(
-          chatId,
-          message!.message_id,
-          `✅ <b>Префикс \"${prefixName}\" успешно куплен!</b>\n\nТеперь ты можешь активировать его в профиле.`,
-          {
-            inline_keyboard: [[{ text: "👤 Мой профиль", callback_data: "profile" }]],
-          },
-        );
-      } else if (data.startsWith("remove_prefix_u")) {
-        await supabaseClient.from("squid_players").update({ prefix: null }).eq("telegram_id", from.id);
-
-        const { data: player } = await supabaseClient
-          .from("squid_players")
-          .select("*")
-          .eq("telegram_id", from.id)
-          .single();
-
-        await answerCallbackQuery(callbackId, "✅ Префикс убран!");
-
-        const displayName = player?.first_name || from.first_name || "Игрок";
-
-        await editMessage(
-          chatId,
-          message!.message_id,
-          `👤 <b>Профиль: ${displayName}</b>\n\n💰 Баланс: ${player?.balance || 0} монет\n🏆 Побед: ${player?.total_wins || 0}\n💀 Поражений: ${player?.total_losses || 0}\n✨ Префикс: Нет префикса`,
-          {
-            inline_keyboard: [
-              [{ text: "🛍️ Магазин префиксов", callback_data: `shop_prefixes_u${from.id}` }],
-              [{ text: "⬅️ Главное меню", callback_data: "main_menu" }],
-            ],
-          },
-        );
-      } else if (data.startsWith("shop_prefixes_u")) {
-        const { data: player } = await supabaseClient
-          .from("squid_players")
-          .select("owned_prefixes, prefix")
-          .eq("telegram_id", from.id)
-          .single();
-
-        // Get all prefixes from database
-        const { data: allPrefixes } = await supabaseClient
-          .from("squid_prefixes")
-          .select("*")
-          .order("price", { ascending: true });
-
-        const ownedPrefixes = player?.owned_prefixes || [];
-        const currentPrefix = player?.prefix;
-
-        const prefixButtons: any[] = [];
-
-        // Show all prefixes from database
-        if (allPrefixes) {
-          for (const prefix of allPrefixes) {
-            if (ownedPrefixes.includes(prefix.name)) {
-              prefixButtons.push([
-                {
-                  text: currentPrefix === prefix.name ? `✅ ${prefix.name} (активен)` : prefix.name,
-                  callback_data:
-                    currentPrefix === prefix.name ? `remove_prefix_u${from.id}` : `activate_prefix_${prefix.name}_u${from.id}`,
-                },
-              ]);
-            } else {
-              prefixButtons.push([
-                { text: `${prefix.name} - ${prefix.price.toLocaleString()} 💰`, callback_data: `buy_prefix_${prefix.name}_u${from.id}` }
-              ]);
-            }
-          }
-        }
-
-        prefixButtons.push([{ text: "⬅️ Назад", callback_data: "profile" }]);
-
-        await editMessage(
-          chatId,
-          message!.message_id,
-          `🛍️ <b>Магазин префиксов</b>\n\nДоступные префиксы для покупки:`,
-          {
-            inline_keyboard: prefixButtons,
-          },
-        );
-      } else if (data.startsWith("activate_prefix_")) {
-        const prefixName = data.split("_u")[0].replace("activate_prefix_", "");
-
-        await supabaseClient.from("squid_players").update({ prefix: prefixName }).eq("telegram_id", from.id);
-
-        const { data: player } = await supabaseClient
-          .from("squid_players")
-          .select("*")
-          .eq("telegram_id", from.id)
-          .single();
-
-        await answerCallbackQuery(callbackId, `✅ Префикс \"${prefixName}\" активирован!`);
-
-        const displayName = `[${prefixName}] ${player?.first_name || from.first_name || "Игрок"}`;
-
-        await editMessage(
-          chatId,
-          message!.message_id,
-          `👤 <b>Профиль: ${displayName}</b>\n\n💰 Баланс: ${player?.balance || 0} монет\n🏆 Побед: ${player?.total_wins || 0}\n💀 Поражений: ${player?.total_losses || 0}\n✨ Префикс: ${prefixName}`,
-          {
-            inline_keyboard: [
-              [{ text: "🛍️ Магазин префиксов", callback_data: `shop_prefixes_u${from.id}` }],
-              [{ text: "❌ Убрать префикс", callback_data: `remove_prefix_u${from.id}` }],
-              [{ text: "⬅️ Главное меню", callback_data: "main_menu" }],
-            ],
-          },
-        );
-      } else if (data.startsWith("dalgona_select_")) {
-        const shapePart = data.replace("dalgona_select_", "").split("_u")[0];
-
-        const shapeConfig: Record<string, { name: string; bet: number; reward: number; chance: number }> = {
-          star: { name: "⭐ Звезда", bet: 100, reward: 400, chance: 0.7 },
-          umbrella: { name: "☂️ Зонтик", bet: 300, reward: 1000, chance: 0.4 },
-          triangle: { name: "🔺 Треугольник", bet: 120, reward: 300, chance: 0.75 },
-          monalisa: { name: "🖼️ Мона Лиза", bet: 500, reward: 5000, chance: 0.03 },
-        };
-
-        const config = shapeConfig[shapePart];
-        if (!config) return new Response("OK", { headers: corsHeaders });
-
-        const { data: player } = await supabaseClient
-          .from("squid_players")
-          .select("balance")
-          .eq("telegram_id", from.id)
-          .single();
-
-        if ((player?.balance || 0) < config.bet) {
-          await answerCallbackQuery(callbackId, "Недостаточно монет!");
-          return new Response("OK", { headers: corsHeaders });
-        }
-
-        await editMessage(
-          chatId,
-          message!.message_id,
-          `🍬 <b>${config.name}</b>\n\n💰 Ставка: ${config.bet} монет\n🎁 Выигрыш: ${config.reward} монет\n📊 Шанс успеха: ${Math.round(config.chance * 100)}%\n\nПодтверждаешь?`,
-          {
-            inline_keyboard: [
-              [{ text: "✅ Вырезать", callback_data: `dalgona_confirm_${shapePart}_u${from.id}` }],
-              [{ text: "❌ Отмена", callback_data: "play_dalgona" }],
-            ],
-          },
-        );
-      } else if (data.startsWith("dalgona_confirm_")) {
-        const shapePart = data.replace("dalgona_confirm_", "").split("_u")[0];
-
-        const shapeConfig: Record<string, { name: string; bet: number; reward: number; chance: number }> = {
-          star: { name: "⭐ Звезда", bet: 100, reward: 400, chance: 0.7 },
-          umbrella: { name: "☂️ Зонтик", bet: 300, reward: 1000, chance: 0.4 },
-          triangle: { name: "🔺 Треугольник", bet: 120, reward: 300, chance: 0.75 },
-          monalisa: { name: "🖼️ Мона Лиза", bet: 500, reward: 5000, chance: 0.03 },
-        };
-
-        const config = shapeConfig[shapePart];
-        if (!config) return new Response("OK", { headers: corsHeaders });
-
-        const { data: currentPlayer } = await supabaseClient
-          .from("squid_players")
-          .select("balance, casino_admin_mode")
-          .eq("telegram_id", from.id)
-          .single();
-
-        if ((currentPlayer?.balance || 0) < config.bet) {
-          await answerCallbackQuery(callbackId, "Недостаточно монет!");
-          return new Response("OK", { headers: corsHeaders });
-        }
-
-        // Deduct bet
-        await supabaseClient
-          .from("squid_players")
-          .update({ balance: (currentPlayer?.balance || 0) - config.bet })
-          .eq("telegram_id", from.id);
-
-        // Admin casino mode - always win
-        const success = currentPlayer?.casino_admin_mode ? true : Math.random() < config.chance;
-        const winAmount = success ? config.reward : 0;
-
-        if (success) {
-          await supabaseClient
-            .from("squid_players")
-            .update({ balance: (currentPlayer?.balance || 0) - config.bet + winAmount })
-            .eq("telegram_id", from.id);
-
-          await supabaseClient.from("squid_casino_history").insert({
-            player_id: (await supabaseClient.from("squid_players").select("id").eq("telegram_id", from.id).single())
-              .data?.id,
-            game_type: "dalgona",
-            bet_amount: config.bet,
-            win_amount: winAmount,
-            result: { shape: shapePart, success: true },
-          });
-
-          await editMessage(
-            chatId,
-            message!.message_id,
-            `✅ Отлично! Ты вырезал ${config.name} и получил ${winAmount} монет! 💰`,
-            {
-              inline_keyboard: [
-                [{ text: "🎮 Играть ещё", callback_data: "play_dalgona" }],
-                [{ text: "⬅️ Главное меню", callback_data: "main_menu" }],
-              ],
-            },
-          );
-        } else {
-          await supabaseClient.from("squid_casino_history").insert({
-            player_id: (await supabaseClient.from("squid_players").select("id").eq("telegram_id", from.id).single())
-              .data?.id,
-            game_type: "dalgona",
-            bet_amount: config.bet,
-            win_amount: 0,
-            result: { shape: shapePart, success: false },
-          });
-
-          await editMessage(chatId, message!.message_id, `❌ Печенье сломалось! Ты потерял ${config.bet} монет.`, {
-            inline_keyboard: [
-              [{ text: "🎮 Играть ещё", callback_data: "play_dalgona" }],
-              [{ text: "⬅️ Главное меню", callback_data: "main_menu" }],
-            ],
-          });
-        }
-      } else if (data === "main_menu") {
-        const { data: player } = await supabaseClient
-          .from("squid_players")
-          .select("balance")
-          .eq("telegram_id", from.id)
-          .single();
-
-        await editMessage(
-          chatId,
-          message!.message_id,
-          `🦑 <b>Добро пожаловать в Squid Game Bot!</b>\n\n💰 Твой баланс: ${player?.balance || 0} монет\n\nВыбери игру:`,
-          {
-            inline_keyboard: [
-              [{ text: "🍬 Dalgona Challenge", callback_data: "play_dalgona" }],
-              [{ text: "🌉 Стеклянный мост", callback_data: "play_glass_bridge" }],
-              [{ text: "🦑 Игра в Кальмара (PvP)", callback_data: "play_squid_pvp" }],
-              [{ text: "👤 Мой профиль", callback_data: "profile" }],
-            ],
-          },
-        );
-      } else if (data === "profile") {
-        const { data: player } = await supabaseClient
-          .from("squid_players")
-          .select("*")
-          .eq("telegram_id", from.id)
-          .single();
-
-        const prefixText = player?.prefix ? `${player.prefix}` : "Нет префикса";
-        const displayName = player?.prefix
-          ? `[${player.prefix}] ${player?.first_name || from.first_name || "Игрок"}`
-          : player?.first_name || from.first_name || "Игрок";
-
-        const ownedPrefixes = player?.owned_prefixes || [];
-
-        // Build prefix selection buttons
-        const prefixButtons: any[] = [];
-        if (ownedPrefixes.length > 0) {
-          for (const prefixName of ownedPrefixes) {
-            if (prefixName !== player?.prefix) {
-              prefixButtons.push([{ text: `✨ Активировать ${prefixName}`, callback_data: `activate_prefix_${prefixName}_u${from.id}` }]);
-            }
-          }
-        }
-
-        await editMessage(
-          chatId,
-          message!.message_id,
-          `👤 <b>Профиль: ${displayName}</b>\n\n💰 Баланс: ${player?.balance || 0} монет\n🏆 Побед: ${player?.total_wins || 0}\n💀 Поражений: ${player?.total_losses || 0}\n✨ Префикс: ${prefixText}\n📦 Куплено префиксов: ${ownedPrefixes.length}`,
-          {
-            inline_keyboard: [
-              ...prefixButtons,
-              [{ text: "🛍️ Магазин префиксов", callback_data: `shop_prefixes_u${from.id}` }],
-              player?.prefix ? [{ text: "❌ Убрать префикс", callback_data: `remove_prefix_u${from.id}` }] : [],
-              [{ text: "⬅️ Главное меню", callback_data: "main_menu" }],
-            ].filter((row) => row.length > 0),
-          },
-        );
-      } else if (data.startsWith("donate_premium_u")) {
-        await editMessage(
-          chatId,
-          message!.message_id,
-          `👑 <b>PREMIUM подписка</b>\n\n` +
-            `🎁 <b>Что ты получишь:</b>\n` +
-            `   • 2X множитель ограбления игроков\n` +
-            `   • 2X бонус выигрыша в казино\n` +
-            `   • 2X доход от бизнеса\n\n` +
-            `💰 <b>Стоимость:</b> договорная\n\n` +
-            `📩 Для покупки напишите: @COKPYIIIEHUE\n` +
-            `🎁 Также можно оплатить подарками Telegram!`,
-          {
-            inline_keyboard: [
-              [{ text: "⬅️ Назад", callback_data: `donate_back_u${from.id}` }],
-            ],
-          },
-        );
-      } else if (data.startsWith("donate_coins_100k_u")) {
-        await editMessage(
-          chatId,
-          message!.message_id,
-          `🪙 <b>100,000 монет</b>\n\n` +
-            `💰 Стоимость: <b>15₽</b>\n\n` +
-            `📩 Для покупки напишите: @COKPYIIIEHUE\n` +
-            `🎁 Также можно оплатить подарками Telegram!`,
-          {
-            inline_keyboard: [
-              [{ text: "⬅️ Назад", callback_data: `donate_back_u${from.id}` }],
-            ],
-          },
-        );
-      } else if (data.startsWith("donate_coins_500k_u")) {
-        await editMessage(
-          chatId,
-          message!.message_id,
-          `💰 <b>500,000 монет</b>\n\n` +
-            `💰 Стоимость: <b>35₽</b>\n\n` +
-            `📩 Для покупки напишите: @COKPYIIIEHUE\n` +
-            `🎁 Также можно оплатить подарками Telegram!`,
-          {
-            inline_keyboard: [
-              [{ text: "⬅️ Назад", callback_data: `donate_back_u${from.id}` }],
-            ],
-          },
-        );
-      } else if (data.startsWith("donate_coins_1m_u")) {
-        await editMessage(
-          chatId,
-          message!.message_id,
-          `💎 <b>1,000,000 монет</b>\n\n` +
-            `💰 Стоимость: <b>75₽</b>\n\n` +
-            `📩 Для покупки напишите: @COKPYIIIEHUE\n` +
-            `🎁 Также можно оплатить подарками Telegram!`,
-          {
-            inline_keyboard: [
-              [{ text: "⬅️ Назад", callback_data: `donate_back_u${from.id}` }],
-            ],
-          },
-        );
-      } else if (data.startsWith("donate_prefix_u")) {
-        await editMessage(
-          chatId,
-          message!.message_id,
-          `✨ <b>Кастомный префикс</b>\n\n` +
-            `Получи уникальный префикс, который будет отображаться рядом с твоим именем!\n\n` +
-            `💰 Стоимость: <b>договорная</b>\n\n` +
-            `📩 Для покупки напишите: @COKPYIIIEHUE\n` +
-            `🎁 Также можно оплатить подарками Telegram!`,
-          {
-            inline_keyboard: [
-              [{ text: "⬅️ Назад", callback_data: `donate_back_u${from.id}` }],
-            ],
-          },
-        );
-      } else if (data.startsWith("donate_back_u")) {
-        const { data: player } = await supabaseClient
-          .from("squid_players")
-          .select("id, balance, is_premium, premium_expires_at")
-          .eq("telegram_id", from.id)
-          .single();
-
-        const isPremiumActive = player?.is_premium && player?.premium_expires_at && new Date(player.premium_expires_at) > new Date();
-        const premiumStatus = isPremiumActive 
-          ? `✅ Активен до ${new Date(player.premium_expires_at!).toLocaleDateString("ru-RU")}`
-          : "❌ Не активен";
-
-        await editMessage(
-          chatId,
-          message!.message_id,
-          `💎 <b>Донат магазин</b>\n\n` +
-            `👑 <b>PREMIUM статус:</b> ${premiumStatus}\n\n` +
-            `🎁 <b>Преимущества PREMIUM:</b>\n` +
-            `   • 2X множитель ограбления игроков\n` +
-            `   • 2X бонус выигрыша в казино\n` +
-            `   • 2X доход от бизнеса\n\n` +
-            `💵 Твой баланс: ${(player?.balance || 0).toLocaleString()} монет`,
-          {
-            inline_keyboard: [
-              [{ text: "👑 PREMIUM (1 месяц)", callback_data: `donate_premium_u${from.id}` }],
-              [{ text: "🪙 100,000 монет - 15₽", callback_data: `donate_coins_100k_u${from.id}` }],
-              [{ text: "💰 500,000 монет - 35₽", callback_data: `donate_coins_500k_u${from.id}` }],
-              [{ text: "💎 1,000,000 монет - 75₽", callback_data: `donate_coins_1m_u${from.id}` }],
-              [{ text: "✨ Кастомный префикс", callback_data: `donate_prefix_u${from.id}` }],
-              [{ text: "⬅️ Назад", callback_data: "main_menu" }],
-            ],
-          },
-        );
-      } else if (data.startsWith("admin_set_prefix_absolute_")) {
-        const { data: admin } = await supabaseClient
-          .from("squid_admins")
-          .select("*")
-          .eq("telegram_id", from.id)
-          .single();
-
-        if (!admin) {
-          await answerCallbackQuery(callbackId, "Нет доступа");
-          return new Response("OK", { headers: corsHeaders });
-        }
-
-        const targetId = parseInt(data.replace("admin_set_prefix_absolute_", ""));
-
-        await supabaseClient.from("squid_players").update({ prefix: "absolute" }).eq("telegram_id", targetId);
-
-        await answerCallbackQuery(callbackId, "✅ Префикс установлен!");
-        await editMessage(chatId, message!.message_id, `✅ Префикс \"absolute\" установлен игроку ${targetId}`);
-      } else if (data.startsWith("admin_set_prefix_emperror_")) {
-        const { data: admin } = await supabaseClient
-          .from("squid_admins")
-          .select("*")
-          .eq("telegram_id", from.id)
-          .single();
-
-        if (!admin) {
-          await answerCallbackQuery(callbackId, "Нет доступа");
-          return new Response("OK", { headers: corsHeaders });
-        }
-
-        const targetId = parseInt(data.replace("admin_set_prefix_emperror_", ""));
-
-        await supabaseClient.from("squid_players").update({ prefix: "emperror" }).eq("telegram_id", targetId);
-
-        await answerCallbackQuery(callbackId, "✅ Префикс установлен!");
-        await editMessage(chatId, message!.message_id, `✅ Префикс \"emperror\" установлен игроку ${targetId}`);
-      } else if (data.startsWith("admin_remove_prefix_")) {
-        const { data: admin } = await supabaseClient
-          .from("squid_admins")
-          .select("*")
-          .eq("telegram_id", from.id)
-          .single();
-
-        if (!admin) {
-          await answerCallbackQuery(callbackId, "Нет доступа");
-          return new Response("OK", { headers: corsHeaders });
-        }
-
-        const targetId = parseInt(data.replace("admin_remove_prefix_", ""));
-
-        await supabaseClient.from("squid_players").update({ prefix: null }).eq("telegram_id", targetId);
-
-        await answerCallbackQuery(callbackId, "✅ Префикс убран!");
-        await editMessage(chatId, message!.message_id, `✅ Префикс убран у игрока ${targetId}`);
-      } else if (data.startsWith("admin_reset_stats_")) {
-        const { data: admin } = await supabaseClient
-          .from("squid_admins")
-          .select("*")
-          .eq("telegram_id", from.id)
-          .single();
-
-        if (!admin) {
-          await answerCallbackQuery(callbackId, "Нет доступа");
-          return new Response("OK", { headers: corsHeaders });
-        }
-
-        const targetId = parseInt(data.replace("admin_reset_stats_", ""));
-
-        await supabaseClient
-          .from("squid_players")
-          .update({
-            total_wins: 0,
-            total_losses: 0,
-          })
-          .eq("telegram_id", targetId);
-
-        await answerCallbackQuery(callbackId, "✅ Статистика обнулена!");
-        await editMessage(chatId, message!.message_id, `✅ Статистика обнулена у игрока ${targetId}`);
-      } else if (data === "play_casino") {
-        await editMessage(chatId, message!.message_id, "🎰 <b>Казино</b>\n\nДобро пожаловать в казино!", {
-          inline_keyboard: [
-            [{ text: "🎡 Рулетка", callback_data: `casino_roulette_u${from.id}` }],
-            [{ text: "⬅️ Назад", callback_data: "main_menu" }],
-          ],
-        });
-      } else if (data.startsWith("casino_roulette_u")) {
-        await editMessage(chatId, message!.message_id, "🎡 <b>Рулетка</b>\n\nВыбери ставку (100-10000 монет) и цвет:", {
-          inline_keyboard: [
-            [{ text: "🔴 Красное (x2)", callback_data: `roulette_bet_red_u${from.id}` }],
-            [{ text: "⚫ Черное (x2)", callback_data: `roulette_bet_black_u${from.id}` }],
-            [{ text: "🟢 Зеленое (x14)", callback_data: `roulette_bet_green_u${from.id}` }],
-            [{ text: "⬅️ Назад", callback_data: "play_casino" }],
-          ],
-        });
-      } else if (data.startsWith("roulette_bet_")) {
-        const color = data.includes("red") ? "red" : data.includes("black") ? "black" : "green";
-
-        await editMessage(
-          chatId,
-          message!.message_id,
-          `Выбран цвет: ${color === "red" ? "🔴 Красное" : color === "black" ? "⚫ Черное" : "🟢 Зеленое"}\n\nВыбери размер ставки:`,
-          {
-            inline_keyboard: [
-              [{ text: "100 монет", callback_data: `roulette_play_${color}_100_u${from.id}` }],
-              [{ text: "500 монет", callback_data: `roulette_play_${color}_500_u${from.id}` }],
-              [{ text: "1000 монет", callback_data: `roulette_play_${color}_1000_u${from.id}` }],
-              [{ text: "5000 монет", callback_data: `roulette_play_${color}_5000_u${from.id}` }],
-              [{ text: "10000 монет", callback_data: `roulette_play_${color}_10000_u${from.id}` }],
-              [{ text: "⬅️ Назад", callback_data: `casino_roulette_u${from.id}` }],
-            ],
-          },
-        );
-      } else if (data.startsWith("roulette_play_")) {
-        const parts = data.split("_");
-        const color = parts[2];
-        const betAmount = parseInt(parts[3]);
-
-        const { data: player } = await supabaseClient
-          .from("squid_players")
-          .select("id, balance, casino_admin_mode")
-          .eq("telegram_id", from.id)
-          .single();
-
-        if (!player || player.balance < betAmount) {
-          await answerCallbackQuery(callbackId, "Недостаточно монет!");
-          return new Response("OK", { headers: corsHeaders });
-        }
-
-        // Deduct bet
-        await supabaseClient
-          .from("squid_players")
-          .update({ balance: player.balance - betAmount })
-          .eq("id", player.id);
-
-        // Spin roulette - FAIR random chances
-        let resultColor: string;
-        let winMultiplier = 0;
-
-        // Admin casino mode - always win
-        if (player.casino_admin_mode) {
-          resultColor = color;
-          winMultiplier = color === "green" ? 14 : 2;
-        } else {
-          const result = Math.random() * 100;
-
-          // Fair chances: Red 48.5%, Black 48.5%, Green 3%
-          if (result < 3) {
-            resultColor = "green";
-          } else if (result < 51.5) {
-            resultColor = "red";
+              },
+            );
           } else {
-            resultColor = "black";
-          }
+            await editMessage(chatId, message!.message_id, brStatusMsg + `\n\n⏳ Ход игрока ${brNextPlayerName}...`);
 
-          if (resultColor === color) {
-            winMultiplier = color === "green" ? 14 : 2;
-          }
-        }
-
-        const winAmount = betAmount * winMultiplier;
-        const profit = winAmount - betAmount;
-
-        if (winAmount > 0) {
-          await supabaseClient
-            .from("squid_players")
-            .update({ balance: player.balance - betAmount + winAmount })
-            .eq("id", player.id);
-        }
-
-        await supabaseClient.from("squid_casino_history").insert({
-          player_id: player.id,
-          game_type: "roulette",
-          bet_amount: betAmount,
-          win_amount: winAmount,
-          result: { color: resultColor, bet: color },
-        });
-
-        const resultEmoji = resultColor === "red" ? "🔴" : resultColor === "black" ? "⚫" : "🟢";
-        const resultText =
-          winAmount > 0
-            ? `🎉 <b>ВЫИГРЫШ!</b>\n\nРезультат: ${resultEmoji} ${resultColor}\n💰 Выигрыш: ${profit} монет\n💵 Новый баланс: ${player.balance - betAmount + winAmount} монет`
-            : `😔 Проигрыш\n\nРезультат: ${resultEmoji} ${resultColor}\n💸 Потеря: ${betAmount} монет\n💵 Новый баланс: ${player.balance - betAmount} монет`;
-
-        await editMessage(chatId, message!.message_id, resultText, {
-          inline_keyboard: [
-            [{ text: "🎡 Играть еще", callback_data: `casino_roulette_u${from.id}` }],
-            [{ text: "⬅️ Назад", callback_data: "main_menu" }],
-          ],
-        });
-      } else if (data.startsWith("open_case_")) {
-        const caseNum = parseInt(data.split("_")[2]);
-
-        const { data: player } = await supabaseClient
-          .from("squid_players")
-          .select("id, balance, owned_prefixes")
-          .eq("telegram_id", from.id)
-          .single();
-
-        if (!player) {
-          await answerCallbackQuery(callbackId, "❌ Игрок не найден");
-          return new Response("OK", { headers: corsHeaders });
-        }
-
-        let caseCost = 0;
-        let rewards: { amount?: number; prefix?: string; chance: number; text: string }[] = [];
-
-        if (caseNum === 1) {
-          caseCost = 100000;
-          rewards = [
-            { amount: 50000, chance: 70, text: "🪙 50,000 монет" },
-            { amount: 150000, chance: 11, text: "🪙 150,000 монет" },
-            { amount: 300000, chance: 5, text: "💰 300,000 монет" },
-            { prefix: "VIP", chance: 1, text: "👑 VIP префикс" },
-            { amount: 0, chance: 13, text: "❌ Пусто" },
-          ];
-        } else if (caseNum === 2) {
-          caseCost = 500000;
-          rewards = [
-            { amount: 200000, chance: 70, text: "🪙 200,000 монет" },
-            { amount: 600000, chance: 11, text: "💰 600,000 монет" },
-            { amount: 1000000, chance: 5, text: "💎 1,000,000 монет" },
-            { prefix: "VIP", chance: 1, text: "👑 VIP префикс" },
-            { amount: 0, chance: 13, text: "❌ Пусто" },
-          ];
-        }
-
-        if (player.balance < caseCost) {
-          await editMessage(
-            chatId,
-            message!.message_id,
-            `❌ <b>Недостаточно монет!</b>\n\nСтоимость кейса: ${caseCost.toLocaleString()} монет\nТвой баланс: ${player.balance.toLocaleString()} монет`,
-            {
-              inline_keyboard: [[{ text: "⬅️ Назад к кейсам", callback_data: `case_menu_u${from.id}` }]],
-            },
-          );
-          return new Response("OK", { headers: corsHeaders });
-        }
-
-        // Deduct cost
-        await supabaseClient
-          .from("squid_players")
-          .update({ balance: player.balance - caseCost })
-          .eq("id", player.id);
-
-        // Roll for reward
-        const roll = Math.random() * 100;
-        let cumulative = 0;
-        let wonReward = rewards[rewards.length - 1]; // Default to last (empty)
-
-        for (const reward of rewards) {
-          cumulative += reward.chance;
-          if (roll < cumulative) {
-            wonReward = reward;
-            break;
+            await sendMessage(
+              brNextPlayerId,
+              brStatusMsg + `\n\n🎯 <b>Твой ход! Выбери действие:</b>`,
+              {
+                inline_keyboard: [
+                  [
+                    { text: "🔫 Стрелять в себя", callback_data: `br_shoot_self_${brSessionId}_${brNextPlayerNum}_u${brNextPlayerId}` },
+                    { text: "💀 Стрелять в противника", callback_data: `br_shoot_enemy_${brSessionId}_${brNextPlayerNum}_u${brNextPlayerId}` },
+                  ],
+                ],
+              },
+            );
           }
         }
-
-        let resultText = "";
-        let newBalance = player.balance - caseCost;
-
-        if (wonReward.prefix) {
-          // Won VIP prefix
-          const ownedPrefixes = player.owned_prefixes || [];
-          if (ownedPrefixes.includes("VIP")) {
-            // Already has VIP, give coins instead
-            const compensation = caseNum === 1 ? 200000 : 800000;
-            newBalance += compensation;
-            await supabaseClient.from("squid_players").update({ balance: newBalance }).eq("id", player.id);
-            resultText = `🎁 <b>Кейс #${caseNum} открыт!</b>\n\n👑 Выпал VIP префикс, но он у тебя уже есть!\n💰 Компенсация: ${compensation.toLocaleString()} монет\n\n💵 Новый баланс: ${newBalance.toLocaleString()} монет`;
-          } else {
-            await supabaseClient
-              .from("squid_players")
-              .update({ owned_prefixes: [...ownedPrefixes, "VIP"] })
-              .eq("id", player.id);
-            resultText = `🎁 <b>Кейс #${caseNum} открыт!</b>\n\n🎉 <b>ДЖЕКПОТ!</b>\n👑 Ты получил VIP префикс!\n\nАктивируй его в /profile\n\n💵 Баланс: ${newBalance.toLocaleString()} монет`;
-          }
-        } else if (wonReward.amount === 0) {
-          // Empty - nothing won
-          resultText = `🎁 <b>Кейс #${caseNum} открыт!</b>\n\n❌ Пусто! Ничего не выпало.\n\n💵 Баланс: ${newBalance.toLocaleString()} монет`;
-        } else {
-          // Won coins
-          newBalance += wonReward.amount!;
-          await supabaseClient.from("squid_players").update({ balance: newBalance }).eq("id", player.id);
-
-          const profit = wonReward.amount! - caseCost;
-          const profitText =
-            profit > 0 ? `📈 Профит: +${profit.toLocaleString()} монет` : `📉 Потеря: ${profit.toLocaleString()} монет`;
-
-          resultText = `🎁 <b>Кейс #${caseNum} открыт!</b>\n\n${wonReward.text}\n${profitText}\n\n💵 Новый баланс: ${newBalance.toLocaleString()} монет`;
-        }
-
-        await editMessage(chatId, message!.message_id, resultText, {
-          inline_keyboard: [
-            [{ text: "🎁 Открыть ещё", callback_data: `case_menu_u${from.id}` }],
-            [{ text: "⬅️ Главное меню", callback_data: "main_menu" }],
-          ],
-        });
-      } else if (data.startsWith("case_menu_u")) {
-        const { data: player } = await supabaseClient
-          .from("squid_players")
-          .select("balance")
-          .eq("telegram_id", from.id)
-          .single();
-
-        await editMessage(
-          chatId,
-          message!.message_id,
-          `📦 <b>Магазин кейсов</b>\n\n` +
-            `🎁 <b>Кейс #1</b> - 100,000 монет\n` +
-            `   🪙 50,000 монет (70%)\n` +
-            `   🪙 150,000 монет (11%)\n` +
-            `   💰 300,000 монет (5%)\n` +
-            `   👑 VIP префикс (1%)\n` +
-            `   ❌ Пусто (13%)\n\n` +
-            `💎 <b>Кейс #2</b> - 500,000 монет\n` +
-            `   🪙 200,000 монет (70%)\n` +
-            `   🪙 600,000 монет (11%)\n` +
-            `   💎 1,000,000 монет (5%)\n` +
-            `   👑 VIP префикс (1%)\n` +
-            `   ❌ Пусто (13%)\n\n` +
-            `💵 Твой баланс: ${(player?.balance || 0).toLocaleString()} монет`,
-          {
-            inline_keyboard: [
-              [{ text: "🎁 Открыть Кейс #1 (100k)", callback_data: `open_case_1_u${from.id}` }],
-              [{ text: "💎 Открыть Кейс #2 (500k)", callback_data: `open_case_2_u${from.id}` }],
-            ],
-          },
-        );
       }
-
-      return new Response("OK", { headers: corsHeaders });
     }
 
-    // Handle text messages
-    if (update.message?.text) {
+    // Handle text commands
+    if (update.message) {
       const { chat, from, text } = update.message;
 
-      if (!from) {
+      if (!chat || !from) {
         return new Response("OK", { headers: corsHeaders });
       }
 
-      // Create or update player
-      const { data: player } = await supabaseClient
-        .from("squid_players")
-        .upsert(
-          {
-            telegram_id: from.id,
-            username: from.username,
-            first_name: from.first_name,
-          },
-          { onConflict: "telegram_id" },
-        )
-        .select()
-        .single();
-
-      // Store chat information
-      await supabaseClient.from("squid_bot_chats").upsert(
+      // Ensure player exists
+      await supabaseClient.from("squid_players").upsert(
         {
-          chat_id: chat.id,
-          chat_type: chat.type || "private",
-          chat_title: chat.title || null,
-          chat_username: chat.username || null,
-          last_activity: new Date().toISOString(),
+          telegram_id: from.id,
+          username: from.username,
+          first_name: from.first_name,
         },
-        { onConflict: "chat_id" },
+        { onConflict: "telegram_id" },
       );
 
-      // Track player activity in this chat
-      if (player) {
-        await supabaseClient.from("squid_player_chats").upsert(
+      // Track chat activity
+      if (chat.type !== "private") {
+        await supabaseClient.from("squid_bot_chats").upsert(
           {
-            player_id: player.id,
             chat_id: chat.id,
-            last_message_at: new Date().toISOString(),
+            chat_type: chat.type || "group",
+            chat_title: chat.title,
+            chat_username: chat.username,
+            last_activity: new Date().toISOString(),
           },
-          { onConflict: "player_id,chat_id" },
+          { onConflict: "chat_id" },
         );
+
+        // Track player-chat relationship
+        const { data: playerData } = await supabaseClient
+          .from("squid_players")
+          .select("id")
+          .eq("telegram_id", from.id)
+          .single();
+
+        if (playerData) {
+          await supabaseClient.from("squid_player_chats").upsert(
+            {
+              player_id: playerData.id,
+              chat_id: chat.id,
+              last_message_at: new Date().toISOString(),
+            },
+            { onConflict: "player_id,chat_id" },
+          );
+        }
+      }
+
+      // Skip if no text
+      if (!text) {
+        return new Response("OK", { headers: corsHeaders });
       }
 
       if (text === "/start" || text.startsWith("/start ")) {
-        // Check for referral code
-        const args = text.split(" ");
-        let referrerTelegramId: number | null = null;
-        
-        if (args.length > 1) {
-          const refCode = args[1];
-          if (refCode.startsWith("ref")) {
-            referrerTelegramId = parseInt(refCode.replace("ref", ""));
-          }
-        }
-
-        // IMPORTANT: Check if player ALREADY exists BEFORE the upsert at line 1752
-        const { data: existingPlayer } = await supabaseClient
-          .from("squid_players")
-          .select("id, balance, telegram_id, referrer_id")
-          .eq("telegram_id", from.id)
-          .maybeSingle();
-
-        // Handle referral for NEW players only (no existing record AND no referrer set)
-        if (!existingPlayer && referrerTelegramId && referrerTelegramId !== from.id) {
-          const { data: referrer } = await supabaseClient
-            .from("squid_players")
-            .select("id, balance, referral_count, gift_count, first_name")
-            .eq("telegram_id", referrerTelegramId)
-            .single();
-
-          if (referrer) {
-            // Create new player with referrer_id set
-            await supabaseClient
-              .from("squid_players")
-              .insert({
-                telegram_id: from.id,
-                username: from.username,
-                first_name: from.first_name,
-                referrer_id: referrer.id,
-                balance: 1000,
-              });
-
-            // Give referrer rewards: 100000 coins + 1 gift
-            await supabaseClient
-              .from("squid_players")
-              .update({
-                balance: referrer.balance + 100000,
-                referral_count: (referrer.referral_count || 0) + 1,
-                gift_count: (referrer.gift_count || 0) + 1,
-              })
-              .eq("id", referrer.id);
-
-            // Notify referrer
-            await sendMessage(
-              referrerTelegramId,
-              `🎉 <b>Новый реферал!</b>\n\n${from.first_name} присоединился по твоей ссылке!\n\n💰 +100,000 монет\n🎁 +1 подарок\n\nИспользуй /gift_open чтобы открыть подарок!`,
-            );
-          }
-        } else if (existingPlayer && !existingPlayer.referrer_id && referrerTelegramId && referrerTelegramId !== from.id) {
-          // Player exists but has no referrer yet - can still set referrer
-          const { data: referrer } = await supabaseClient
-            .from("squid_players")
-            .select("id, balance, referral_count, gift_count, first_name")
-            .eq("telegram_id", referrerTelegramId)
-            .single();
-
-          if (referrer && existingPlayer.id !== referrer.id) {
-            // Update player with referrer_id
-            await supabaseClient
-              .from("squid_players")
-              .update({ referrer_id: referrer.id })
-              .eq("id", existingPlayer.id);
-
-            // Give referrer rewards
-            await supabaseClient
-              .from("squid_players")
-              .update({
-                balance: referrer.balance + 100000,
-                referral_count: (referrer.referral_count || 0) + 1,
-                gift_count: (referrer.gift_count || 0) + 1,
-              })
-              .eq("id", referrer.id);
-
-            // Notify referrer
-            await sendMessage(
-              referrerTelegramId,
-              `🎉 <b>Новый реферал!</b>\n\n${from.first_name} присоединился по твоей ссылке!\n\n💰 +100,000 монет\n🎁 +1 подарок\n\nИспользуй /gift_open чтобы открыть подарок!`,
-            );
-          }
-        }
-
         const { data: player } = await supabaseClient
           .from("squid_players")
           .select("balance, telegram_id, referral_count, gift_count")
@@ -1934,7 +1214,7 @@ serve(async (req) => {
             inline_keyboard: [
               [{ text: "🍬 Dalgona Challenge", callback_data: "play_dalgona" }],
               [{ text: "🌉 Стеклянный мост", callback_data: "play_glass_bridge" }],
-              [{ text: "🦑 Игра в Кальмара (PvP)", callback_data: "play_squid_pvp" }],
+              [{ text: "🔫 Русская рулетка (PvP)", callback_data: "play_squid_pvp" }],
               [{ text: "👤 Мой профиль", callback_data: "profile" }],
             ],
           },
@@ -1953,7 +1233,7 @@ serve(async (req) => {
       } else if (text === "/help") {
         await sendMessage(
           chat.id,
-          `📋 <b>Список команд</b>\n\n<b>🎮 Игры:</b>\n🍬 Dalgona Challenge - вырезай фигурки из печенья\n🌉 Стеклянный мост - пройди по опасному мосту\n🦑 Игра в Кальмара (PvP) - бейся с другими игроками\n\n<b>⚔️ Дуэли:</b>\n/challenge [ставка] - ответь на сообщение игрока\n/challenge [ID] [ставка] - вызов по ID\n/accept - принять вызов (ответом на сообщение с вызовом)\n/decline - отказаться от вызова\n\n<b>💰 Команды:</b>\n/balance - проверить баланс\n/profile - твой профиль\n/daily - получить ежедневный бонус\n/bp - ежедневный бонус (10k-100k монет)\n/promo [код] - использовать промокод\n/pay [ID] [сумма] - перевести монеты игроку\n/rob - ограбить игрока (раз в час)\n/top - топ 10 богатых игроков в чате\n/topworld - топ 10 богатых игроков глобально\n/shop - магазин префиксов\n/case - магазин кейсов\n/donate - премиум и донат\n\n<b>🔗 Рефералы:</b>\n/ref - твоя реферальная ссылка\n/top_ref - топ 10 по рефералам\n/gift_open - открыть подарок\n\n<b>🏭 Бизнес:</b>\n/business_shop - магазин бизнесов\n/my_buss - мои бизнесы и улучшения\n/collect - собрать прибыль (макс. 1 час)\n\n<b>📦 Предметы:</b>\n/si - искать предметы (раз в час)\n/items - показать инвентарь\n/sell [номер] - продать предмет\n/sell all - продать все предметы\n\n<b>🏰 Кланы:</b>\n/clan - информация о твоём клане\n/clans - список топ кланов\n/clan_create [название] - создать клан (500k)\n/clan_join [название] - вступить в клан\n/clan_leave - покинуть клан\n/clan_delete - удалить свой клан\n\n<b>🎲 Казино:</b>\n/casino - открыть веб-казино (Кейсы тоже тут!)\n🎰 Рулетка • 💣 Мины • 🪜 Лестница • 🎁 Джекпот • 🚀 Краш • 📦 Кейсы\n/roulette [цвет] [ставка] - сыграть в рулетку\nЦвета: red, black, green\n\n<b>ℹ️ Помощь:</b>\n/help - список всех команд`,
+          `📋 <b>Список команд</b>\n\n<b>🎮 Игры:</b>\n🍬 Dalgona Challenge - вырезай фигурки из печенья\n🌉 Стеклянный мост - пройди по опасному мосту\n🔫 Русская Рулетка (PvP) - дуэль с дробовиком\n\n<b>⚔️ Дуэли (Русская Рулетка):</b>\n/challenge [ставка] - ответь на сообщение игрока\n/challenge [ID] [ставка] - вызов по ID\nИнлайн-кнопки для принятия/отказа\nРаботает в беседах и ЛС!\n\n<b>💰 Команды:</b>\n/balance - проверить баланс\n/profile - твой профиль\n/daily - получить ежедневный бонус\n/bp - ежедневный бонус (10k-100k монет)\n/promo [код] - использовать промокод\n/pay [ID] [сумма] - перевести монеты игроку\n/rob - ограбить игрока (раз в час)\n/top - топ 10 богатых игроков в чате\n/topworld - топ 10 богатых игроков глобально\n/shop - магазин префиксов\n/case - магазин кейсов\n/donate - премиум и донат\n\n<b>🔗 Рефералы:</b>\n/ref - твоя реферальная ссылка\n/top_ref - топ 10 по рефералам\n/gift_open - открыть подарок\n\n<b>🏭 Бизнес:</b>\n/business_shop - магазин бизнесов\n/my_buss - мои бизнесы и улучшения\n/collect - собрать прибыль (макс. 1 час)\n\n<b>📦 Предметы:</b>\n/si - искать предметы (раз в час)\n/items - показать инвентарь\n/sell [номер] - продать предмет\n/sell all - продать все предметы\n\n<b>🏰 Кланы:</b>\n/clan - информация о твоём клане\n/clans - список топ кланов\n/clan_create [название] - создать клан (500k)\n/clan_join [название] - вступить в клан\n/clan_leave - покинуть клан\n/clan_delete - удалить свой клан\n\n<b>🎲 Казино:</b>\n/casino - открыть веб-казино (Кейсы тоже тут!)\n🎰 Рулетка • 💣 Мины • 🪜 Лестница • 🎁 Джекпот • 🚀 Краш • 📦 Кейсы\n/roulette [цвет] [ставка] - сыграть в рулетку\nЦвета: red, black, green\n\n<b>ℹ️ Помощь:</b>\n/help - список всех команд`,
         );
       } else if (text === "/daily") {
         const { data: player } = await supabaseClient
@@ -2139,7 +1419,7 @@ serve(async (req) => {
           .from("squid_game_sessions")
           .insert({
             player1_id: challenger.id,
-            game_type: "squid_pvp",
+            game_type: "buckshot_roulette",
             bet_amount: betAmount,
             status: "waiting",
             game_data: { challenger_telegram_id: from.id, target_telegram_id: targetTelegramId }
@@ -2165,10 +1445,12 @@ serve(async (req) => {
 
         // Send challenge to target player - in same chat if it's a group, or DM if private
         const challengeMessage = 
-          `⚔️ <b>ВЫЗОВ НА ДУЭЛЬ!</b> ⚔️\n\n` +
-          `👤 ${challengerName} вызывает тебя на Игру в Кальмара!\n\n` +
+          `🔫 <b>ВЫЗОВ НА РУССКУЮ РУЛЕТКУ!</b> 🔫\n\n` +
+          `👤 ${challengerName} вызывает тебя на дуэль с дробовиком!\n\n` +
           `💰 Ставка: <b>${betAmount.toLocaleString()} монет</b>\n` +
-          `🎮 Игра: Бой 3 на 3 HP\n\n` +
+          `🎮 Игра: Buckshot Roulette\n` +
+          `❤️ У каждого по 3 HP\n` +
+          `🔴 Боевые и ⚪ холостые патроны в барабане\n\n` +
           `Принимаешь вызов?`;
         
         const challengeButtons = {
@@ -2212,7 +1494,7 @@ serve(async (req) => {
           .from("squid_game_sessions")
           .select("*, player1:squid_players!player1_id(telegram_id, first_name)")
           .eq("status", "waiting")
-          .eq("game_type", "squid_pvp");
+          .eq("game_type", "buckshot_roulette");
           
         // Find session where this player was challenged
         const session = sessions?.find((s: any) => {
@@ -2299,7 +1581,7 @@ serve(async (req) => {
           .from("squid_game_sessions")
           .select("*, player1:squid_players!player1_id(telegram_id, first_name)")
           .eq("status", "waiting")
-          .eq("game_type", "squid_pvp");
+          .eq("game_type", "buckshot_roulette");
           
         const session = sessions?.find((s: any) => {
           const gameData = s.game_data as any;
@@ -3055,7 +2337,7 @@ serve(async (req) => {
           mediaType = 'animation';
         }
 
-        const commandText = (hasPhoto || hasVideo || hasAnimation) ? (update.message?.caption || "") : text;
+        const commandText = (hasPhoto || hasVideo || hasAnimation) ? (update.message?.caption || "") : (text || "");
         const args = commandText.replace("/dep_all ", "").trim();
         const firstSpace = args.indexOf(" ");
 
@@ -4278,7 +3560,7 @@ serve(async (req) => {
         }
 
         // Use caption if media attached, otherwise use text
-        const commandText = hasAttachedMedia ? (update.message?.caption || "") : text;
+        const commandText = hasAttachedMedia ? (update.message?.caption || "") : (text || "");
         const args = commandText.replace("/gift_all ", "").trim();
         const firstSpace = args.indexOf(" ");
 
