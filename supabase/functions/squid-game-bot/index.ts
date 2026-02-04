@@ -1529,11 +1529,28 @@ serve(async (req) => {
           .update({ balance: (player1Data?.balance || 0) - session.bet_amount })
           .eq("id", session.player1_id);
           
-        // Initialize game with 3 lives each
+        // Generate shells for Buckshot Roulette: 2-4 live + 2-4 blank = 4-8 total
+        const acceptLiveCount = Math.floor(Math.random() * 3) + 2; // 2-4 боевых
+        const acceptBlankCount = Math.floor(Math.random() * 3) + 2; // 2-4 холостых
+        const acceptShells: ("live" | "blank")[] = [
+          ...Array(acceptLiveCount).fill("live"),
+          ...Array(acceptBlankCount).fill("blank"),
+        ];
+        // Shuffle shells
+        for (let i = acceptShells.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [acceptShells[i], acceptShells[j]] = [acceptShells[j], acceptShells[i]];
+        }
+
+        // Initialize Buckshot Roulette game
         const gameData = {
           player1_hp: 3,
           player2_hp: 3,
           current_turn: "player1",
+          shells: acceptShells,
+          shell_index: 0,
+          initial_live: acceptLiveCount,
+          initial_blank: acceptBlankCount,
           moves: [],
         };
         
@@ -1550,18 +1567,34 @@ serve(async (req) => {
         const player2Name = playerData.first_name;
         const player1TgId = (session.player1 as any).telegram_id;
         
-        // Send interactive buttons to both players
+        const acceptShellInfo = `🔴 Боевых: ${acceptLiveCount} | ⚪ Холостых: ${acceptBlankCount}`;
+        const acceptGameInfo = 
+          `🔫 <b>РУССКАЯ РУЛЕТКА</b>\n\n` +
+          `👤 ${player1Name} VS ${player2Name}\n` +
+          `💰 Ставка: ${session.bet_amount.toLocaleString()} монет\n\n` +
+          `📦 В барабане ${acceptShells.length} патронов:\n${acceptShellInfo}\n\n` +
+          `❤️ Твоё HP: ${gameData.player1_hp}\n` +
+          `❤️ HP противника: ${gameData.player2_hp}`;
+
+        // Send to player1 (their turn first)
         await sendMessage(
           player1TgId,
-          `⚔️ <b>Игра началась!</b>\n\nТы против ${player2Name}\nСтавка: ${session.bet_amount} монет\n\n❤️ Твоё HP: ${gameData.player1_hp}\n❤️ HP противника: ${gameData.player2_hp}\n\n🎯 <b>Твой ход!</b>`,
+          acceptGameInfo + `\n\n🎯 <b>Твой ход! Выбери действие:</b>`,
           {
-            inline_keyboard: [[{ text: "⚔️ Ударить", callback_data: `squid_attack_${session.id}_p1` }]],
+            inline_keyboard: [
+              [
+                { text: "🔫 Стрелять в себя", callback_data: `br_shoot_self_${session.id}_p1_u${player1TgId}` },
+                { text: "💀 Стрелять в противника", callback_data: `br_shoot_enemy_${session.id}_p1_u${player1TgId}` },
+              ],
+            ],
           },
         );
         
         await sendMessage(
           chat.id,
-          `⚔️ <b>Игра началась!</b>\n\nТы против ${player1Name}\nСтавка: ${session.bet_amount} монет\n\n❤️ Твоё HP: ${gameData.player2_hp}\n❤️ HP противника: ${gameData.player1_hp}\n\n⏳ Ожидание хода противника...`,
+          acceptGameInfo.replace(`❤️ Твоё HP: ${gameData.player1_hp}`, `❤️ HP ${player1Name}: ${gameData.player1_hp}`)
+            .replace(`❤️ HP противника: ${gameData.player2_hp}`, `❤️ HP ${player2Name}: ${gameData.player2_hp}`) +
+          `\n\n⏳ Ход игрока ${player1Name}...`,
         );
       } else if (text === "/decline") {
         // Decline challenge
