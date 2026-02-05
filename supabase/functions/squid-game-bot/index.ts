@@ -171,6 +171,53 @@ async function sendMediaByFileId(chatId: number, fileId: string, mediaType: 'pho
   }
 }
 
+// Function to set bot commands for autocomplete
+async function setBotCommands() {
+  const commands = [
+    { command: "start", description: "🎮 Начать игру" },
+    { command: "help", description: "📋 Список всех команд" },
+    { command: "balance", description: "💰 Проверить баланс" },
+    { command: "profile", description: "👤 Твой профиль" },
+    { command: "daily", description: "🎁 Ежедневный бонус" },
+    { command: "casino", description: "🎰 Открыть веб-казино" },
+    { command: "challenge", description: "🔫 Русская рулетка (PvP)" },
+    { command: "roulette", description: "🎲 Казино рулетка" },
+    { command: "shop", description: "🛒 Магазин префиксов" },
+    { command: "case", description: "📦 Магазин кейсов" },
+    { command: "promo", description: "🎟 Активировать промокод" },
+    { command: "pay", description: "💸 Перевести монеты игроку" },
+    { command: "rob", description: "🔪 Ограбить игрока" },
+    { command: "top", description: "🏆 Топ игроков в чате" },
+    { command: "topworld", description: "🌍 Топ игроков глобально" },
+    { command: "ref", description: "🔗 Реферальная ссылка" },
+    { command: "top_ref", description: "📊 Топ рефералов" },
+    { command: "gift_open", description: "🎁 Открыть подарок" },
+    { command: "business_shop", description: "🏭 Магазин бизнесов" },
+    { command: "my_buss", description: "📈 Мои бизнесы" },
+    { command: "collect", description: "💵 Собрать прибыль" },
+    { command: "si", description: "🔍 Искать предметы" },
+    { command: "items", description: "🎒 Инвентарь" },
+    { command: "sell", description: "💎 Продать предмет" },
+    { command: "clan", description: "🏰 Информация о клане" },
+    { command: "clans", description: "🏆 Топ кланов" },
+    { command: "clan_create", description: "⚔️ Создать клан" },
+    { command: "clan_join", description: "🚪 Вступить в клан" },
+    { command: "clan_leave", description: "🚶 Покинуть клан" },
+    { command: "donate", description: "⭐ Премиум и донат" },
+  ];
+
+  try {
+    await fetch(`${TELEGRAM_API}/setMyCommands`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ commands }),
+    });
+    console.log("Bot commands set successfully");
+  } catch (error) {
+    console.error("Error setting bot commands:", error);
+  }
+}
+
 async function editMessage(chatId: number, messageId: number, text: string, replyMarkup?: any) {
   const body: any = { chat_id: chatId, message_id: messageId, text, parse_mode: "HTML" };
   if (replyMarkup) body.reply_markup = replyMarkup;
@@ -1201,6 +1248,9 @@ serve(async (req) => {
       }
 
       if (text === "/start" || text.startsWith("/start ")) {
+        // Set bot commands for autocomplete menu
+        await setBotCommands();
+        
         const { data: player } = await supabaseClient
           .from("squid_players")
           .select("balance, telegram_id, referral_count, gift_count")
@@ -1233,7 +1283,7 @@ serve(async (req) => {
       } else if (text === "/help") {
         await sendMessage(
           chat.id,
-          `📋 <b>Список команд</b>\n\n<b>🎮 Игры:</b>\n🍬 Dalgona Challenge - вырезай фигурки из печенья\n🌉 Стеклянный мост - пройди по опасному мосту\n🔫 Русская Рулетка (PvP) - дуэль с дробовиком\n\n<b>⚔️ Дуэли (Русская Рулетка):</b>\n/challenge [ставка] - ответь на сообщение игрока\n/challenge [ID] [ставка] - вызов по ID\nИнлайн-кнопки для принятия/отказа\nРаботает в беседах и ЛС!\n\n<b>💰 Команды:</b>\n/balance - проверить баланс\n/profile - твой профиль\n/daily - получить ежедневный бонус\n/bp - ежедневный бонус (10k-100k монет)\n/promo [код] - использовать промокод\n/pay [ID] [сумма] - перевести монеты игроку\n/rob - ограбить игрока (раз в час)\n/top - топ 10 богатых игроков в чате\n/topworld - топ 10 богатых игроков глобально\n/shop - магазин префиксов\n/case - магазин кейсов\n/donate - премиум и донат\n\n<b>🔗 Рефералы:</b>\n/ref - твоя реферальная ссылка\n/top_ref - топ 10 по рефералам\n/gift_open - открыть подарок\n\n<b>🏭 Бизнес:</b>\n/business_shop - магазин бизнесов\n/my_buss - мои бизнесы и улучшения\n/collect - собрать прибыль (макс. 1 час)\n\n<b>📦 Предметы:</b>\n/si - искать предметы (раз в час)\n/items - показать инвентарь\n/sell [номер] - продать предмет\n/sell all - продать все предметы\n\n<b>🏰 Кланы:</b>\n/clan - информация о твоём клане\n/clans - список топ кланов\n/clan_create [название] - создать клан (500k)\n/clan_join [название] - вступить в клан\n/clan_leave - покинуть клан\n/clan_delete - удалить свой клан\n\n<b>🎲 Казино:</b>\n/casino - открыть веб-казино (Кейсы тоже тут!)\n🎰 Рулетка • 💣 Мины • 🪜 Лестница • 🎁 Джекпот • 🚀 Краш • 📦 Кейсы\n/roulette [цвет] [ставка] - сыграть в рулетку\nЦвета: red, black, green\n\n<b>ℹ️ Помощь:</b>\n/help - список всех команд`,
+          `📋 <b>Список команд</b>\n\n<b>🎮 Игры:</b>\n🍬 Dalgona Challenge - вырезай фигурки из печенья\n🌉 Стеклянный мост - пройди по опасному мосту\n🔫 Русская Рулетка (PvP) - дуэль с дробовиком\n\n<b>⚔️ Дуэли (Русская Рулетка):</b>\n/challenge [ставка] - ответь на сообщение игрока\n/challenge [ID] [ставка] - вызов по ID\nИнлайн-кнопки для принятия/отказа\nРаботает в беседах и ЛС!\n\n<b>💰 Команды:</b>\n/balance - проверить баланс\n/profile - твой профиль\n/daily - получить ежедневный бонус\n/promo [код] - использовать промокод\n/pay [ID] [сумма] - перевести монеты игроку\n/rob - ограбить игрока (раз в час)\n/top - топ 10 богатых игроков в чате\n/topworld - топ 10 богатых игроков глобально\n/shop - магазин префиксов\n/case - магазин кейсов\n/donate - премиум и донат\n\n<b>🔗 Рефералы:</b>\n/ref - твоя реферальная ссылка\n/top_ref - топ 10 по рефералам\n/gift_open - открыть подарок\n\n<b>🏭 Бизнес:</b>\n/business_shop - магазин бизнесов\n/my_buss - мои бизнесы и улучшения\n/collect - собрать прибыль (макс. 1 час)\n\n<b>📦 Предметы:</b>\n/si - искать предметы (раз в час)\n/items - показать инвентарь\n/sell [номер] - продать предмет\n/sell all - продать все предметы\n\n<b>🏰 Кланы:</b>\n/clan - информация о твоём клане\n/clans - список топ кланов\n/clan_create [название] - создать клан (500k)\n/clan_join [название] - вступить в клан\n/clan_leave - покинуть клан\n/clan_delete - удалить свой клан\n\n<b>🎲 Казино:</b>\n/casino - открыть веб-казино (Кейсы тоже тут!)\n🎰 Рулетка • 💣 Мины • 🪜 Лестница • 🎁 Джекпот • 🚀 Краш • 📦 Кейсы\n/roulette [цвет] [ставка] - сыграть в рулетку\nЦвета: red, black, green\n\n<b>ℹ️ Помощь:</b>\n/help - список всех команд`,
         );
       } else if (text === "/daily") {
         const { data: player } = await supabaseClient
@@ -3993,86 +4043,6 @@ serve(async (req) => {
           chat.id,
           "🟢 <b>Бот включён!</b>\n\nБот теперь доступен для всех пользователей."
         );
-      } else if (text === "/bp") {
-        // New Year daily bonus command
-        const { data: player } = await supabaseClient
-          .from("squid_players")
-          .select("id, balance, last_bp_claim, gift_count")
-          .eq("telegram_id", from.id)
-          .single();
-
-        if (!player) {
-          await sendMessage(chat.id, "❌ Игрок не найден. Используй /start");
-          return new Response("OK", { headers: corsHeaders });
-        }
-
-        const now = new Date();
-        const lastClaim = player.last_bp_claim ? new Date(player.last_bp_claim) : null;
-        
-        // Check if already claimed today
-        if (lastClaim) {
-          const lastClaimDate = new Date(lastClaim.getFullYear(), lastClaim.getMonth(), lastClaim.getDate());
-          const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-          
-          if (lastClaimDate.getTime() === todayDate.getTime()) {
-            const tomorrow = new Date(todayDate);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            const hoursLeft = Math.ceil((tomorrow.getTime() - now.getTime()) / (1000 * 60 * 60));
-            
-            await sendMessage(
-              chat.id,
-              `⏰ <b>Ты уже получил бонус сегодня!</b>\n\nПриходи завтра через ${hoursLeft} ${hoursLeft === 1 ? "час" : hoursLeft < 5 ? "часа" : "часов"}.`
-            );
-            return new Response("OK", { headers: corsHeaders });
-          }
-        }
-
-        // Check if it's January 1st (New Year)
-        const isNewYear = now.getMonth() === 0 && now.getDate() === 1;
-        
-        if (isNewYear) {
-          // New Year special bonus - 20 gifts
-          const newGiftCount = (player.gift_count || 0) + 20;
-          
-          await supabaseClient
-            .from("squid_players")
-            .update({ 
-              gift_count: newGiftCount,
-              last_bp_claim: now.toISOString()
-            })
-            .eq("id", player.id);
-
-          await sendMessage(
-            chat.id,
-            `🎄 <b>С НОВЫМ ГОДОМ!</b> 🎄\n\n` +
-              `🎁 Тебе начислено: <b>20 подарков!</b>\n\n` +
-              `📢 Друзья, поздравляю вас с Новым годом, желаю вам только всего наилучшего, ` +
-              `пусть в следующем году ваши мечты и желания исполнятся все до единого. ` +
-              `Заберите все хорошее в этот год, а плохое оставьте в прошлом, с уважением squid game, by @COKPYIIIEHUE\n\n` +
-              `🎁 Всего подарков: ${newGiftCount}\n` +
-              `Открой их: /gift_open`
-          );
-        } else {
-          // Regular daily bonus - 10000 to 100000 coins
-          const bonusAmount = Math.floor(Math.random() * 90001) + 10000; // 10000 to 100000
-          const newBalance = (player.balance || 0) + bonusAmount;
-          
-          await supabaseClient
-            .from("squid_players")
-            .update({ 
-              balance: newBalance,
-              last_bp_claim: now.toISOString()
-            })
-            .eq("id", player.id);
-
-          await sendMessage(
-            chat.id,
-            `🎁 <b>Ежедневный бонус!</b>\n\n` +
-              `💰 Ты получил: <b>+${bonusAmount.toLocaleString()} монет!</b>\n\n` +
-              `💵 Новый баланс: ${newBalance.toLocaleString()} монет\n\n` +
-              `Приходи завтра за новым бонусом! 🎉`
-          );
-        }
       }
     }
 
