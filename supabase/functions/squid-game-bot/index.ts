@@ -174,36 +174,35 @@ async function sendMediaByFileId(chatId: number, fileId: string, mediaType: 'pho
 // Function to set bot commands for autocomplete
 async function setBotCommands() {
   const commands = [
-    { command: "start", description: "🎮 Начать игру" },
-    { command: "help", description: "📋 Список всех команд" },
-    { command: "balance", description: "💰 Проверить баланс" },
-    { command: "profile", description: "👤 Твой профиль" },
-    { command: "daily", description: "🎁 Ежедневный бонус" },
-    { command: "casino", description: "🎰 Открыть веб-казино" },
-    { command: "challenge", description: "🔫 Русская рулетка (PvP)" },
-    { command: "roulette", description: "🎲 Казино рулетка" },
-    { command: "shop", description: "🛒 Магазин префиксов" },
-    { command: "case", description: "📦 Магазин кейсов" },
-    { command: "promo", description: "🎟 Активировать промокод" },
-    { command: "pay", description: "💸 Перевести монеты игроку" },
-    { command: "rob", description: "🔪 Ограбить игрока" },
-    { command: "top", description: "🏆 Топ игроков в чате" },
-    { command: "topworld", description: "🌍 Топ игроков глобально" },
+    { command: "help", description: "📋 Команды" },
+    { command: "profile", description: "👤 Профиль" },
+    { command: "shop", description: "🛒 Магазин" },
+    { command: "casino", description: "🎰 Казино" },
+    { command: "challenge", description: "🔫 Русская рулетка" },
+    { command: "top", description: "🏆 Топ игроков" },
+    { command: "daily", description: "🎁 Бонус" },
+    { command: "donate", description: "⭐ Премиум" },
     { command: "ref", description: "🔗 Реферальная ссылка" },
+    { command: "balance", description: "💰 Баланс" },
+    { command: "promo", description: "🎟 Промокод" },
+    { command: "pay", description: "💸 Перевод" },
+    { command: "rob", description: "🔪 Ограбить" },
+    { command: "topworld", description: "🌍 Мировой топ" },
     { command: "top_ref", description: "📊 Топ рефералов" },
     { command: "gift_open", description: "🎁 Открыть подарок" },
-    { command: "business_shop", description: "🏭 Магазин бизнесов" },
+    { command: "business_shop", description: "🏭 Бизнесы" },
     { command: "my_buss", description: "📈 Мои бизнесы" },
     { command: "collect", description: "💵 Собрать прибыль" },
-    { command: "si", description: "🔍 Искать предметы" },
+    { command: "si", description: "🔍 Поиск предметов" },
     { command: "items", description: "🎒 Инвентарь" },
-    { command: "sell", description: "💎 Продать предмет" },
-    { command: "clan", description: "🏰 Информация о клане" },
+    { command: "sell", description: "💎 Продать" },
+    { command: "case", description: "📦 Кейсы" },
+    { command: "clan", description: "🏰 Клан" },
     { command: "clans", description: "🏆 Топ кланов" },
     { command: "clan_create", description: "⚔️ Создать клан" },
-    { command: "clan_join", description: "🚪 Вступить в клан" },
+    { command: "clan_join", description: "🚪 Вступить" },
     { command: "clan_leave", description: "🚶 Покинуть клан" },
-    { command: "donate", description: "⭐ Премиум и донат" },
+    { command: "roulette", description: "🎲 Рулетка" },
   ];
 
   try {
@@ -1189,6 +1188,242 @@ serve(async (req) => {
             );
           }
         }
+      } else if (data === "open_casino") {
+        await sendMessage(
+          chatId,
+          `🎰 <b>Веб-казино</b>\n\n🎡 Рулетка • 💣 Мины • 🪜 Лестница • 🎁 Джекпот • 📦 Кейсы\n\nНажми кнопку чтобы открыть:`,
+          {
+            inline_keyboard: [
+              [{ text: "🎮 Открыть казино", web_app: { url: "https://punelittley.github.io/fashion-nest-creator/casino/" } }],
+            ],
+          },
+        );
+      } else if (data === "main_menu") {
+        await editMessage(
+          chatId,
+          message!.message_id,
+          `🦑 <b>Squid Game Bot</b>\n\n🎮 Выбери игру или используй /profile для просмотра профиля:`,
+          {
+            inline_keyboard: [
+              [{ text: "🍬 Dalgona Challenge", callback_data: "play_dalgona" }],
+              [{ text: "🌉 Стеклянный мост", callback_data: "play_glass_bridge" }],
+              [{ text: "🔫 Русская рулетка (PvP)", callback_data: "play_squid_pvp" }],
+              [{ text: "👤 Мой профиль", callback_data: "profile" }],
+              [{ text: "🎰 Казино", callback_data: "open_casino" }],
+            ],
+          },
+        );
+      } else if (data === "profile") {
+        // Full profile via callback
+        const { data: player } = await supabaseClient
+          .from("squid_players")
+          .select("*")
+          .eq("telegram_id", from.id)
+          .single();
+
+        if (!player) {
+          await answerCallbackQuery(callbackId, "Профиль не найден");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const { data: clanMember } = await supabaseClient
+          .from("squid_clan_members")
+          .select("clan:squid_clans(name)")
+          .eq("player_id", player.id)
+          .single();
+
+        const { data: businesses } = await supabaseClient
+          .from("squid_player_businesses")
+          .select("business_type, upgrade_level")
+          .eq("player_id", player.id);
+
+        const { count: itemsCount } = await supabaseClient
+          .from("squid_player_items")
+          .select("*", { count: "exact", head: true })
+          .eq("player_id", player.id);
+
+        const businessNames: Record<string, string> = {
+          mask_factory: "🏭 Фабрика масок",
+          vip_casino: "🎰 VIP Казино",
+        };
+
+        const businessList = businesses?.length
+          ? businesses.map((b) => `${businessNames[b.business_type] || b.business_type} (ур. ${b.upgrade_level})`).join("\n")
+          : "Нет бизнесов";
+
+        const clanName = (clanMember?.clan as any)?.name || "Нет клана";
+        const prefix = player.prefix || "Нет";
+        const isPremium = player.is_premium && player.premium_expires_at && new Date(player.premium_expires_at) > new Date();
+
+        const profileText = 
+          `👤 <b>ПРОФИЛЬ</b>\n\n` +
+          `┌ 🆔 ID: <code>${player.telegram_id}</code>\n` +
+          `├ 📛 Имя: ${player.first_name || "Игрок"}\n` +
+          `├ 🏷 Префикс: ${prefix}\n` +
+          `├ ⭐ Премиум: ${isPremium ? "✅ Активен" : "❌ Нет"}\n` +
+          `└ 🏰 Клан: ${clanName}\n\n` +
+          `💰 <b>ЭКОНОМИКА</b>\n` +
+          `┌ 💵 Баланс: ${(player.balance || 0).toLocaleString()} монет\n` +
+          `├ 🎁 Подарков: ${player.gift_count || 0}\n` +
+          `├ 👥 Рефералов: ${player.referral_count || 0}\n` +
+          `└ 🎒 Предметов: ${itemsCount || 0}\n\n` +
+          `📊 <b>СТАТИСТИКА</b>\n` +
+          `┌ ✅ Выиграно: ${(player.total_wins || 0).toLocaleString()} монет\n` +
+          `└ ❌ Проиграно: ${(player.total_losses || 0).toLocaleString()} монет\n\n` +
+          `🏭 <b>БИЗНЕСЫ</b>\n${businessList}\n\n` +
+          `📅 Регистрация: ${new Date(player.created_at || "").toLocaleDateString("ru-RU")}`;
+
+        await editMessage(
+          chatId,
+          message!.message_id,
+          profileText,
+          {
+            inline_keyboard: [
+              [
+                { text: "🎰 Казино", callback_data: "open_casino" },
+                { text: "🛒 Магазин", callback_data: "shop_menu" },
+              ],
+              [
+                { text: "🎒 Инвентарь", callback_data: "show_items" },
+                { text: "🏭 Бизнесы", callback_data: "show_businesses" },
+              ],
+              [{ text: "⬅️ Главное меню", callback_data: "main_menu" }],
+            ],
+          },
+        );
+      } else if (data === "shop_menu") {
+        await editMessage(
+          chatId,
+          message!.message_id,
+          `🛒 <b>Магазин</b>\n\nВыбери раздел:`,
+          {
+            inline_keyboard: [
+              [{ text: "🏷 Префиксы", callback_data: `shop_prefixes_u${from.id}` }],
+              [{ text: "📦 Кейсы", callback_data: "open_casino" }],
+              [{ text: "🏭 Бизнесы", callback_data: "show_businesses" }],
+              [{ text: "⬅️ Назад", callback_data: "profile" }],
+            ],
+          },
+        );
+      } else if (data === "show_items") {
+        const { data: player } = await supabaseClient
+          .from("squid_players")
+          .select("id")
+          .eq("telegram_id", from.id)
+          .single();
+
+        if (!player) {
+          await answerCallbackQuery(callbackId, "Игрок не найден");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const { data: items } = await supabaseClient
+          .from("squid_player_items")
+          .select("*")
+          .eq("player_id", player.id)
+          .order("created_at", { ascending: false })
+          .limit(20);
+
+        if (!items || items.length === 0) {
+          await editMessage(
+            chatId,
+            message!.message_id,
+            `🎒 <b>Инвентарь</b>\n\n📭 Инвентарь пуст.\n\nИспользуй /si для поиска предметов или открой кейсы в казино.`,
+            {
+              inline_keyboard: [
+                [{ text: "🎰 Казино", callback_data: "open_casino" }],
+                [{ text: "⬅️ Назад", callback_data: "profile" }],
+              ],
+            },
+          );
+        } else {
+          const itemsList = items.map((item, i) => `${i + 1}. ${item.item_icon || "📦"} ${item.item_name} - ${item.sell_price.toLocaleString()} монет`).join("\n");
+          await editMessage(
+            chatId,
+            message!.message_id,
+            `🎒 <b>Инвентарь</b>\n\n${itemsList}\n\nИспользуй /sell [номер] для продажи`,
+            {
+              inline_keyboard: [
+                [{ text: "💰 Продать всё", callback_data: `sell_all_items_u${from.id}` }],
+                [{ text: "⬅️ Назад", callback_data: "profile" }],
+              ],
+            },
+          );
+        }
+      } else if (data === "show_businesses") {
+        const { data: player } = await supabaseClient
+          .from("squid_players")
+          .select("id, balance")
+          .eq("telegram_id", from.id)
+          .single();
+
+        if (!player) {
+          await answerCallbackQuery(callbackId, "Игрок не найден");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const { data: businesses } = await supabaseClient
+          .from("squid_player_businesses")
+          .select("*")
+          .eq("player_id", player.id);
+
+        const businessNames: Record<string, string> = {
+          mask_factory: "🏭 Фабрика масок",
+          vip_casino: "🎰 VIP Казино",
+        };
+        const businessIncomes: Record<string, number> = {
+          mask_factory: 5000,
+          vip_casino: 15000,
+        };
+
+        let businessText = `🏭 <b>Бизнесы</b>\n\n💰 Баланс: ${player.balance.toLocaleString()} монет\n\n`;
+
+        if (!businesses || businesses.length === 0) {
+          businessText += `У тебя нет бизнесов.\n\n<b>Доступные бизнесы:</b>\n🏭 Фабрика масок - 200,000 монет (5,000/час)\n🎰 VIP Казино - 500,000 монет (15,000/час)`;
+        } else {
+          businesses.forEach((b) => {
+            const baseIncome = businessIncomes[b.business_type] || 5000;
+            const income = baseIncome * b.upgrade_level;
+            businessText += `${businessNames[b.business_type] || b.business_type}\nУровень: ${b.upgrade_level} | Доход: ${income.toLocaleString()}/час\n\n`;
+          });
+        }
+
+        await editMessage(
+          chatId,
+          message!.message_id,
+          businessText,
+          {
+            inline_keyboard: [
+              [{ text: "🛒 Магазин бизнесов", callback_data: `business_shop_u${from.id}` }],
+              [{ text: "💵 Собрать прибыль", callback_data: `collect_profit_u${from.id}` }],
+              [{ text: "⬅️ Назад", callback_data: "profile" }],
+            ],
+          },
+        );
+      } else if (data === "show_ref") {
+        const { data: player } = await supabaseClient
+          .from("squid_players")
+          .select("telegram_id, referral_count, gift_count")
+          .eq("telegram_id", from.id)
+          .single();
+
+        if (!player) {
+          await answerCallbackQuery(callbackId, "Игрок не найден");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const refLink = `https://t.me/squid_roulette_bot?start=ref_${player.telegram_id}`;
+        await editMessage(
+          chatId,
+          message!.message_id,
+          `🔗 <b>Реферальная программа</b>\n\n👥 Приведено рефералов: ${player.referral_count || 0}\n🎁 Получено подарков: ${player.gift_count || 0}\n\n<b>Твоя ссылка:</b>\n<code>${refLink}</code>\n\nЗа каждого приглашённого ты получишь 🎁 подарок!`,
+          {
+            inline_keyboard: [
+              [{ text: "🎁 Открыть подарок", callback_data: `open_gift_u${from.id}` }],
+              [{ text: "⬅️ Назад", callback_data: "profile" }],
+            ],
+          },
+        );
       }
     }
 
@@ -1251,21 +1486,97 @@ serve(async (req) => {
         // Set bot commands for autocomplete menu
         await setBotCommands();
         
-        const { data: player } = await supabaseClient
-          .from("squid_players")
-          .select("balance, telegram_id, referral_count, gift_count")
-          .eq("telegram_id", from.id)
-          .single();
-
+        // Welcome message with game selection
         await sendMessage(
           chat.id,
-          `🦑 <b>Добро пожаловать в Squid Game Bot!</b>\n\n💰 Твой баланс: ${player?.balance || 0} монет\n🆔 Твой ID: ${player?.telegram_id}\n👥 Рефералов: ${player?.referral_count || 0}\n🎁 Подарков: ${player?.gift_count || 0}\n\n<b>📋 Команды:</b>\n/help - список всех команд\n/ref - твоя реферальная ссылка\n/gift_open - открыть подарок\n/top - топ богатых игроков\n/daily - ежедневный бонус\n\nВыбери игру:`,
+          `🦑 <b>Добро пожаловать в Squid Game Bot!</b>\n\n🎮 Выбери игру или используй /profile для просмотра профиля:`,
           {
             inline_keyboard: [
               [{ text: "🍬 Dalgona Challenge", callback_data: "play_dalgona" }],
               [{ text: "🌉 Стеклянный мост", callback_data: "play_glass_bridge" }],
               [{ text: "🔫 Русская рулетка (PvP)", callback_data: "play_squid_pvp" }],
               [{ text: "👤 Мой профиль", callback_data: "profile" }],
+              [{ text: "🎰 Казино", callback_data: "open_casino" }],
+            ],
+          },
+        );
+      } else if (text === "/profile") {
+        // Full profile with all user info
+        const { data: player } = await supabaseClient
+          .from("squid_players")
+          .select("*")
+          .eq("telegram_id", from.id)
+          .single();
+
+        if (!player) {
+          await sendMessage(chat.id, "❌ Профиль не найден. Используй /start");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        // Get clan info
+        const { data: clanMember } = await supabaseClient
+          .from("squid_clan_members")
+          .select("clan:squid_clans(name)")
+          .eq("player_id", player.id)
+          .single();
+
+        // Get businesses
+        const { data: businesses } = await supabaseClient
+          .from("squid_player_businesses")
+          .select("business_type, upgrade_level")
+          .eq("player_id", player.id);
+
+        // Get items count
+        const { count: itemsCount } = await supabaseClient
+          .from("squid_player_items")
+          .select("*", { count: "exact", head: true })
+          .eq("player_id", player.id);
+
+        const businessNames: Record<string, string> = {
+          mask_factory: "🏭 Фабрика масок",
+          vip_casino: "🎰 VIP Казино",
+        };
+
+        const businessList = businesses?.length
+          ? businesses.map((b) => `${businessNames[b.business_type] || b.business_type} (ур. ${b.upgrade_level})`).join("\n")
+          : "Нет бизнесов";
+
+        const clanName = (clanMember?.clan as any)?.name || "Нет клана";
+        const prefix = player.prefix || "Нет";
+        const isPremium = player.is_premium && player.premium_expires_at && new Date(player.premium_expires_at) > new Date();
+
+        const profileText = 
+          `👤 <b>ПРОФИЛЬ</b>\n\n` +
+          `┌ 🆔 ID: <code>${player.telegram_id}</code>\n` +
+          `├ 📛 Имя: ${player.first_name || "Игрок"}\n` +
+          `├ 🏷 Префикс: ${prefix}\n` +
+          `├ ⭐ Премиум: ${isPremium ? "✅ Активен" : "❌ Нет"}\n` +
+          `└ 🏰 Клан: ${clanName}\n\n` +
+          `💰 <b>ЭКОНОМИКА</b>\n` +
+          `┌ 💵 Баланс: ${(player.balance || 0).toLocaleString()} монет\n` +
+          `├ 🎁 Подарков: ${player.gift_count || 0}\n` +
+          `├ 👥 Рефералов: ${player.referral_count || 0}\n` +
+          `└ 🎒 Предметов: ${itemsCount || 0}\n\n` +
+          `📊 <b>СТАТИСТИКА</b>\n` +
+          `┌ ✅ Выиграно: ${(player.total_wins || 0).toLocaleString()} монет\n` +
+          `└ ❌ Проиграно: ${(player.total_losses || 0).toLocaleString()} монет\n\n` +
+          `🏭 <b>БИЗНЕСЫ</b>\n${businessList}\n\n` +
+          `📅 Регистрация: ${new Date(player.created_at || "").toLocaleDateString("ru-RU")}`;
+
+        await sendMessage(
+          chat.id,
+          profileText,
+          {
+            inline_keyboard: [
+              [
+                { text: "🎰 Казино", callback_data: "open_casino" },
+                { text: "🛒 Магазин", callback_data: "shop_menu" },
+              ],
+              [
+                { text: "🎒 Инвентарь", callback_data: "show_items" },
+                { text: "🏭 Бизнесы", callback_data: "show_businesses" },
+              ],
+              [{ text: "🔗 Реферальная ссылка", callback_data: "show_ref" }],
             ],
           },
         );
