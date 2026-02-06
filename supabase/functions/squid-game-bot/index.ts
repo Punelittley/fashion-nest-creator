@@ -196,6 +196,9 @@ async function setBotCommands() {
     { command: "si", description: "🔍 Поиск предметов" },
     { command: "items", description: "🎒 Инвентарь" },
     { command: "sell", description: "💎 Продать" },
+    { command: "market", description: "🏪 Биржа предметов" },
+    { command: "sell_market", description: "📤 Выставить на биржу" },
+    { command: "my_listings", description: "📋 Мои лоты" },
     { command: "case", description: "📦 Кейсы" },
     { command: "clan", description: "🏰 Клан" },
     { command: "clans", description: "🏆 Топ кланов" },
@@ -927,7 +930,9 @@ serve(async (req) => {
           [shells[i], shells[j]] = [shells[j], shells[i]];
         }
 
-        // Initialize Buckshot Roulette game
+        // Initialize Buckshot Roulette game - preserve game_chat_id
+        const prevGameData = session.game_data as any;
+        const gameChatId = prevGameData?.game_chat_id || chatId;
         const gameData = {
           player1_hp: 3,
           player2_hp: 3,
@@ -937,6 +942,9 @@ serve(async (req) => {
           initial_live: liveCount,
           initial_blank: blankCount,
           moves: [],
+          game_chat_id: gameChatId,
+          player1_telegram_id: player1TgId,
+          player2_telegram_id: from.id,
         };
 
         await supabaseClient
@@ -958,13 +966,14 @@ serve(async (req) => {
           `👤 ${player1Name} VS ${player2Name}\n` +
           `💰 Ставка: ${session.bet_amount.toLocaleString()} монет\n\n` +
           `📦 В барабане ${shells.length} патронов:\n${shellInfo}\n\n` +
-          `❤️ Твоё HP: ${gameData.player1_hp}\n` +
-          `❤️ HP противника: ${gameData.player2_hp}`;
+          `❤️ HP ${player1Name}: ${gameData.player1_hp}\n` +
+          `❤️ HP ${player2Name}: ${gameData.player2_hp}`;
 
-        // Send to player1 (their turn first)
-        await sendMessage(
-          player1TgId,
-          gameInfo + `\n\n🎯 <b>Твой ход! Выбери действие:</b>`,
+        // Send game message with buttons in the same chat where the game is happening
+        await editMessage(
+          chatId,
+          message!.message_id,
+          gameInfo + `\n\n🎯 Ход игрока ${player1Name}! Выбери действие:`,
           {
             inline_keyboard: [
               [
@@ -973,15 +982,6 @@ serve(async (req) => {
               ],
             ],
           },
-        );
-
-        // Update the challenge message in chat
-        await editMessage(
-          chatId,
-          message!.message_id,
-          gameInfo.replace(`❤️ Твоё HP: ${gameData.player1_hp}`, `❤️ HP ${player1Name}: ${gameData.player1_hp}`)
-            .replace(`❤️ HP противника: ${gameData.player2_hp}`, `❤️ HP ${player2Name}: ${gameData.player2_hp}`) +
-          `\n\n⏳ Ход игрока ${player1Name}...`,
         );
       } else if (data.startsWith("br_shoot_")) {
         // Buckshot Roulette - shooting logic
@@ -1158,10 +1158,11 @@ serve(async (req) => {
             brShellStatus;
 
           if (brExtraTurn) {
+            // Same player gets another turn - show buttons for them in same chat
             await editMessage(
               chatId,
               message!.message_id,
-              brStatusMsg + `\n\n🎯 <b>Твой ход снова!</b>`,
+              brStatusMsg + `\n\n🎯 Ход игрока ${brPlayerNum === "p1" ? brP1Name : brP2Name} снова!`,
               {
                 inline_keyboard: [
                   [
@@ -1172,11 +1173,11 @@ serve(async (req) => {
               },
             );
           } else {
-            await editMessage(chatId, message!.message_id, brStatusMsg + `\n\n⏳ Ход игрока ${brNextPlayerName}...`);
-
-            await sendMessage(
-              brNextPlayerId,
-              brStatusMsg + `\n\n🎯 <b>Твой ход! Выбери действие:</b>`,
+            // Next player's turn - show buttons for them in same chat
+            await editMessage(
+              chatId,
+              message!.message_id,
+              brStatusMsg + `\n\n🎯 Ход игрока ${brNextPlayerName}!`,
               {
                 inline_keyboard: [
                   [
@@ -1188,6 +1189,49 @@ serve(async (req) => {
             );
           }
         }
+      } else if (data.startsWith("cancel_listing_")) {
+        // Cancel a marketplace listing
+        const listingId = data.split("_u")[0].replace("cancel_listing_", "");
+        
+        const { data: listing } = await supabaseClient
+          .from("squid_item_marketplace")
+          .select("*")
+          .eq("id", listingId)
+          .single();
+
+        if (!listing) {
+          await answerCallbackQuery(callbackId, "Лот не найден или уже продан");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const { data: player } = await supabaseClient
+          .from("squid_players")
+          .select("id")
+          .eq("telegram_id", from.id)
+          .single();
+
+        if (!player || listing.seller_id !== player.id) {
+          await answerCallbackQuery(callbackId, "Это не твой лот!");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        // Return item to inventory
+        await supabaseClient.from("squid_player_items").insert({
+          player_id: player.id,
+          item_name: listing.item_name,
+          item_rarity: listing.item_rarity,
+          item_icon: listing.item_icon,
+          sell_price: Math.floor(listing.price * 0.7),
+        });
+
+        // Remove from marketplace
+        await supabaseClient.from("squid_item_marketplace").delete().eq("id", listingId);
+
+        await editMessage(
+          chatId,
+          message!.message_id,
+          `✅ Лот снят с биржи!\n\n${listing.item_icon || "📦"} ${listing.item_name} возвращён в инвентарь.`,
+        );
       } else if (data === "open_casino") {
         await sendMessage(
           chatId,
@@ -1594,7 +1638,7 @@ serve(async (req) => {
       } else if (text === "/help") {
         await sendMessage(
           chat.id,
-          `📋 <b>Список команд</b>\n\n<b>🎮 Игры:</b>\n🍬 Dalgona Challenge - вырезай фигурки из печенья\n🌉 Стеклянный мост - пройди по опасному мосту\n🔫 Русская Рулетка (PvP) - дуэль с дробовиком\n\n<b>⚔️ Дуэли (Русская Рулетка):</b>\n/challenge [ставка] - ответь на сообщение игрока\n/challenge [ID] [ставка] - вызов по ID\nИнлайн-кнопки для принятия/отказа\nРаботает в беседах и ЛС!\n\n<b>💰 Команды:</b>\n/balance - проверить баланс\n/profile - твой профиль\n/daily - получить ежедневный бонус\n/promo [код] - использовать промокод\n/pay [ID] [сумма] - перевести монеты игроку\n/rob - ограбить игрока (раз в час)\n/top - топ 10 богатых игроков в чате\n/topworld - топ 10 богатых игроков глобально\n/shop - магазин префиксов\n/case - магазин кейсов\n/donate - премиум и донат\n\n<b>🔗 Рефералы:</b>\n/ref - твоя реферальная ссылка\n/top_ref - топ 10 по рефералам\n/gift_open - открыть подарок\n\n<b>🏭 Бизнес:</b>\n/business_shop - магазин бизнесов\n/my_buss - мои бизнесы и улучшения\n/collect - собрать прибыль (макс. 1 час)\n\n<b>📦 Предметы:</b>\n/si - искать предметы (раз в час)\n/items - показать инвентарь\n/sell [номер] - продать предмет\n/sell all - продать все предметы\n\n<b>🏰 Кланы:</b>\n/clan - информация о твоём клане\n/clans - список топ кланов\n/clan_create [название] - создать клан (500k)\n/clan_join [название] - вступить в клан\n/clan_leave - покинуть клан\n/clan_delete - удалить свой клан\n\n<b>🎲 Казино:</b>\n/casino - открыть веб-казино (Кейсы тоже тут!)\n🎰 Рулетка • 💣 Мины • 🪜 Лестница • 🎁 Джекпот • 🚀 Краш • 📦 Кейсы\n/roulette [цвет] [ставка] - сыграть в рулетку\nЦвета: red, black, green\n\n<b>ℹ️ Помощь:</b>\n/help - список всех команд`,
+          `📋 <b>Список команд</b>\n\n<b>🎮 Игры:</b>\n🍬 Dalgona Challenge - вырезай фигурки из печенья\n🌉 Стеклянный мост - пройди по опасному мосту\n🔫 Русская Рулетка (PvP) - дуэль с дробовиком\n\n<b>⚔️ Дуэли (Русская Рулетка):</b>\n/challenge [ставка] - ответь на сообщение игрока\n/challenge [ID] [ставка] - вызов по ID\nИнлайн-кнопки для принятия/отказа\nРаботает в беседах и ЛС!\n\n<b>💰 Команды:</b>\n/balance - проверить баланс\n/profile - твой профиль\n/daily - получить ежедневный бонус\n/promo [код] - использовать промокод\n/pay [ID] [сумма] - перевести монеты игроку\n/rob - ограбить игрока (раз в час)\n/top - топ 10 богатых игроков в чате\n/topworld - топ 10 богатых игроков глобально\n/shop - магазин префиксов\n/case - магазин кейсов\n/donate - премиум и донат\n\n<b>🔗 Рефералы:</b>\n/ref - твоя реферальная ссылка\n/top_ref - топ 10 по рефералам\n/gift_open - открыть подарок\n\n<b>🏭 Бизнес:</b>\n/business_shop - магазин бизнесов\n/my_buss - мои бизнесы и улучшения\n/collect - собрать прибыль (макс. 1 час)\n\n<b>📦 Предметы:</b>\n/si - искать предметы (раз в час)\n/items - показать инвентарь\n/sell [номер] - продать предмет\n/sell all - продать все предметы\n\n<b>🏪 Биржа:</b>\n/market - просмотр биржи\n/sell_market [номер] [цена] - выставить предмет\n/buy_market [номер] - купить с биржи\n/my_listings - мои лоты\n\n<b>🏰 Кланы:</b>\n/clan - информация о твоём клане\n/clans - список топ кланов\n/clan_create [название] - создать клан (500k)\n/clan_join [название] - вступить в клан\n/clan_leave - покинуть клан\n/clan_delete - удалить свой клан\n\n<b>🎲 Казино:</b>\n/casino - открыть веб-казино (Кейсы тоже тут!)\n🎰 Рулетка • 💣 Мины • 🪜 Лестница • 🎁 Джекпот • 🚀 Краш • 📦 Кейсы\n/roulette [цвет] [ставка] - сыграть в рулетку\nЦвета: red, black, green\n\n<b>ℹ️ Помощь:</b>\n/help - список всех команд`,
         );
       } else if (text === "/daily") {
         const { data: player } = await supabaseClient
@@ -1775,7 +1819,7 @@ serve(async (req) => {
           return new Response("OK", { headers: corsHeaders });
         }
 
-        // Create game session
+        // Create game session - store chat_id for group play
         const { data: session, error: sessionError } = await supabaseClient
           .from("squid_game_sessions")
           .insert({
@@ -1783,7 +1827,7 @@ serve(async (req) => {
             game_type: "buckshot_roulette",
             bet_amount: betAmount,
             status: "waiting",
-            game_data: { challenger_telegram_id: from.id, target_telegram_id: targetTelegramId }
+            game_data: { challenger_telegram_id: from.id, target_telegram_id: targetTelegramId, game_chat_id: chat.id }
           })
           .select()
           .single();
@@ -1823,12 +1867,8 @@ serve(async (req) => {
           ],
         };
 
-        // Send to the same chat if it's a group, or to target's DM
-        if (chat.type !== "private") {
-          await sendMessage(chat.id, challengeMessage, challengeButtons);
-        } else {
-          await sendMessage(targetTelegramId, challengeMessage, challengeButtons);
-        }
+        // Always send in same chat (group or private)
+        await sendMessage(chat.id, challengeMessage, challengeButtons);
       } else if (text === "/accept") {
         // Accept challenge by replying to the challenge message
         const replyTo = update.message?.reply_to_message;
@@ -1913,6 +1953,9 @@ serve(async (req) => {
           initial_live: acceptLiveCount,
           initial_blank: acceptBlankCount,
           moves: [],
+          game_chat_id: chat.id,
+          player1_telegram_id: player1TgId,
+          player2_telegram_id: from.id,
         };
         
         await supabaseClient
@@ -1934,13 +1977,13 @@ serve(async (req) => {
           `👤 ${player1Name} VS ${player2Name}\n` +
           `💰 Ставка: ${session.bet_amount.toLocaleString()} монет\n\n` +
           `📦 В барабане ${acceptShells.length} патронов:\n${acceptShellInfo}\n\n` +
-          `❤️ Твоё HP: ${gameData.player1_hp}\n` +
-          `❤️ HP противника: ${gameData.player2_hp}`;
+          `❤️ HP ${player1Name}: ${gameData.player1_hp}\n` +
+          `❤️ HP ${player2Name}: ${gameData.player2_hp}`;
 
-        // Send to player1 (their turn first)
+        // Send game with buttons in the same chat
         await sendMessage(
-          player1TgId,
-          acceptGameInfo + `\n\n🎯 <b>Твой ход! Выбери действие:</b>`,
+          chat.id,
+          acceptGameInfo + `\n\n🎯 Ход игрока ${player1Name}! Выбери действие:`,
           {
             inline_keyboard: [
               [
@@ -1949,13 +1992,6 @@ serve(async (req) => {
               ],
             ],
           },
-        );
-        
-        await sendMessage(
-          chat.id,
-          acceptGameInfo.replace(`❤️ Твоё HP: ${gameData.player1_hp}`, `❤️ HP ${player1Name}: ${gameData.player1_hp}`)
-            .replace(`❤️ HP противника: ${gameData.player2_hp}`, `❤️ HP ${player2Name}: ${gameData.player2_hp}`) +
-          `\n\n⏳ Ход игрока ${player1Name}...`,
         );
       } else if (text === "/decline") {
         // Decline challenge
@@ -3087,27 +3123,33 @@ serve(async (req) => {
         // Random money (0-2000) - reduced
         const moneyFound = Math.floor(Math.random() * 2001);
 
-        // Item drop chances - REDUCED
+        // Item drop chances - REDUCED + Ultramythical
         const itemChance = Math.random() * 100;
-        let itemFound: { name: string; rarity: string; sellPrice: number } | null = null;
+        let itemFound: { name: string; rarity: string; sellPrice: number; icon?: string } | null = null;
 
-        if (itemChance < 0.5) {
+        if (itemChance < 0.05) {
+          // 0.05% - Золотой кубок Создателя (Ультрамифическая)
+          itemFound = { name: "🏆 Золотой кубок Создателя", rarity: "Ультрамифическая", sellPrice: 500000, icon: "🏆" };
+        } else if (itemChance < 0.15) {
+          // 0.1% - Корона 001 (Ультрамифическая)
+          itemFound = { name: "👑 Корона 001", rarity: "Ультрамифическая", sellPrice: 300000, icon: "👑" };
+        } else if (itemChance < 0.65) {
           // 0.5% - Маска Фронтман (Мифическая)
           itemFound = { name: "🎭 Маска Фронтман", rarity: "Мифическая", sellPrice: 25000 };
-        } else if (itemChance < 2.5) {
+        } else if (itemChance < 2.65) {
           // 2% - Карта VIP (Эпическая)
           itemFound = { name: "💳 Карта VIP", rarity: "Эпическая", sellPrice: 9000 };
-        } else if (itemChance < 7.5) {
+        } else if (itemChance < 7.65) {
           // 5% - Маска квадрат (Раритет)
           itemFound = { name: "🟥 Маска квадрат", rarity: "Раритет", sellPrice: 5000 };
-        } else if (itemChance < 17.5) {
+        } else if (itemChance < 17.65) {
           // 10% - Печенька Зонт (Обычная)
           itemFound = { name: "🍪 Печенька Зонт", rarity: "Обычная", sellPrice: 2000 };
-        } else if (itemChance < 25) {
+        } else if (itemChance < 25.15) {
           // 7.5% - Зипка 456 (Обычная)
           itemFound = { name: "🧥 Зипка 456", rarity: "Обычная", sellPrice: 3000 };
         }
-        // 75% - nothing
+        // ~75% - nothing
 
         // Update balance and last claim
         await supabaseClient
@@ -3124,6 +3166,7 @@ serve(async (req) => {
             player_id: player.id,
             item_name: itemFound.name,
             item_rarity: itemFound.rarity,
+            item_icon: itemFound.icon || null,
             sell_price: itemFound.sellPrice,
           });
         }
@@ -3236,6 +3279,213 @@ serve(async (req) => {
           chat.id,
           `✅ <b>Предмет продан!</b>\n\n${itemToSell.item_name}\n💰 Получено: ${itemToSell.sell_price.toLocaleString()} монет\n💵 Новый баланс: ${(player.balance + itemToSell.sell_price).toLocaleString()} монет`,
         );
+      } else if (text === "/market") {
+        // Browse marketplace
+        const { data: listings } = await supabaseClient
+          .from("squid_item_marketplace")
+          .select("*, seller:squid_players!seller_id(first_name, telegram_id)")
+          .order("created_at", { ascending: false })
+          .limit(20);
+
+        if (!listings || listings.length === 0) {
+          await sendMessage(chat.id, "🏪 <b>Биржа предметов</b>\n\n📭 Пока нет лотов на продажу.\n\nВыставь свой предмет: /sell_market [номер] [цена]");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const rarityEmoji: Record<string, string> = {
+          "Ультрамифическая": "🌟",
+          "Мифическая": "🔮",
+          "Эпическая": "💎",
+          "Раритет": "🟣",
+          "Обычная": "⚪",
+        };
+
+        let marketText = "🏪 <b>Биржа предметов</b>\n\n";
+        listings.forEach((listing, index) => {
+          const seller = (listing.seller as any);
+          const rEmoji = rarityEmoji[listing.item_rarity] || "📦";
+          marketText += `${index + 1}. ${listing.item_icon || rEmoji} <b>${listing.item_name}</b>\n`;
+          marketText += `   ${rEmoji} ${listing.item_rarity} | 💰 ${listing.price.toLocaleString()} монет\n`;
+          marketText += `   👤 ${seller?.first_name || "Неизвестно"}\n`;
+          marketText += `   Купить: <code>/buy_market ${index + 1}</code>\n\n`;
+        });
+
+        marketText += "📤 Выставить: /sell_market [номер] [цена]\n📋 Мои лоты: /my_listings";
+
+        // Store listing IDs in a temp way (we'll use index-based lookup)
+        await sendMessage(chat.id, marketText);
+      } else if (text.startsWith("/sell_market ")) {
+        const args = text.split(" ");
+        if (args.length !== 3) {
+          await sendMessage(chat.id, "❌ Формат: /sell_market [номер предмета из /items] [цена]");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const itemIndex = parseInt(args[1]) - 1;
+        const price = parseInt(args[2]);
+
+        if (isNaN(price) || price <= 0) {
+          await sendMessage(chat.id, "❌ Цена должна быть положительным числом!");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const { data: player } = await supabaseClient
+          .from("squid_players")
+          .select("id")
+          .eq("telegram_id", from.id)
+          .single();
+
+        if (!player) {
+          await sendMessage(chat.id, "❌ Игрок не найден.");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const { data: items } = await supabaseClient
+          .from("squid_player_items")
+          .select("*")
+          .eq("player_id", player.id)
+          .order("created_at", { ascending: false });
+
+        if (!items || items.length === 0 || itemIndex < 0 || itemIndex >= items.length) {
+          await sendMessage(chat.id, "❌ Предмет не найден! Используй /items чтобы увидеть список.");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const item = items[itemIndex];
+
+        // Add to marketplace
+        await supabaseClient.from("squid_item_marketplace").insert({
+          item_id: item.id,
+          item_name: item.item_name,
+          item_rarity: item.item_rarity,
+          item_icon: item.item_icon,
+          item_source: "bot",
+          price: price,
+          seller_id: player.id,
+        });
+
+        // Remove from inventory
+        await supabaseClient.from("squid_player_items").delete().eq("id", item.id);
+
+        await sendMessage(
+          chat.id,
+          `✅ <b>Предмет выставлен на биржу!</b>\n\n${item.item_icon || "📦"} ${item.item_name}\n💰 Цена: ${price.toLocaleString()} монет\n\nУбрать с биржи: /my_listings`,
+        );
+      } else if (text.startsWith("/buy_market ")) {
+        const listingIndex = parseInt(text.split(" ")[1]) - 1;
+
+        if (isNaN(listingIndex) || listingIndex < 0) {
+          await sendMessage(chat.id, "❌ Формат: /buy_market [номер из /market]");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const { data: player } = await supabaseClient
+          .from("squid_players")
+          .select("id, balance")
+          .eq("telegram_id", from.id)
+          .single();
+
+        if (!player) {
+          await sendMessage(chat.id, "❌ Игрок не найден.");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const { data: listings } = await supabaseClient
+          .from("squid_item_marketplace")
+          .select("*, seller:squid_players!seller_id(first_name, telegram_id, id, balance)")
+          .order("created_at", { ascending: false })
+          .limit(20);
+
+        if (!listings || listingIndex >= listings.length) {
+          await sendMessage(chat.id, "❌ Лот не найден! Используй /market");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const listing = listings[listingIndex];
+        const seller = listing.seller as any;
+
+        if (seller?.id === player.id) {
+          await sendMessage(chat.id, "❌ Ты не можешь купить свой же предмет!");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        if (player.balance < listing.price) {
+          await sendMessage(chat.id, `❌ Недостаточно монет! Нужно: ${listing.price.toLocaleString()}, у тебя: ${player.balance.toLocaleString()}`);
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        // Transfer money
+        await supabaseClient
+          .from("squid_players")
+          .update({ balance: player.balance - listing.price })
+          .eq("id", player.id);
+
+        await supabaseClient
+          .from("squid_players")
+          .update({ balance: (seller?.balance || 0) + listing.price })
+          .eq("id", seller?.id);
+
+        // Add item to buyer's inventory
+        await supabaseClient.from("squid_player_items").insert({
+          player_id: player.id,
+          item_name: listing.item_name,
+          item_rarity: listing.item_rarity,
+          item_icon: listing.item_icon,
+          sell_price: Math.floor(listing.price * 0.7),
+        });
+
+        // Remove from marketplace
+        await supabaseClient.from("squid_item_marketplace").delete().eq("id", listing.id);
+
+        await sendMessage(
+          chat.id,
+          `✅ <b>Предмет куплен!</b>\n\n${listing.item_icon || "📦"} ${listing.item_name}\n💰 Цена: ${listing.price.toLocaleString()} монет\n💵 Баланс: ${(player.balance - listing.price).toLocaleString()} монет`,
+        );
+
+        // Notify seller
+        if (seller?.telegram_id) {
+          try {
+            await sendMessage(
+              seller.telegram_id,
+              `💰 <b>Твой предмет продан!</b>\n\n${listing.item_icon || "📦"} ${listing.item_name}\n💰 +${listing.price.toLocaleString()} монет`,
+            );
+          } catch (e) { /* seller might have blocked bot */ }
+        }
+      } else if (text === "/my_listings") {
+        const { data: player } = await supabaseClient
+          .from("squid_players")
+          .select("id")
+          .eq("telegram_id", from.id)
+          .single();
+
+        if (!player) {
+          await sendMessage(chat.id, "❌ Игрок не найден.");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        const { data: listings } = await supabaseClient
+          .from("squid_item_marketplace")
+          .select("*")
+          .eq("seller_id", player.id)
+          .order("created_at", { ascending: false });
+
+        if (!listings || listings.length === 0) {
+          await sendMessage(chat.id, "📋 <b>Мои лоты</b>\n\n📭 У тебя нет активных лотов.\n\nВыставь: /sell_market [номер] [цена]");
+          return new Response("OK", { headers: corsHeaders });
+        }
+
+        let listText = "📋 <b>Мои лоты на бирже</b>\n\n";
+        const buttons: any[] = [];
+
+        listings.forEach((listing, index) => {
+          listText += `${index + 1}. ${listing.item_icon || "📦"} ${listing.item_name}\n`;
+          listText += `   💰 ${listing.price.toLocaleString()} монет\n\n`;
+          buttons.push([{ text: `❌ Снять ${listing.item_name}`, callback_data: `cancel_listing_${listing.id}_u${from.id}` }]);
+        });
+
+        await sendMessage(chat.id, listText, {
+          inline_keyboard: buttons,
+        });
       } else if (text === "/business_shop") {
         const { data: player } = await supabaseClient
           .from("squid_players")
@@ -4260,56 +4510,6 @@ serve(async (req) => {
               [{ text: "✨ Кастомный префикс", callback_data: `donate_prefix_u${from.id}` }],
               [{ text: "⬅️ Назад", callback_data: "main_menu" }],
             ],
-          },
-        );
-      } else if (text === "/profile") {
-        const { data: player } = await supabaseClient
-          .from("squid_players")
-          .select("*")
-          .eq("telegram_id", from.id)
-          .single();
-
-        if (!player) {
-          await sendMessage(chat.id, "❌ Игрок не найден. Используй /start");
-          return new Response("OK", { headers: corsHeaders });
-        }
-
-        const prefixText = player.prefix ? `${player.prefix}` : "Нет префикса";
-        const displayName = player.prefix
-          ? `[${player.prefix}] ${player.first_name || from.first_name || "Игрок"}`
-          : player.first_name || from.first_name || "Игрок";
-
-        const ownedPrefixes = player.owned_prefixes || [];
-        const isPremiumActive = player.is_premium && player.premium_expires_at && new Date(player.premium_expires_at) > new Date();
-
-        // Build prefix selection buttons
-        const prefixButtons: any[] = [];
-        if (ownedPrefixes.length > 0) {
-          for (const prefixName of ownedPrefixes) {
-            if (prefixName !== player.prefix) {
-              prefixButtons.push([{ text: `✨ Активировать ${prefixName}`, callback_data: `activate_prefix_${prefixName}_u${from.id}` }]);
-            }
-          }
-        }
-
-        await sendMessage(
-          chat.id,
-          `👤 <b>Профиль: ${displayName}</b>\n\n` +
-            `💰 Баланс: ${(player.balance || 0).toLocaleString()} монет\n` +
-            `👑 Premium: ${isPremiumActive ? "✅ Активен" : "❌ Нет"}\n` +
-            `🏆 Побед: ${player.total_wins || 0}\n` +
-            `💀 Поражений: ${player.total_losses || 0}\n` +
-            `✨ Префикс: ${prefixText}\n` +
-            `📦 Куплено префиксов: ${ownedPrefixes.length}\n` +
-            `👥 Рефералов: ${player.referral_count || 0}\n` +
-            `🎁 Подарков: ${player.gift_count || 0}`,
-          {
-            inline_keyboard: [
-              ...prefixButtons,
-              [{ text: "🛍️ Магазин префиксов", callback_data: `shop_prefixes_u${from.id}` }],
-              player.prefix ? [{ text: "❌ Убрать префикс", callback_data: `remove_prefix_u${from.id}` }] : [],
-              [{ text: "⬅️ Главное меню", callback_data: "main_menu" }],
-            ].filter((row) => row.length > 0),
           },
         );
       } else if (text === "/off") {
