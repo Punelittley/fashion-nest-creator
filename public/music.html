@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIAODQQ | Neural Music</title>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <link rel="stylesheet" href="common-styles.css">
+    <style>
+        .track-card {
+            display: flex; align-items: center; gap: 16px; padding: 16px 20px;
+            border-radius: 20px; transition: 0.3s; cursor: pointer;
+        }
+        .track-card:hover { background: rgba(255,255,255,0.03); }
+        .track-card.playing { background: rgba(139, 92, 246, 0.08); border: 1px solid rgba(139, 92, 246, 0.15); }
+        .track-cover { width: 56px; height: 56px; border-radius: 14px; object-fit: cover; border: 1px solid var(--border); }
+        .progress-bar { height: 6px; background: rgba(255,255,255,0.08); border-radius: 10px; cursor: pointer; position: relative; flex: 1; }
+        .progress-fill { height: 100%; background: var(--accent); border-radius: 10px; width: 0%; transition: width 0.1s; box-shadow: 0 0 10px var(--accent-glow); }
+        .play-btn {
+            width: 64px; height: 64px; border-radius: 50%; background: var(--accent);
+            display: flex; align-items: center; justify-content: center;
+            border: none; cursor: pointer; transition: 0.3s; color: #fff;
+            box-shadow: 0 0 30px var(--accent-glow);
+        }
+        .play-btn:hover { transform: scale(1.1); }
+        .control-btn {
+            width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: 0.3s; color: #fff;
+        }
+        .control-btn:hover { background: rgba(255,255,255,0.1); border-color: var(--accent); }
+        .visualizer-bar { width: 4px; border-radius: 2px; background: var(--accent); animation: vbar 0.5s ease infinite alternate; }
+        @keyframes vbar { from { height: 10px; } to { height: 40px; } }
+        .genre-chip {
+            padding: 10px 24px; border-radius: 100px; font-size: 11px; font-weight: 800;
+            text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: 0.3s;
+            background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: rgba(255,255,255,0.5);
+        }
+        .genre-chip:hover { border-color: var(--accent); color: #fff; }
+        .genre-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 4px 20px var(--accent-glow); }
+        .featured-card {
+            border-radius: 24px; overflow: hidden; position: relative; cursor: pointer; transition: 0.3s;
+            border: 1px solid var(--border);
+        }
+        .featured-card:hover { border-color: var(--accent); transform: translateY(-4px); }
+        .featured-card img { width: 100%; height: 200px; object-fit: cover; }
+        .featured-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 20px; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); }
+        .volume-slider { -webkit-appearance: none; width: 80px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 10px; outline: none; }
+        .volume-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; background: var(--accent); border-radius: 50%; cursor: pointer; }
+    </style>
+</head>
+<body class="pb-40">
+
+    <header class="header-float">
+        <div class="header-float-inner">
+            <a href="index.html" class="header-logo huge-text text-lg">SIAODQQ</a>
+            <div class="header-nav-pills" id="nav-links"></div>
+            <div class="header-actions" id="nav-actions"></div>
+        </div>
+    </header>
+
+    <main class="max-w-[1400px] mx-auto px-10 pt-24">
+        <!-- Hero -->
+        <div class="mb-12">
+            <h1 class="huge-text text-6xl mb-4">Neural<br>Music</h1>
+            <p class="text-sm opacity-30 uppercase font-bold tracking-widest">Аудио-пространство SIAODQQ</p>
+        </div>
+
+        <!-- Featured Playlists -->
+        <div class="mb-12">
+            <h2 class="huge-text text-2xl mb-6">Рекомендации</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="featuredGrid">
+                <div class="featured-card" onclick="selectTrack(0)">
+                    <img src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=400">
+                    <div class="featured-overlay">
+                        <p class="font-bold text-sm">Algorithm of Silence</p>
+                        <p class="text-[10px] opacity-50 uppercase font-bold">Lofi-Scifi Waves</p>
+                    </div>
+                </div>
+                <div class="featured-card" onclick="selectTrack(3)">
+                    <img src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400">
+                    <div class="featured-overlay">
+                        <p class="font-bold text-sm">Neon Pulse</p>
+                        <p class="text-[10px] opacity-50 uppercase font-bold">Tokyo After Dark</p>
+                    </div>
+                </div>
+                <div class="featured-card" onclick="selectTrack(4)">
+                    <img src="https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=400">
+                    <div class="featured-overlay">
+                        <p class="font-bold text-sm">Binary Sunset</p>
+                        <p class="text-[10px] opacity-50 uppercase font-bold">Glitch Gardens</p>
+                    </div>
+                </div>
+                <div class="featured-card" onclick="selectTrack(7)">
+                    <img src="https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=400">
+                    <div class="featured-overlay">
+                        <p class="font-bold text-sm">Phosphor Dreams</p>
+                        <p class="text-[10px] opacity-50 uppercase font-bold">Midnight Protocol</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Genres -->
+        <div class="mb-12">
+            <h2 class="huge-text text-2xl mb-6">Жанры</h2>
+            <div class="flex flex-wrap gap-3" id="genreFilters">
+                <div class="genre-chip active" onclick="filterGenre('all', this)">Все</div>
+                <div class="genre-chip" onclick="filterGenre('lofi', this)">Lo-Fi</div>
+                <div class="genre-chip" onclick="filterGenre('ambient', this)">Ambient</div>
+                <div class="genre-chip" onclick="filterGenre('synth', this)">Synthwave</div>
+                <div class="genre-chip" onclick="filterGenre('electronic', this)">Electronic</div>
+                <div class="genre-chip" onclick="filterGenre('chill', this)">Chill</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Плеер -->
+            <div class="lg:col-span-4">
+                <div class="glass-card p-8 sticky top-28">
+                    <div class="mb-8">
+                        <img id="now-cover" src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=400" class="w-full aspect-square rounded-3xl object-cover border border-white/5 mb-6">
+                        <h3 class="huge-text text-xl" id="now-title">Algorithm of Silence</h3>
+                        <p class="text-xs opacity-40 uppercase font-bold mt-1" id="now-artist">Lofi-Scifi Waves</p>
+                    </div>
+
+                    <!-- Визуализатор -->
+                    <div class="flex items-end justify-center gap-1 h-12 mb-6" id="visualizer">
+                        <div class="visualizer-bar" style="animation-delay:0s;height:15px;"></div>
+                        <div class="visualizer-bar" style="animation-delay:0.1s;height:25px;"></div>
+                        <div class="visualizer-bar" style="animation-delay:0.2s;height:35px;"></div>
+                        <div class="visualizer-bar" style="animation-delay:0.05s;height:20px;"></div>
+                        <div class="visualizer-bar" style="animation-delay:0.15s;height:30px;"></div>
+                        <div class="visualizer-bar" style="animation-delay:0.25s;height:18px;"></div>
+                        <div class="visualizer-bar" style="animation-delay:0.08s;height:28px;"></div>
+                        <div class="visualizer-bar" style="animation-delay:0.18s;height:22px;"></div>
+                        <div class="visualizer-bar" style="animation-delay:0.12s;height:32px;"></div>
+                        <div class="visualizer-bar" style="animation-delay:0.22s;height:16px;"></div>
+                    </div>
+
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="text-[10px] opacity-30 font-bold" id="time-current">0:00</span>
+                        <div class="progress-bar" id="progressBar" onclick="seekTrack(event)">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <span class="text-[10px] opacity-30 font-bold" id="time-total">0:00</span>
+                    </div>
+
+                    <div class="flex items-center justify-center gap-6 mb-6">
+                        <button class="control-btn" onclick="toggleShuffle()" id="shuffleBtn" title="Перемешать">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M4 4h4l3 3m0 0l3 3m-3-3l3-3M4 20h4l9-9m0 0l3-3m-3 3l3 3M14 4l6 6m0 0l-6 6"></path></svg>
+                        </button>
+                        <button class="control-btn" onclick="prevTrack()">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+                        </button>
+                        <button class="play-btn" id="playBtn" onclick="togglePlay()">
+                            <svg class="w-7 h-7" id="playIcon" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        </button>
+                        <button class="control-btn" onclick="nextTrack()">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+                        </button>
+                        <button class="control-btn" onclick="toggleRepeat()" id="repeatBtn" title="Повтор">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        </button>
+                    </div>
+
+                    <!-- Громкость -->
+                    <div class="flex items-center gap-3 justify-center">
+                        <svg class="w-4 h-4 opacity-30" fill="currentColor" viewBox="0 0 24 24"><path d="M5 9v6h4l5 5V4L9 9H5zm13.54.46a5 5 0 010 5.08l-1.42-1.42a3 3 0 000-2.24l1.42-1.42z"/></svg>
+                        <input type="range" class="volume-slider" min="0" max="100" value="75" oninput="setVolume(this.value)">
+                        <svg class="w-4 h-4 opacity-30" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5.5a5 5 0 010 5l-1.5-1.5a3 3 0 000-2l1.5-1.5zM14 3.23v2.06a8 8 0 010 13.42v2.06A10 10 0 0014 3.23z"/></svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Плейлист -->
+            <div class="lg:col-span-8 space-y-8">
+                <!-- Недавно прослушанное -->
+                <div class="glass-card p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="huge-text text-xl">Недавно прослушанное</h3>
+                    </div>
+                    <div class="flex gap-4 overflow-x-auto pb-2" id="recentlyPlayed">
+                        <!-- Заполняется JS -->
+                    </div>
+                </div>
+
+                <!-- Основной плейлист -->
+                <div class="glass-card p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="huge-text text-xl">Playlist</h3>
+                        <span class="text-[10px] font-bold opacity-30 uppercase" id="track-count">0 треков</span>
+                    </div>
+                    <div class="space-y-2" id="trackList"></div>
+                </div>
+
+                <!-- Топ чарт -->
+                <div class="glass-card p-6">
+                    <h3 class="huge-text text-xl mb-6">Топ Чарт</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
+                            <span class="huge-text text-2xl text-purple-400 w-10 text-center">1</span>
+                            <img src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=100" class="w-12 h-12 rounded-xl object-cover">
+                            <div class="flex-1"><p class="font-bold text-sm">Neon Pulse</p><p class="text-[10px] opacity-40 uppercase font-bold">Tokyo After Dark</p></div>
+                            <span class="text-xs opacity-30">12.4K прослушиваний</span>
+                        </div>
+                        <div class="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
+                            <span class="huge-text text-2xl text-purple-400 w-10 text-center">2</span>
+                            <img src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=100" class="w-12 h-12 rounded-xl object-cover">
+                            <div class="flex-1"><p class="font-bold text-sm">Algorithm of Silence</p><p class="text-[10px] opacity-40 uppercase font-bold">Lofi-Scifi Waves</p></div>
+                            <span class="text-xs opacity-30">9.8K прослушиваний</span>
+                        </div>
+                        <div class="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
+                            <span class="huge-text text-2xl text-purple-400 w-10 text-center">3</span>
+                            <img src="https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=100" class="w-12 h-12 rounded-xl object-cover">
+                            <div class="flex-1"><p class="font-bold text-sm">Binary Sunset</p><p class="text-[10px] opacity-40 uppercase font-bold">Glitch Gardens</p></div>
+                            <span class="text-xs opacity-30">7.2K прослушиваний</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="common.js"></script>
+    <script>
+        const tracks = [
+            { title: 'Algorithm of Silence', artist: 'Lofi-Scifi Waves', cover: 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=200', duration: '4:30', genre: 'lofi' },
+            { title: 'Digital Dreamscape', artist: 'Neural Ambient', cover: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=200', duration: '3:45', genre: 'ambient' },
+            { title: 'Quantum Echo', artist: 'Cyber Synthetics', cover: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200', duration: '5:12', genre: 'synth' },
+            { title: 'Neon Pulse', artist: 'Tokyo After Dark', cover: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=200', duration: '3:58', genre: 'electronic' },
+            { title: 'Binary Sunset', artist: 'Glitch Gardens', cover: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=200', duration: '6:02', genre: 'chill' },
+            { title: 'Void Walker', artist: 'Astral Frequencies', cover: 'https://images.unsplash.com/photo-1504898770365-14faca6a7320?w=200', duration: '4:17', genre: 'ambient' },
+            { title: 'Neural Storm', artist: 'Synth Collective', cover: 'https://images.unsplash.com/photo-1571974599782-87624638275e?w=200', duration: '3:33', genre: 'synth' },
+            { title: 'Phosphor Dreams', artist: 'Midnight Protocol', cover: 'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=200', duration: '5:44', genre: 'lofi' },
+            { title: 'Chrome Waves', artist: 'Digital Nomad', cover: 'https://images.unsplash.com/photo-1487180144351-b8472da7d491?w=200', duration: '4:02', genre: 'electronic' },
+            { title: 'Astral Gateway', artist: 'Cosmic Drift', cover: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=200', duration: '6:31', genre: 'ambient' },
+            { title: 'Midnight Circuit', artist: 'Neon Arcade', cover: 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=200', duration: '3:19', genre: 'synth' },
+            { title: 'Zen Protocol', artist: 'Chill Matrix', cover: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200', duration: '5:55', genre: 'chill' },
+        ];
+
+        let currentTrack = 0;
+        let isPlaying = false;
+        let progressInterval = null;
+        let currentProgress = 0;
+        let currentGenre = 'all';
+        let isShuffled = false;
+        let isRepeat = false;
+        let recentlyPlayedList = [];
+
+        function getFilteredTracks() {
+            if (currentGenre === 'all') return tracks;
+            return tracks.filter(t => t.genre === currentGenre);
+        }
+
+        function renderTracks() {
+            const list = document.getElementById('trackList');
+            const filtered = getFilteredTracks();
+            document.getElementById('track-count').textContent = filtered.length + ' треков';
+            
+            list.innerHTML = filtered.map((t, i) => {
+                const globalIdx = tracks.indexOf(t);
+                return `
+                <div class="track-card ${globalIdx === currentTrack ? 'playing' : ''}" onclick="selectTrack(${globalIdx})">
+                    <span class="text-xs opacity-20 font-bold w-6 text-center">${i + 1}</span>
+                    <img src="${t.cover}" class="track-cover">
+                    <div class="flex-1 min-w-0">
+                        <p class="font-bold text-sm truncate">${t.title}</p>
+                        <p class="text-[10px] opacity-40 uppercase font-bold">${t.artist}</p>
+                    </div>
+                    <span class="text-[10px] opacity-20 font-bold px-2 py-1 rounded-full bg-white/5 uppercase">${t.genre}</span>
+                    <span class="text-xs opacity-20 font-bold">${t.duration}</span>
+                </div>
+            `}).join('');
+        }
+
+        function renderRecentlyPlayed() {
+            const container = document.getElementById('recentlyPlayed');
+            if (recentlyPlayedList.length === 0) {
+                container.innerHTML = '<p class="text-xs opacity-30 py-4">Ещё ничего не прослушано</p>';
+                return;
+            }
+            container.innerHTML = recentlyPlayedList.slice(0, 6).map(idx => {
+                const t = tracks[idx];
+                return `
+                    <div class="flex-shrink-0 w-32 cursor-pointer group" onclick="selectTrack(${idx})">
+                        <img src="${t.cover}" class="w-32 h-32 rounded-2xl object-cover border border-white/5 group-hover:border-purple-500 transition mb-2">
+                        <p class="text-xs font-bold truncate">${t.title}</p>
+                        <p class="text-[9px] opacity-30 uppercase font-bold truncate">${t.artist}</p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectTrack(idx) {
+            currentTrack = idx;
+            currentProgress = 0;
+            if (!recentlyPlayedList.includes(idx)) recentlyPlayedList.unshift(idx);
+            if (recentlyPlayedList.length > 10) recentlyPlayedList.pop();
+            updateNowPlaying();
+            renderTracks();
+            renderRecentlyPlayed();
+            if (!isPlaying) togglePlay();
+        }
+
+        function updateNowPlaying() {
+            const t = tracks[currentTrack];
+            document.getElementById('now-cover').src = t.cover.replace('w=200', 'w=400');
+            document.getElementById('now-title').textContent = t.title;
+            document.getElementById('now-artist').textContent = t.artist;
+            document.getElementById('time-total').textContent = t.duration;
+            document.getElementById('progressFill').style.width = '0%';
+            document.getElementById('time-current').textContent = '0:00';
+        }
+
+        function togglePlay() {
+            isPlaying = !isPlaying;
+            const icon = document.getElementById('playIcon');
+            const vis = document.getElementById('visualizer');
+            
+            if (isPlaying) {
+                icon.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+                vis.style.opacity = '1';
+                startProgress();
+            } else {
+                icon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+                vis.style.opacity = '0.3';
+                stopProgress();
+            }
+        }
+
+        function startProgress() {
+            stopProgress();
+            progressInterval = setInterval(() => {
+                currentProgress += 0.5;
+                if (currentProgress >= 100) {
+                    if (isRepeat) { currentProgress = 0; }
+                    else { nextTrack(); return; }
+                }
+                document.getElementById('progressFill').style.width = currentProgress + '%';
+                const t = tracks[currentTrack];
+                const parts = t.duration.split(':');
+                const totalSec = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+                const curSec = Math.floor(totalSec * currentProgress / 100);
+                const m = Math.floor(curSec / 60);
+                const s = curSec % 60;
+                document.getElementById('time-current').textContent = m + ':' + (s < 10 ? '0' : '') + s;
+            }, 300);
+        }
+
+        function stopProgress() {
+            if (progressInterval) { clearInterval(progressInterval); progressInterval = null; }
+        }
+
+        function nextTrack() {
+            if (isShuffled) {
+                currentTrack = Math.floor(Math.random() * tracks.length);
+            } else {
+                currentTrack = (currentTrack + 1) % tracks.length;
+            }
+            currentProgress = 0;
+            if (!recentlyPlayedList.includes(currentTrack)) recentlyPlayedList.unshift(currentTrack);
+            updateNowPlaying();
+            renderTracks();
+            renderRecentlyPlayed();
+            if (isPlaying) startProgress();
+        }
+
+        function prevTrack() {
+            currentTrack = (currentTrack - 1 + tracks.length) % tracks.length;
+            currentProgress = 0;
+            updateNowPlaying();
+            renderTracks();
+            if (isPlaying) startProgress();
+        }
+
+        function seekTrack(e) {
+            const bar = document.getElementById('progressBar');
+            const rect = bar.getBoundingClientRect();
+            currentProgress = ((e.clientX - rect.left) / rect.width) * 100;
+            document.getElementById('progressFill').style.width = currentProgress + '%';
+        }
+
+        function filterGenre(genre, el) {
+            currentGenre = genre;
+            document.querySelectorAll('.genre-chip').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            renderTracks();
+        }
+
+        function toggleShuffle() {
+            isShuffled = !isShuffled;
+            const btn = document.getElementById('shuffleBtn');
+            btn.style.background = isShuffled ? 'var(--accent)' : 'rgba(255,255,255,0.05)';
+            btn.style.borderColor = isShuffled ? 'var(--accent)' : '';
+        }
+
+        function toggleRepeat() {
+            isRepeat = !isRepeat;
+            const btn = document.getElementById('repeatBtn');
+            btn.style.background = isRepeat ? 'var(--accent)' : 'rgba(255,255,255,0.05)';
+            btn.style.borderColor = isRepeat ? 'var(--accent)' : '';
+        }
+
+        function setVolume(val) {
+            // UI-only demo
+        }
+
+        renderTracks();
+        updateNowPlaying();
+        renderRecentlyPlayed();
+    </script>
+</body>
+</html>

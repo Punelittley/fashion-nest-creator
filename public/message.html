@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIAODQQ | Neural Messages</title>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <link rel="stylesheet" href="common-styles.css">
+    <style>
+        body { overflow-y: scroll; }
+        .chat-sidebar { background: #000; border-right: 1px solid var(--border); width: 400px; display: flex; flex-direction: column; }
+        .chat-card { padding: 14px 20px; cursor: pointer; display: flex; align-items: center; gap: 14px; transition: all 0.3s ease; position: relative; border-radius: 24px; margin: 4px 10px; }
+        .chat-card:hover { background: rgba(255, 255, 255, 0.03); }
+        .chat-card.active { background: rgba(139, 92, 246, 0.08); border: 1px solid rgba(139, 92, 246, 0.1); }
+        .avatar-img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2px solid transparent; }
+        .online-dot { position: absolute; bottom: 2px; right: 2px; width: 12px; height: 12px; background: #10b981; border: 3px solid #000; border-radius: 50%; }
+        .main-chat { flex: 1; background: #050505; display: flex; flex-direction: column; position: relative; }
+        .chat-top-bar { padding: 16px 30px; border-bottom: 1px solid var(--border); background: rgba(3,3,3,0.5); display: flex; justify-content: space-between; align-items: center; }
+        .message-flow { flex: 1; overflow-y: auto; padding: 30px; display: flex; flex-direction: column; gap: 12px; }
+        .msg-bubble { padding: 12px 18px; border-radius: 20px; font-size: 14.5px; line-height: 1.5; max-width: 65%; }
+        .msg-in { background: rgba(255,255,255,0.05); align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid var(--border); }
+        .msg-out { background: var(--accent); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; box-shadow: 0 10px 25px var(--accent-glow); }
+        .msg-sender { font-size: 10px; font-weight: 800; color: var(--accent); margin-bottom: 4px; text-transform: uppercase; }
+        .call-btn { background: rgba(255,255,255,0.03); border: 1px solid var(--border); padding: 8px 16px; border-radius: 100px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; transition: 0.3s; color: #fff; cursor: pointer; }
+        .call-btn:hover { background: #fff; color: #000; border-color: #fff; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(20px); z-index: 200; display: none; align-items: center; justify-content: center; }
+        .modal-content { background: #0a0a0a; border: 1px solid var(--border); width: 100%; max-width: 500px; border-radius: 40px; padding: 40px; box-shadow: 0 0 50px rgba(0,0,0,1); }
+        .call-avatar-wrap { width: 160px; height: 160px; border-radius: 50%; padding: 5px; background: linear-gradient(45deg, var(--accent), #3b82f6); margin-bottom: 30px; position: relative; }
+        .pulse-glow { position: absolute; inset: 0; border-radius: 50%; background: var(--accent); opacity: 0.3; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 0.4; } 100% { transform: scale(1.6); opacity: 0; } }
+        .input-area { margin: 20px 30px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 100px; padding: 8px 10px 8px 25px; display: flex; align-items: center; }
+        .input-field-msg { background: transparent; flex: 1; color: #fff; font-size: 14px; border: none; outline: none; font-family: 'Inter', sans-serif; }
+        .btn-circle { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.3s; border: none; cursor: pointer; color: #fff; }
+        .label-text { font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.2em; color: var(--accent); margin-bottom: 8px; display: block; }
+        .input-field-modal { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; padding: 16px; color: #fff; font-size: 14px; transition: 0.3s; font-family: 'Inter', sans-serif; outline: none; }
+        .input-field-modal:focus { border-color: var(--accent); background: rgba(139, 92, 246, 0.05); }
+        .member-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 100px; background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.2); font-size: 11px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+        .member-chip:hover { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); }
+        .member-chip.selected { background: var(--accent); color: #fff; }
+        .empty-chat { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; opacity: 0.2; }
+    </style>
+</head>
+<body class="h-screen">
+
+    <header class="header-float">
+        <div class="header-float-inner">
+            <a href="index.html" class="header-logo huge-text text-lg">SIAODQQ</a>
+            <div class="header-nav-pills" id="nav-links"></div>
+            <div class="header-actions" id="nav-actions"></div>
+        </div>
+    </header>
+
+    <main class="max-w-[1400px] mx-auto flex rounded-[40px] overflow-hidden border border-white/5 bg-black/20 backdrop-blur-md" style="height: calc(100vh - 80px); margin-top: 64px; margin-left: auto; margin-right: auto; margin-bottom: 16px;">
+
+        <aside class="chat-sidebar">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="huge-text text-2xl">Nodes</h2>
+                    <button onclick="openCreateChat()" class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-purple-500 transition group">
+                        <svg class="w-5 h-5 group-hover:scale-110 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    </button>
+                </div>
+                <input type="text" placeholder="Поиск..." class="w-full bg-white/5 border border-white/5 rounded-2xl py-3 px-5 text-sm text-white" style="outline:none;" id="chatSearch" oninput="filterChats()">
+            </div>
+            <div class="overflow-y-auto flex-1" id="chatList">
+                <div class="p-6 text-center">
+                    <p class="text-xs opacity-30">Загрузка бесед...</p>
+                </div>
+            </div>
+        </aside>
+
+        <section class="main-chat" id="mainChatArea">
+            <div class="empty-chat" id="emptyChatState">
+                <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="1" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+                <p class="huge-text text-xl">Выберите беседу</p>
+                <p class="text-xs mt-2">или создайте новую</p>
+            </div>
+
+            <header class="chat-top-bar" id="chatTopBar" style="display:none;">
+                <div class="flex items-center gap-4">
+                    <h3 class="font-bold" id="chatTitle">—</h3>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="startCall('audio')" class="call-btn">Звонок</button>
+                    <button onclick="startCall('video')" class="call-btn">Видео</button>
+                </div>
+            </header>
+
+            <div class="message-flow" id="chatFlow" style="display:none;"></div>
+
+            <div class="input-area" id="inputArea" style="display:none;">
+                <input type="text" id="msgInput" placeholder="Напишите сообщение..." class="input-field-msg px-4" onkeydown="if(event.key==='Enter')sendMessage()">
+                <button class="bg-purple-500 px-8 py-3 rounded-full font-black text-[10px] uppercase shadow-lg border-none text-white cursor-pointer" onclick="sendMessage()">Broadcast</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Модал создания чата -->
+    <div id="createChatModal" class="modal-overlay">
+        <div class="modal-content" style="max-width:600px;">
+            <div class="flex justify-between items-start mb-8">
+                <h2 class="huge-text text-3xl">Новая<br>Беседа</h2>
+                <button onclick="toggleModal('createChatModal', false)" class="opacity-20 hover:opacity-100 transition" style="background:none;border:none;color:#fff;cursor:pointer;">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="space-y-6">
+                <div>
+                    <label class="label-text">Название беседы (для группы)</label>
+                    <input type="text" id="chatNameInput" placeholder="Название группы..." class="input-field-modal">
+                </div>
+                <div>
+                    <label class="label-text">Участники</label>
+                    <div class="flex flex-wrap gap-2 mb-3" id="membersList">
+                        <p class="text-xs opacity-30">Загрузка...</p>
+                    </div>
+                </div>
+                <div class="flex gap-4 pt-4">
+                    <button onclick="toggleModal('createChatModal', false)" class="flex-1 py-4 text-[10px] font-black uppercase tracking-widest opacity-30 hover:opacity-100 transition" style="background:none;border:none;color:#fff;cursor:pointer;">Отмена</button>
+                    <button onclick="createConversation()" class="flex-1 py-4 bg-white text-black rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-purple-500 hover:text-white transition-all border-none cursor-pointer">Создать</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- UI звонка -->
+    <div id="callUI" class="modal-overlay">
+        <div class="relative z-10 flex flex-col items-center">
+            <div class="call-avatar-wrap">
+                <div class="pulse-glow"></div>
+                <img id="callAvatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=User" class="w-full h-full rounded-full border-4 border-black relative z-10">
+            </div>
+            <h2 id="callName" class="huge-text text-4xl mb-2">—</h2>
+            <p id="callStatus" class="text-purple-400 font-bold uppercase tracking-[0.3em] mb-4">Neural Syncing...</p>
+            <p id="callTimer" class="text-2xl font-bold mb-8 opacity-50">00:00</p>
+            <div class="flex gap-8">
+                <button id="muteBtnCall" class="btn-circle" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);" onclick="toggleMute()">
+                    <svg class="w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                </button>
+                <button onclick="endCall()" class="btn-circle" style="background:#ef4444;box-shadow:0 0 20px rgba(239,68,68,0.4);">
+                    <svg class="w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M16 8l-8 8m0-8l8 8"></path></svg>
+                </button>
+                <button id="videoBtnCall" class="btn-circle" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);" onclick="toggleVideo()">
+                    <svg class="w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                </button>
+            </div>
+            <div id="videoContainer" class="mt-6 flex gap-4" style="display:none;">
+                <video id="localVideo" autoplay muted playsinline class="w-40 h-30 rounded-2xl bg-black border border-white/10" style="transform:scaleX(-1);"></video>
+                <video id="remoteVideo" autoplay playsinline class="w-64 h-48 rounded-2xl bg-black border border-white/10"></video>
+            </div>
+        </div>
+    </div>
+
+    <!-- Входящий звонок -->
+    <div id="incomingCallUI" class="modal-overlay">
+        <div class="relative z-10 flex flex-col items-center">
+            <div class="call-avatar-wrap">
+                <div class="pulse-glow"></div>
+                <img id="incomingCallAvatar" src="" class="w-full h-full rounded-full border-4 border-black relative z-10">
+            </div>
+            <h2 id="incomingCallName" class="huge-text text-4xl mb-2">—</h2>
+            <p class="text-purple-400 font-bold uppercase tracking-[0.3em] mb-8" id="incomingCallType">Входящий звонок...</p>
+            <div class="flex gap-8">
+                <button onclick="rejectIncomingCall()" class="btn-circle" style="background:#ef4444;box-shadow:0 0 20px rgba(239,68,68,0.4);">
+                    <svg class="w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M16 8l-8 8m0-8l8 8"></path></svg>
+                </button>
+                <button onclick="acceptIncomingCall()" class="btn-circle" style="background:#10b981;box-shadow:0 0 20px rgba(16,185,129,0.4);">
+                    <svg class="w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script src="common.js"></script>
+    <script>
+        let socket = null;
+        let conversations = [];
+        let activeConvId = null;
+        let allUsersForChat = [];
+        let selectedMemberIds = new Set();
+        let peerConnection = null;
+        let localStream = null;
+        let callTimerInterval = null;
+        let callSeconds = 0;
+        let isMuted = false;
+        let isVideoOn = false;
+        let currentCallType = 'audio';
+        let currentCallTargetId = null;
+        let incomingCallData = null;
+        let socketReady = false;
+        let pendingStartChat = null;
+
+        // ====== SOCKET.IO ======
+        function initSocket() {
+            try {
+                socket = io();
+                socket.on('connect', () => {
+                    const token = getToken();
+                    if (token) socket.emit('auth', token);
+                });
+                socket.on('auth_ok', (user) => {
+                    console.log('Socket authenticated');
+                    socketReady = true;
+                    loadConversations().then(() => {
+                        // После загрузки бесед, обрабатываем pendingStartChat
+                        if (pendingStartChat) {
+                            handleStartChat(pendingStartChat);
+                            pendingStartChat = null;
+                        }
+                    });
+                });
+                socket.on('new_message', (msg) => {
+                    // Не добавляем дубли — если сообщение уже от нас и мы его отправили через REST
+                    const me = getUser();
+                    if (msg.sender_id === me?.id && msg.conversation_id === activeConvId) {
+                        // Мы уже добавили сообщение локально, пропускаем
+                        return;
+                    }
+                    if (msg.conversation_id === activeConvId) {
+                        appendMessage(msg);
+                    }
+                    loadConversations();
+                });
+                socket.on('incoming_call', (data) => {
+                    incomingCallData = data;
+                    document.getElementById('incomingCallName').textContent = data.callerName;
+                    document.getElementById('incomingCallType').textContent = data.callType === 'video' ? 'Видеозвонок...' : 'Аудиозвонок...';
+                    document.getElementById('incomingCallAvatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.callerName}`;
+                    document.getElementById('incomingCallUI').style.display = 'flex';
+                });
+                socket.on('call_answered', async (data) => {
+                    if (peerConnection) {
+                        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+                        document.getElementById('callStatus').textContent = 'Подключено';
+                        document.getElementById('callStatus').style.color = '#10b981';
+                        startCallTimer();
+                    }
+                });
+                socket.on('ice_candidate', async (data) => {
+                    if (peerConnection && data.candidate) {
+                        try { await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate)); } catch(e) {}
+                    }
+                });
+                socket.on('call_ended', () => {
+                    endCall(true);
+                });
+            } catch(e) {
+                console.warn('Socket.io не доступен');
+                // Фолбэк без сокетов
+                loadConversations().then(() => {
+                    if (pendingStartChat) {
+                        handleStartChat(pendingStartChat);
+                        pendingStartChat = null;
+                    }
+                });
+            }
+        }
+
+        // ====== HANDLE START CHAT (from profile) ======
+        async function handleStartChat(targetUserId) {
+            // Проверяем, есть ли уже приватная беседа с этим пользователем
+            const me = getUser();
+            const existing = conversations.find(c => {
+                if (c.type !== 'private') return false;
+                return c.members && c.members.some(m => m.id === parseInt(targetUserId));
+            });
+
+            if (existing) {
+                // Уже есть беседа — открываем
+                openConversation(existing.id);
+                return;
+            }
+
+            // Создаём новую приватную беседу
+            try {
+                const res = await fetch('/api/conversations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+                    body: JSON.stringify({ memberIds: [parseInt(targetUserId)], type: 'private' })
+                });
+                const data = await res.json();
+                await loadConversations();
+                if (data.conversation) openConversation(data.conversation.id);
+            } catch(e) {
+                console.error('Ошибка создания чата');
+            }
+        }
+
+        // ====== CONVERSATIONS ======
+        async function loadConversations() {
+            try {
+                const res = await fetch('/api/conversations', { headers: { 'Authorization': 'Bearer ' + getToken() } });
+                const data = await res.json();
+                conversations = data.conversations || [];
+                renderConversations();
+            } catch(e) {
+                console.warn('Не удалось загрузить беседы');
+            }
+        }
+
+        function renderConversations() {
+            const list = document.getElementById('chatList');
+            const me = getUser();
+            
+            if (conversations.length === 0) {
+                list.innerHTML = '<div class="p-6 text-center"><p class="text-xs opacity-30">Нет бесед. Создайте первую!</p></div>';
+                return;
+            }
+            
+            list.innerHTML = conversations.map(c => {
+                const isActive = c.id === activeConvId;
+                let displayName = c.name;
+                let avatarSeed = c.name || 'group';
+                
+                if (c.type === 'private' && c.members) {
+                    const other = c.members.find(m => m.id !== me.id);
+                    if (other) {
+                        displayName = other.name;
+                        avatarSeed = other.username;
+                    }
+                }
+                if (!displayName) displayName = 'Беседа #' + c.id;
+                
+                const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${avatarSeed}`;
+                const lastMsg = c.last_message || 'Нет сообщений';
+                
+                return `
+                    <div class="chat-card ${isActive ? 'active' : ''}" onclick="openConversation(${c.id})" data-name="${displayName.toLowerCase()}">
+                        <div style="position:relative">
+                            <img src="${avatarUrl}" class="avatar-img">
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex justify-between">
+                                <span class="font-bold text-sm truncate">${displayName}</span>
+                            </div>
+                            <p class="text-xs opacity-40 mt-1 truncate">${lastMsg}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterChats() {
+            const q = document.getElementById('chatSearch').value.toLowerCase();
+            document.querySelectorAll('.chat-card').forEach(card => {
+                const name = card.dataset.name || '';
+                card.style.display = name.includes(q) ? '' : 'none';
+            });
+        }
+
+        async function openConversation(convId) {
+            activeConvId = convId;
+            renderConversations();
+            
+            document.getElementById('emptyChatState').style.display = 'none';
+            document.getElementById('chatTopBar').style.display = 'flex';
+            document.getElementById('chatFlow').style.display = 'flex';
+            document.getElementById('inputArea').style.display = 'flex';
+            
+            const conv = conversations.find(c => c.id === convId);
+            const me = getUser();
+            let title = conv?.name || 'Беседа';
+            if (conv?.type === 'private' && conv?.members) {
+                const other = conv.members.find(m => m.id !== me.id);
+                if (other) title = other.name;
+            }
+            document.getElementById('chatTitle').textContent = title;
+            
+            try {
+                const res = await fetch(`/api/conversations/${convId}/messages`, { headers: { 'Authorization': 'Bearer ' + getToken() } });
+                const data = await res.json();
+                const flow = document.getElementById('chatFlow');
+                flow.innerHTML = '';
+                (data.messages || []).forEach(msg => appendMessage(msg));
+                flow.scrollTop = flow.scrollHeight;
+            } catch(e) {}
+            
+            if (socket) socket.emit('join_conversation', convId);
+        }
+
+        function appendMessage(msg) {
+            const flow = document.getElementById('chatFlow');
+            const me = getUser();
+            const isOwn = msg.sender_id === me?.id;
+            const div = document.createElement('div');
+            div.className = `msg-bubble ${isOwn ? 'msg-out' : 'msg-in'}`;
+            div.setAttribute('data-msg-id', msg.id || '');
+            
+            if (!isOwn) {
+                div.innerHTML = `<div class="msg-sender">${msg.sender_name || 'Аноним'}</div>${msg.text}`;
+            } else {
+                div.textContent = msg.text;
+            }
+            
+            flow.appendChild(div);
+            gsap.from(div, { opacity: 0, y: 10, duration: 0.3 });
+            flow.scrollTop = flow.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('msgInput');
+            const text = input.value.trim();
+            if (!text || !activeConvId) return;
+            
+            // Добавляем сообщение локально сразу
+            const me = getUser();
+            appendMessage({
+                id: 'temp_' + Date.now(),
+                sender_id: me?.id,
+                sender_name: me?.name,
+                text: text,
+                conversation_id: activeConvId
+            });
+            input.value = '';
+
+            try {
+                await fetch(`/api/conversations/${activeConvId}/messages`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+                    body: JSON.stringify({ text })
+                });
+            } catch(e) {
+                console.error('Ошибка отправки');
+            }
+        }
+
+        // ====== СОЗДАНИЕ БЕСЕДЫ ======
+        async function openCreateChat() {
+            toggleModal('createChatModal', true);
+            try {
+                const res = await fetch('/api/users');
+                const data = await res.json();
+                allUsersForChat = (data.users || []).filter(u => u.id !== getUser()?.id);
+                renderMembersList();
+            } catch(e) {}
+        }
+
+        function renderMembersList() {
+            const container = document.getElementById('membersList');
+            container.innerHTML = allUsersForChat.map(u => `
+                <div class="member-chip ${selectedMemberIds.has(u.id) ? 'selected' : ''}" onclick="toggleMember(${u.id})">
+                    <img src="${u.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.username}`}" class="w-5 h-5 rounded-full">
+                    ${u.name}
+                </div>
+            `).join('');
+            
+            if (allUsersForChat.length === 0) {
+                container.innerHTML = '<p class="text-xs opacity-30">Нет доступных пользователей</p>';
+            }
+        }
+
+        function toggleMember(id) {
+            if (selectedMemberIds.has(id)) selectedMemberIds.delete(id);
+            else selectedMemberIds.add(id);
+            renderMembersList();
+        }
+
+        async function createConversation() {
+            if (selectedMemberIds.size === 0) return;
+            
+            const name = document.getElementById('chatNameInput').value.trim();
+            const memberIds = Array.from(selectedMemberIds);
+            const type = memberIds.length > 1 ? 'group' : 'private';
+            
+            try {
+                const res = await fetch('/api/conversations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+                    body: JSON.stringify({ name: type === 'group' ? name : '', memberIds, type })
+                });
+                const data = await res.json();
+                toggleModal('createChatModal', false);
+                selectedMemberIds.clear();
+                document.getElementById('chatNameInput').value = '';
+                
+                await loadConversations();
+                if (data.conversation) openConversation(data.conversation.id);
+            } catch(e) {
+                console.error('Ошибка создания беседы');
+            }
+        }
+
+        // ====== ЗВОНКИ (WebRTC) ======
+        async function startCall(type) {
+            if (!activeConvId) return;
+            currentCallType = type;
+            
+            const conv = conversations.find(c => c.id === activeConvId);
+            const me = getUser();
+            let targetUser = null;
+            
+            if (conv?.members) {
+                targetUser = conv.members.find(m => m.id !== me.id);
+            }
+            if (!targetUser) { alert('Звонки работают только в приватных чатах'); return; }
+            
+            currentCallTargetId = targetUser.id;
+            
+            document.getElementById('callName').textContent = targetUser.name;
+            document.getElementById('callAvatar').src = targetUser.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${targetUser.username}`;
+            document.getElementById('callStatus').textContent = type === 'video' ? 'Visual Syncing...' : 'Neural Syncing...';
+            document.getElementById('callStatus').style.color = '';
+            document.getElementById('callTimer').textContent = '00:00';
+            document.getElementById('callUI').style.display = 'flex';
+            
+            try {
+                const constraints = { audio: true, video: type === 'video' };
+                localStream = await navigator.mediaDevices.getUserMedia(constraints);
+                
+                if (type === 'video') {
+                    document.getElementById('localVideo').srcObject = localStream;
+                    document.getElementById('videoContainer').style.display = 'flex';
+                }
+                
+                peerConnection = new RTCPeerConnection({
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' }
+                    ]
+                });
+                
+                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+                
+                peerConnection.ontrack = (event) => {
+                    document.getElementById('remoteVideo').srcObject = event.streams[0];
+                    if (currentCallType === 'video') document.getElementById('videoContainer').style.display = 'flex';
+                };
+                
+                peerConnection.onicecandidate = (event) => {
+                    if (event.candidate && socket) {
+                        socket.emit('ice_candidate', { targetUserId: currentCallTargetId, candidate: event.candidate });
+                    }
+                };
+
+                peerConnection.oniceconnectionstatechange = () => {
+                    if (peerConnection.iceConnectionState === 'connected') {
+                        document.getElementById('callStatus').textContent = 'Подключено';
+                        document.getElementById('callStatus').style.color = '#10b981';
+                    } else if (peerConnection.iceConnectionState === 'disconnected' || peerConnection.iceConnectionState === 'failed') {
+                        document.getElementById('callStatus').textContent = 'Потеряно соединение';
+                        document.getElementById('callStatus').style.color = '#ef4444';
+                    }
+                };
+                
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+                
+                if (socket) {
+                    socket.emit('call_user', {
+                        targetUserId: currentCallTargetId,
+                        offer: offer,
+                        callerName: me.name,
+                        callType: type
+                    });
+                } else {
+                    document.getElementById('callStatus').textContent = 'Socket.io не подключён';
+                    document.getElementById('callStatus').style.color = '#ef4444';
+                }
+            } catch(e) {
+                console.error('Ошибка доступа к камере/микрофону:', e);
+                document.getElementById('callStatus').textContent = 'Ошибка: ' + e.message;
+                document.getElementById('callStatus').style.color = '#ef4444';
+            }
+        }
+
+        async function acceptIncomingCall() {
+            if (!incomingCallData) return;
+            document.getElementById('incomingCallUI').style.display = 'none';
+            
+            const data = incomingCallData;
+            currentCallTargetId = data.callerId;
+            currentCallType = data.callType;
+            
+            document.getElementById('callName').textContent = data.callerName;
+            document.getElementById('callAvatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.callerName}`;
+            document.getElementById('callStatus').textContent = 'Подключение...';
+            document.getElementById('callTimer').textContent = '00:00';
+            document.getElementById('callUI').style.display = 'flex';
+            
+            try {
+                const constraints = { audio: true, video: data.callType === 'video' };
+                localStream = await navigator.mediaDevices.getUserMedia(constraints);
+                
+                if (data.callType === 'video') {
+                    document.getElementById('localVideo').srcObject = localStream;
+                    document.getElementById('videoContainer').style.display = 'flex';
+                }
+                
+                peerConnection = new RTCPeerConnection({
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' }
+                    ]
+                });
+                
+                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+                
+                peerConnection.ontrack = (event) => {
+                    document.getElementById('remoteVideo').srcObject = event.streams[0];
+                };
+                
+                peerConnection.onicecandidate = (event) => {
+                    if (event.candidate && socket) {
+                        socket.emit('ice_candidate', { targetUserId: currentCallTargetId, candidate: event.candidate });
+                    }
+                };
+                
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+                
+                socket.emit('call_answer', { targetUserId: data.callerId, answer: answer });
+                
+                document.getElementById('callStatus').textContent = 'Подключено';
+                document.getElementById('callStatus').style.color = '#10b981';
+                startCallTimer();
+            } catch(e) {
+                document.getElementById('callStatus').textContent = 'Ошибка';
+                document.getElementById('callStatus').style.color = '#ef4444';
+            }
+            
+            incomingCallData = null;
+        }
+
+        function rejectIncomingCall() {
+            document.getElementById('incomingCallUI').style.display = 'none';
+            if (incomingCallData && socket) {
+                socket.emit('end_call', { targetUserId: incomingCallData.callerId });
+            }
+            incomingCallData = null;
+        }
+
+        function endCall(remote = false) {
+            if (peerConnection) { peerConnection.close(); peerConnection = null; }
+            if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+            if (callTimerInterval) { clearInterval(callTimerInterval); callTimerInterval = null; }
+            
+            document.getElementById('callUI').style.display = 'none';
+            document.getElementById('videoContainer').style.display = 'none';
+            document.getElementById('localVideo').srcObject = null;
+            document.getElementById('remoteVideo').srcObject = null;
+            
+            if (!remote && currentCallTargetId && socket) {
+                socket.emit('end_call', { targetUserId: currentCallTargetId });
+            }
+            currentCallTargetId = null;
+            callSeconds = 0;
+            isMuted = false;
+            isVideoOn = false;
+        }
+
+        function startCallTimer() {
+            callSeconds = 0;
+            if (callTimerInterval) clearInterval(callTimerInterval);
+            callTimerInterval = setInterval(() => {
+                callSeconds++;
+                const m = Math.floor(callSeconds / 60);
+                const s = callSeconds % 60;
+                document.getElementById('callTimer').textContent = 
+                    (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+            }, 1000);
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            if (localStream) {
+                localStream.getAudioTracks().forEach(t => t.enabled = !isMuted);
+            }
+            const btn = document.getElementById('muteBtnCall');
+            btn.style.background = isMuted ? '#ef4444' : 'rgba(255,255,255,0.1)';
+        }
+
+        function toggleVideo() {
+            if (localStream) {
+                const videoTracks = localStream.getVideoTracks();
+                if (videoTracks.length > 0) {
+                    isVideoOn = !isVideoOn;
+                    videoTracks.forEach(t => t.enabled = isVideoOn);
+                }
+            }
+        }
+
+        // ====== UTILS ======
+        function toggleModal(id, show) {
+            const modal = document.getElementById(id);
+            if (show) {
+                modal.style.display = 'flex';
+                gsap.from(modal.querySelector('.modal-content') || modal.children[0], { y: 50, opacity: 0, scale: 0.9, duration: 0.5, ease: "power4.out" });
+            } else {
+                gsap.to(modal.querySelector('.modal-content') || modal.children[0], {
+                    y: 50, opacity: 0, scale: 0.9, duration: 0.3, ease: "power4.in",
+                    onComplete: () => { modal.style.display = 'none'; }
+                });
+            }
+        }
+
+        // ====== INIT ======
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!requireAuth()) return;
+            
+            // Сохраняем startChat параметр до инициализации
+            const params = new URLSearchParams(location.search);
+            const startChatUserId = params.get('startChat');
+            if (startChatUserId) {
+                pendingStartChat = startChatUserId;
+                // Убираем параметр из URL чтобы при обновлении не дублировался
+                history.replaceState({}, '', 'message.html');
+            }
+            
+            initSocket();
+        });
+    </script>
+</body>
+</html>

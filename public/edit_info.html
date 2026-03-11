@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIAODQQ | Настройка Профиля</title>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="common-styles.css">
+    <style>
+        body { overflow-y: auto; }
+        .glass-panel { background: var(--glass); border: 1px solid var(--border); backdrop-filter: blur(50px); border-radius: 40px; }
+        .input-group { position: relative; width: 100%; }
+        .input-field { 
+            width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--border); 
+            border-radius: 20px; padding: 18px 24px; color: #fff; transition: 0.4s; font-size: 14px; outline: none;
+            font-family: 'Inter', sans-serif;
+        }
+        .input-field:focus { 
+            border-color: var(--accent); background: rgba(139, 92, 246, 0.05); 
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.1); 
+        }
+        .label-text { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.2em; color: rgba(255,255,255,0.3); margin-bottom: 10px; display: block; padding-left: 10px; }
+        .settings-btn { 
+            width: 100%; text-align: left; padding: 16px 24px; border-radius: 20px; 
+            font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.4); transition: 0.3s;
+            background: none; border: none; cursor: pointer;
+        }
+        .settings-btn.active { background: rgba(255,255,255,0.05); color: #fff; border-left: 4px solid var(--accent); }
+        .settings-btn:hover:not(.active) { background: rgba(255,255,255,0.03); color: #fff; }
+        .toggle-box { width: 50px; height: 26px; background: rgba(255,255,255,0.1); border-radius: 100px; position: relative; cursor: pointer; transition: 0.3s; }
+        .toggle-box.active { background: var(--accent); }
+        .toggle-circle { width: 18px; height: 18px; background: #fff; border-radius: 50%; position: absolute; top: 4px; left: 4px; transition: 0.3s; }
+        .toggle-box.active .toggle-circle { left: 28px; }
+        .btn-gradient {
+            background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+            padding: 16px 40px; border-radius: 100px; font-weight: 900; 
+            text-transform: uppercase; font-size: 11px; letter-spacing: 0.1em;
+            transition: 0.4s; box-shadow: 0 10px 30px rgba(139, 92, 246, 0.3);
+            border: none; color: #fff; cursor: pointer;
+        }
+        .btn-gradient:hover { transform: scale(1.05) translateY(-2px); box-shadow: 0 15px 40px rgba(139, 92, 246, 0.5); }
+        .btn-gradient:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        #save-status {
+            font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em;
+            transition: 0.3s; opacity: 0;
+        }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+        .banner-upload-zone {
+            width: 100%; height: 180px; border-radius: 24px; border: 2px dashed var(--border);
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            background-size: cover; background-position: center; transition: 0.3s;
+            position: relative; overflow: hidden;
+        }
+        .banner-upload-zone:hover { border-color: var(--accent); }
+        .banner-upload-zone .overlay-text {
+            background: rgba(0,0,0,0.6); padding: 8px 20px; border-radius: 12px;
+            font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em;
+            z-index: 2;
+        }
+        .avatar-upload-zone {
+            position: relative; cursor: pointer;
+        }
+        .avatar-upload-zone:hover .avatar-overlay {
+            opacity: 1;
+        }
+        .avatar-overlay {
+            position: absolute; inset: 0; border-radius: 50%; background: rgba(0,0,0,0.5);
+            display: flex; align-items: center; justify-content: center; opacity: 0; transition: 0.3s;
+            font-size: 10px; font-weight: 800; text-transform: uppercase; color: #fff;
+        }
+        .theme-card {
+            padding: 24px; border-radius: 24px; background: rgba(255,255,255,0.03); border: 2px solid var(--border);
+            text-align: center; cursor: pointer; transition: 0.3s;
+        }
+        .theme-card:hover { border-color: rgba(255,255,255,0.2); }
+        .theme-card.active { border-color: var(--accent); box-shadow: 0 0 20px var(--accent-glow); }
+        .accent-dot {
+            width: 36px; height: 36px; border-radius: 50%; cursor: pointer; transition: 0.3s; border: 3px solid transparent;
+        }
+        .accent-dot:hover { transform: scale(1.15); }
+        .accent-dot.active { border-color: #fff; box-shadow: 0 0 15px rgba(255,255,255,0.3); }
+    </style>
+</head>
+<body class="pb-20 px-10">
+
+    <div class="fixed top-0 left-0 w-full h-full pointer-events-none" style="z-index:-1;">
+        <div class="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-600/10 blur-[120px] rounded-full"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-blue-600/10 blur-[120px] rounded-full"></div>
+    </div>
+
+    <header class="header-float">
+        <div class="header-float-inner">
+            <a href="index.html" class="header-logo huge-text text-lg">SIAODQQ</a>
+            <div class="header-nav-pills" id="nav-links"></div>
+            <div class="header-actions" id="nav-actions"></div>
+        </div>
+    </header>
+
+    <main class="w-full max-w-[1400px] mx-auto pt-24 grid grid-cols-12 gap-10">
+        
+        <!-- Sidebar: shifted right with pl-6, takes less space -->
+        <aside class="col-span-12 lg:col-span-3 space-y-2 pl-6" style="position:relative; z-index:5;">
+            <h2 class="huge-text text-3xl mb-10">System<br>Settings</h2>
+            <button class="settings-btn active" data-tab="profile">Публичный профиль</button>
+            <button class="settings-btn" data-tab="security">Аккаунт и Безопасность</button>
+            <button class="settings-btn" data-tab="appearance">Внешний вид</button>
+            <button class="settings-btn" data-tab="notifications">Уведомления</button>
+            <button class="settings-btn" data-tab="privacy">Приватность</button>
+            <div class="pt-10">
+                <button class="settings-btn" style="color:rgba(239,68,68,0.5);" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='rgba(239,68,68,0.5)'" onclick="if(confirm('Вы уверены, что хотите удалить профиль? Это действие необратимо.')) deleteProfile()">Удалить профиль</button>
+            </div>
+        </aside>
+
+        <div class="col-span-12 lg:col-span-9">
+            
+            <!-- TAB: Публичный профиль -->
+            <div class="tab-panel active glass-panel p-12" id="tab-profile">
+                <div class="mb-12 pb-12 border-b border-white/5">
+                    <h4 class="huge-text text-xl mb-4">Баннер профиля</h4>
+                    <p class="text-xs opacity-30 mb-4 uppercase font-bold tracking-tighter">Рекомендуемый размер: 1500x500px</p>
+                    <div class="banner-upload-zone" id="banner-zone" onclick="document.getElementById('banner-input').click()">
+                        <span class="overlay-text">Нажмите, чтобы загрузить баннер</span>
+                    </div>
+                    <input type="file" id="banner-input" accept="image/*" style="display:none;" onchange="previewBanner(this)">
+                </div>
+
+                <div class="flex items-center gap-10 mb-12 pb-12 border-b border-white/5">
+                    <div class="avatar-upload-zone" onclick="document.getElementById('avatar-input').click()">
+                        <div class="w-32 h-32 rounded-full bg-gradient-to-tr from-purple-500 to-blue-500 p-1">
+                            <div class="w-full h-full rounded-full bg-black overflow-hidden flex items-center justify-center">
+                                <img id="preview-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Alexander" alt="Avatar" class="w-full h-full object-cover">
+                            </div>
+                        </div>
+                        <div class="avatar-overlay">Изменить</div>
+                    </div>
+                    <input type="file" id="avatar-input" accept="image/*" style="display:none;" onchange="previewAvatar(this)">
+                    <div>
+                        <h4 class="huge-text text-xl mb-2">Аватар</h4>
+                        <p class="text-xs opacity-30 mb-4 uppercase font-bold tracking-tighter">Рекомендуемый размер: 512x512px</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="input-group">
+                        <label class="label-text">Отображаемое имя</label>
+                        <input type="text" class="input-field" id="edit-name" placeholder="Как вас называть?">
+                    </div>
+                    <div class="input-group">
+                        <label class="label-text">Никнейм (@)</label>
+                        <input type="text" class="input-field" id="edit-username" placeholder="username">
+                    </div>
+                    <div class="input-group md:col-span-2">
+                        <label class="label-text">Специализация (Tagline)</label>
+                        <input type="text" class="input-field" id="edit-tagline" placeholder="Кто вы?">
+                    </div>
+                    <div class="input-group md:col-span-2">
+                        <label class="label-text">Манифест (О себе)</label>
+                        <textarea class="input-field" style="height:128px;resize:none;" id="edit-bio" placeholder="Расскажите о своей миссии..."></textarea>
+                    </div>
+                    
+                    <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8 pt-6">
+                        <div class="flex items-center justify-between p-6 rounded-3xl bg-white/5 border border-white/5">
+                            <div>
+                                <p class="text-sm font-bold">Публичный профиль</p>
+                                <p class="text-[10px] opacity-30 uppercase font-bold">Виден всем пользователям</p>
+                            </div>
+                            <div class="toggle-box active" onclick="this.classList.toggle('active')"><div class="toggle-circle"></div></div>
+                        </div>
+                        <div class="flex items-center justify-between p-6 rounded-3xl bg-white/5 border border-white/5">
+                            <div>
+                                <p class="text-sm font-bold">Нейронный фильтр</p>
+                                <p class="text-[10px] opacity-30 uppercase font-bold">Улучшение аватара ИИ</p>
+                            </div>
+                            <div class="toggle-box" onclick="this.classList.toggle('active')"><div class="toggle-circle"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center mt-16 pt-10 border-t border-white/5">
+                    <button onclick="location.href='profile.html'" class="text-[10px] font-black uppercase tracking-widest opacity-20 hover:opacity-100 transition" style="background:none;border:none;color:#fff;cursor:pointer;">Отмена</button>
+                    <div class="flex gap-4 items-center">
+                        <span id="save-status"></span>
+                        <button class="btn-gradient" id="save-btn" onclick="saveProfile()">Синхронизировать изменения</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: Аккаунт и Безопасность -->
+            <div class="tab-panel glass-panel p-12" id="tab-security">
+                <h3 class="huge-text text-2xl mb-8">Аккаунт и Безопасность</h3>
+                <div class="space-y-8">
+                    <div class="input-group">
+                        <label class="label-text">Email</label>
+                        <input type="email" class="input-field" id="sec-email" placeholder="mail@example.com" disabled style="opacity:0.5;">
+                    </div>
+                    <div class="input-group">
+                        <label class="label-text">Текущий пароль</label>
+                        <input type="password" class="input-field" placeholder="••••••••••••">
+                    </div>
+                    <div class="input-group">
+                        <label class="label-text">Новый пароль</label>
+                        <input type="password" class="input-field" placeholder="Минимум 8 символов">
+                    </div>
+                    <div class="input-group">
+                        <label class="label-text">Подтвердите пароль</label>
+                        <input type="password" class="input-field" placeholder="Повторите новый пароль">
+                    </div>
+                    <div class="flex items-center justify-between p-6 rounded-3xl bg-white/5 border border-white/5">
+                        <div>
+                            <p class="text-sm font-bold">Двухфакторная аутентификация</p>
+                            <p class="text-[10px] opacity-30 uppercase font-bold">Дополнительная защита аккаунта</p>
+                        </div>
+                        <div class="toggle-box" onclick="this.classList.toggle('active')"><div class="toggle-circle"></div></div>
+                    </div>
+                    <div class="pt-6">
+                        <button class="btn-gradient">Сохранить изменения</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: Внешний вид -->
+            <div class="tab-panel glass-panel p-12" id="tab-appearance">
+                <h3 class="huge-text text-2xl mb-8">Внешний вид</h3>
+                <div class="space-y-8">
+                    <div>
+                        <label class="label-text">Тема интерфейса</label>
+                        <div class="grid grid-cols-3 gap-4 mt-4" id="theme-cards">
+                            <div class="theme-card" data-theme-val="dark" onclick="selectThemeCard('dark')">
+                                <div class="w-10 h-10 rounded-full bg-black mx-auto mb-3 border border-white/20"></div>
+                                <p class="text-xs font-bold">Тёмная</p>
+                            </div>
+                            <div class="theme-card" data-theme-val="light" onclick="selectThemeCard('light')">
+                                <div class="w-10 h-10 rounded-full bg-white mx-auto mb-3"></div>
+                                <p class="text-xs font-bold">Светлая</p>
+                            </div>
+                            <div class="theme-card" data-theme-val="auto" onclick="selectThemeCard('auto')">
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-black to-white mx-auto mb-3"></div>
+                                <p class="text-xs font-bold">Авто</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between p-6 rounded-3xl bg-white/5 border border-white/5">
+                        <div>
+                            <p class="text-sm font-bold">Анимации интерфейса</p>
+                            <p class="text-[10px] opacity-30 uppercase font-bold">Плавные переходы и эффекты</p>
+                        </div>
+                        <div class="toggle-box active" onclick="this.classList.toggle('active')"><div class="toggle-circle"></div></div>
+                    </div>
+                    <div class="flex items-center justify-between p-6 rounded-3xl bg-white/5 border border-white/5">
+                        <div>
+                            <p class="text-sm font-bold">Компактный режим</p>
+                            <p class="text-[10px] opacity-30 uppercase font-bold">Уменьшенные отступы и карточки</p>
+                        </div>
+                        <div class="toggle-box" onclick="this.classList.toggle('active')"><div class="toggle-circle"></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: Уведомления -->
+            <div class="tab-panel glass-panel p-12" id="tab-notifications">
+                <h3 class="huge-text text-2xl mb-8">Уведомления</h3>
+                <div class="space-y-6">
+                    <div class="flex items-center justify-between p-6 rounded-3xl bg-white/5 border border-white/5">
+                        <div><p class="text-sm font-bold">Push-уведомления</p><p class="text-[10px] opacity-30 uppercase font-bold">Мгновенные оповещения в браузере</p></div>
+                        <div class="toggle-box active" onclick="this.classList.toggle('active')"><div class="toggle-circle"></div></div>
+                    </div>
+                    <div class="flex items-center justify-between p-6 rounded-3xl bg-white/5 border border-white/5">
+                        <div><p class="text-sm font-bold">Новые сообщения</p><p class="text-[10px] opacity-30 uppercase font-bold">Уведомлять о входящих сообщениях</p></div>
+                        <div class="toggle-box active" onclick="this.classList.toggle('active')"><div class="toggle-circle"></div></div>
+                    </div>
+                    <div class="flex items-center justify-between p-6 rounded-3xl bg-white/5 border border-white/5">
+                        <div><p class="text-sm font-bold">Запросы в друзья</p><p class="text-[10px] opacity-30 uppercase font-bold">Уведомлять о новых запросах</p></div>
+                        <div class="toggle-box active" onclick="this.classList.toggle('active')"><div class="toggle-circle"></div></div>
+                    </div>
+                    <div class="flex items-center justify-between p-6 rounded-3xl bg-white/5 border border-white/5">
+                        <div><p class="text-sm font-bold">Email-дайджест</p><p class="text-[10px] opacity-30 uppercase font-bold">Еженедельная сводка на почту</p></div>
+                        <div class="toggle-box" onclick="this.classList.toggle('active')"><div class="toggle-circle"></div></div>
+                    </div>
+                    <div class="flex items-center justify-between p-6 rounded-3xl bg-white/5 border border-white/5">
+                        <div><p class="text-sm font-bold">Звуковые уведомления</p><p class="text-[10px] opacity-30 uppercase font-bold">Звук при получении сообщений</p></div>
+                        <div class="toggle-box active" onclick="this.classList.toggle('active')"><div class="toggle-circle"></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: Приватность -->
+            <div class="tab-panel glass-panel p-12" id="tab-privacy">
+                <h3 class="huge-text text-2xl mb-8">Приватность</h3>
+                <div class="space-y-6">
+                    <div class="flex items-center justify-between p-6 rounded-3xl bg-white/5 border border-white/5">
+                        <div><p class="text-sm font-bold">Показывать онлайн-статус</p><p class="text-[10px] opacity-30 uppercase font-bold">Другие видят когда вы в сети</p></div>
+                        <div class="toggle-box active" onclick="this.classList.toggle('active')"><div class="toggle-circle"></div></div>
+                    </div>
+                    <div class="flex items-center justify-between p-6 rounded-3xl bg-white/5 border border-white/5">
+                        <div><p class="text-sm font-bold">Показывать активность</p><p class="text-[10px] opacity-30 uppercase font-bold">Отображать последнее действие</p></div>
+                        <div class="toggle-box" onclick="this.classList.toggle('active')"><div class="toggle-circle"></div></div>
+                    </div>
+                    <div class="flex items-center justify-between p-6 rounded-3xl bg-white/5 border border-white/5">
+                        <div><p class="text-sm font-bold">Разрешить сообщения от всех</p><p class="text-[10px] opacity-30 uppercase font-bold">Получать сообщения от незнакомцев</p></div>
+                        <div class="toggle-box active" onclick="this.classList.toggle('active')"><div class="toggle-circle"></div></div>
+                    </div>
+                    <div class="flex items-center justify-between p-6 rounded-3xl bg-white/5 border border-white/5">
+                        <div><p class="text-sm font-bold">Скрыть из поиска</p><p class="text-[10px] opacity-30 uppercase font-bold">Ваш профиль не найдут в поиске</p></div>
+                        <div class="toggle-box" onclick="this.classList.toggle('active')"><div class="toggle-circle"></div></div>
+                    </div>
+                    <div class="flex items-center justify-between p-6 rounded-3xl bg-white/5 border border-white/5">
+                        <div><p class="text-sm font-bold">Блокировка скриншотов</p><p class="text-[10px] opacity-30 uppercase font-bold">Запретить скриншоты вашего контента</p></div>
+                        <div class="toggle-box" onclick="this.classList.toggle('active')"><div class="toggle-circle"></div></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script src="common.js"></script>
+    <script>
+        let bannerDataUrl = '';
+        let avatarDataUrl = '';
+
+        function previewBanner(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    bannerDataUrl = e.target.result;
+                    const zone = document.getElementById('banner-zone');
+                    zone.style.backgroundImage = `url(${bannerDataUrl})`;
+                    zone.querySelector('.overlay-text').textContent = 'Нажмите, чтобы изменить баннер';
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function previewAvatar(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    avatarDataUrl = e.target.result;
+                    document.getElementById('preview-avatar').src = avatarDataUrl;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function selectThemeCard(theme) {
+            document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('active'));
+            document.querySelector(`.theme-card[data-theme-val="${theme}"]`).classList.add('active');
+            setTheme(theme);
+        }
+
+        function initThemeCards() {
+            const current = getTheme();
+            document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('active'));
+            const card = document.querySelector(`.theme-card[data-theme-val="${current}"]`);
+            if (card) card.classList.add('active');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!requireAuth()) return;
+
+            const user = getUser();
+            if (user) {
+                document.getElementById('edit-name').value = user.name || '';
+                document.getElementById('edit-username').value = user.username || '';
+                document.getElementById('edit-tagline').value = user.tagline || '';
+                document.getElementById('edit-bio').value = user.bio || '';
+                const avatarSrc = user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`;
+                document.getElementById('preview-avatar').src = avatarSrc;
+                
+                const emailField = document.getElementById('sec-email');
+                if (emailField) emailField.value = user.email || '';
+                
+                if (user.banner) {
+                    const zone = document.getElementById('banner-zone');
+                    zone.style.backgroundImage = `url(${user.banner})`;
+                    zone.querySelector('.overlay-text').textContent = 'Нажмите, чтобы изменить баннер';
+                    bannerDataUrl = user.banner;
+                }
+            }
+            initThemeCards();
+        });
+
+        document.querySelectorAll('.settings-btn[data-tab]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.settings-btn[data-tab]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+                const tabId = 'tab-' + btn.dataset.tab;
+                const panel = document.getElementById(tabId);
+                if (panel) panel.classList.add('active');
+            });
+        });
+
+        async function saveProfile() {
+            const btn = document.getElementById('save-btn');
+            const status = document.getElementById('save-status');
+            btn.disabled = true;
+            btn.textContent = 'Сохранение...';
+
+            const name = document.getElementById('edit-name').value.trim();
+            const username = document.getElementById('edit-username').value.trim();
+            const tagline = document.getElementById('edit-tagline').value.trim();
+            const bio = document.getElementById('edit-bio').value.trim();
+
+            if (!name || !username) {
+                status.textContent = '✗ Имя и никнейм обязательны';
+                status.style.color = '#ef4444';
+                status.style.opacity = '1';
+                btn.disabled = false;
+                btn.textContent = 'Синхронизировать изменения';
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + getToken()
+                    },
+                    body: JSON.stringify({ name, username, tagline, bio, banner: bannerDataUrl, avatar: avatarDataUrl || undefined })
+                });
+                const data = await res.json();
+                
+                if (!res.ok) {
+                    status.textContent = '✗ ' + data.error;
+                    status.style.color = '#ef4444';
+                    status.style.opacity = '1';
+                } else {
+                    localStorage.setItem('siaodqq_user', JSON.stringify(data.user));
+                    status.textContent = '✓ Синхронизировано';
+                    status.style.color = '#10b981';
+                    status.style.opacity = '1';
+                    
+                    setTimeout(() => {
+                        location.href = 'profile.html';
+                    }, 1500);
+                }
+            } catch(e) {
+                status.textContent = '✗ Ошибка сервера';
+                status.style.color = '#ef4444';
+                status.style.opacity = '1';
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Синхронизировать изменения';
+        }
+
+        async function deleteProfile() {
+            try {
+                await fetch('/api/profile', {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + getToken() }
+                });
+            } catch(e) {}
+            clearAuth();
+            location.href = 'auth.html';
+        }
+    </script>
+</body>
+</html>

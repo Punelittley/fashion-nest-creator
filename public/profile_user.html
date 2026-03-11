@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIAODQQ | Профиль пользователя</title>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <link rel="stylesheet" href="common-styles.css">
+    <style>
+        .banner-wrap { position: absolute; top: 0; left: 0; width: 100%; height: 75vh; z-index: 0; overflow: hidden; }
+        .banner-img { width: 100%; height: 100%; object-fit: cover; opacity: 0.75; filter: saturate(0.7); transform: scale(1.1); }
+        .banner-overlay { position: absolute; bottom: 0; left: 0; width: 100%; height: 60%; background: linear-gradient(to top, var(--bg) 5%, transparent 100%); }
+        .avatar-main { width: 180px; height: 180px; border-radius: 50%; padding: 6px; background: linear-gradient(45deg, var(--accent), #3b82f6); position: relative; box-shadow: 0 0 40px var(--accent-glow); }
+        .avatar-main img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; border: 5px solid #000; }
+        .friend-avatar { width: 45px; height: 45px; border-radius: 14px; border: 1px solid var(--border); transition: 0.3s; }
+        .friend-avatar:hover { transform: translateY(-5px) scale(1.1); border-color: var(--accent); }
+        .btn-action {
+            padding: 12px 32px; border-radius: 100px; font-weight: 900; text-transform: uppercase; font-size: 10px;
+            letter-spacing: 0.1em; transition: 0.3s; border: none; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header-float">
+        <div class="header-float-inner">
+            <a href="index.html" class="header-logo huge-text text-lg">SIAODQQ</a>
+            <div class="header-nav-pills" id="nav-links"></div>
+            <div class="header-actions" id="nav-actions"></div>
+        </div>
+    </header>
+
+    <div class="banner-wrap">
+        <img src="https://images.unsplash.com/photo-1614850523296-d8c1af93d400?w=1600" class="banner-img" id="banner">
+        <div class="banner-overlay"></div>
+    </div>
+
+  <main class="max-w-[1400px] mx-auto px-10 pt-24 pb-40 relative z-10" style="margin-top: 40px;">
+        
+        <div class="glass-card mb-8 reveal">
+            <div class="flex flex-col lg:flex-row items-center lg:items-end gap-10">
+                <div class="avatar-main">
+                    <img id="profile-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=User" alt="Avatar">
+                </div>
+                <div class="flex-1 text-center lg:text-left">
+                    <div class="flex flex-col lg:flex-row justify-between items-center lg:items-end gap-6">
+                        <div>
+                            <h1 class="huge-text text-6xl lg:text-8xl" id="profile-name">Загрузка...</h1>
+                            <p class="text-purple-400 font-black uppercase tracking-[0.4em] text-[12px] mt-4" id="profile-tagline"></p>
+                        </div>
+                        <div class="flex gap-3">
+                            <button class="btn-action" style="background:#fff; color:#000;" onmouseover="this.style.background='var(--accent)';this.style.color='#fff'" onmouseout="this.style.background='#fff';this.style.color='#000'" id="follow-btn">Подписаться</button>
+                            <button class="btn-action" style="background:rgba(255,255,255,0.05); color:#fff; border:1px solid var(--border);" onclick="sendMessageToUser()" id="msg-btn">Написать</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-8 mt-16 pt-16 border-t border-white/5">
+                <div><span class="text-[10px] opacity-30 font-bold uppercase tracking-widest">Просмотры</span><p class="text-3xl font-black mt-1 tracking-tighter">—</p></div>
+                <div><span class="text-[10px] opacity-30 font-bold uppercase tracking-widest">Подписчики</span><p class="text-3xl font-black mt-1 tracking-tighter">—</p></div>
+                <div><span class="text-[10px] opacity-30 font-bold uppercase tracking-widest">Друзья</span><p class="text-3xl font-black mt-1 tracking-tighter">—</p></div>
+                <div><span class="text-[10px] opacity-30 font-bold uppercase tracking-widest">Ранг</span><p class="text-3xl font-black mt-1 text-purple-400 tracking-tighter">—</p></div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <div class="lg:col-span-4 space-y-8">
+                <div class="glass-card reveal">
+                    <h3 class="huge-text text-xl mb-6">Manifesto</h3>
+                    <p class="text-sm text-white/60 leading-relaxed italic" id="profile-bio">Загрузка...</p>
+                    <div class="mt-8 space-y-4">
+                        <div class="flex justify-between text-[11px]"><span class="opacity-30 uppercase font-bold">Username</span><span id="profile-username">@...</span></div>
+                        <div class="flex justify-between text-[11px]"><span class="opacity-30 uppercase font-bold">Дата регистрации</span><span id="profile-date">...</span></div>
+                    </div>
+                </div>
+
+                <div class="glass-card reveal">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="huge-text text-xl">Nexus Circle</h3>
+                        <span class="text-[10px] font-bold opacity-30">0 чел.</span>
+                    </div>
+                    <div class="grid grid-cols-5 gap-3">
+                        <div class="friend-avatar bg-white/5 flex items-center justify-center text-[10px] opacity-30">Пусто</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-8 space-y-8" id="userPosts">
+                <div class="glass-card reveal">
+                    <div class="flex items-center justify-center py-16">
+                        <p class="text-sm opacity-30 uppercase font-bold tracking-widest">Загрузка публикаций...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="common.js"></script>
+    <script>
+        let viewedUser = null;
+
+        function sendMessageToUser() {
+            if (!viewedUser) return;
+            location.href = 'message.html?startChat=' + viewedUser.id;
+        }
+
+        function getTimeAgo(dateStr) {
+            const now = new Date();
+            const date = new Date(dateStr);
+            const diff = Math.floor((now - date) / 1000);
+            if (diff < 60) return 'только что';
+            if (diff < 3600) return Math.floor(diff / 60) + ' мин. назад';
+            if (diff < 86400) return Math.floor(diff / 3600) + ' ч. назад';
+            return Math.floor(diff / 86400) + ' дн. назад';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        async function loadUserPosts(userId) {
+            try {
+                const res = await fetch('/api/posts?userId=' + userId);
+                const data = await res.json();
+                const posts = data.posts || [];
+                const container = document.getElementById('userPosts');
+                if (posts.length === 0) {
+                    container.innerHTML = '<div class="glass-card reveal"><div class="flex items-center justify-center py-16"><p class="text-sm opacity-30 uppercase font-bold tracking-widest">Пока нет публикаций</p></div></div>';
+                    return;
+                }
+                container.innerHTML = posts.map(post => {
+                    const avatarSrc = post.author_avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.author_username}`;
+                    return `
+                        <div class="glass-card mb-6">
+                            <div class="flex items-center gap-4 mb-8">
+                                <div class="w-12 h-12 rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600">
+                                    <img src="${avatarSrc}" class="w-full h-full object-cover">
+                                </div>
+                                <div>
+                                    <p class="font-bold text-[16px]">${post.author_name}</p>
+                                    <p class="text-[10px] opacity-30 font-bold uppercase tracking-widest">${getTimeAgo(post.created_at)}</p>
+                                </div>
+                            </div>
+                            <p class="text-[18px] leading-relaxed text-white/90">${escapeHtml(post.text)}</p>
+                        </div>
+                    `;
+                }).join('');
+            } catch(e) {
+                document.getElementById('userPosts').innerHTML = '<div class="glass-card reveal"><div class="flex items-center justify-center py-16"><p class="text-sm opacity-30 uppercase font-bold tracking-widest">Пока нет публикаций</p></div></div>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            gsap.registerPlugin(ScrollTrigger);
+            gsap.to(".reveal", { opacity: 1, y: 0, duration: 1, stagger: 0.15, ease: "power4.out" });
+
+            window.addEventListener('scroll', () => {
+                const y = window.scrollY;
+                gsap.to("#banner", { y: y * 0.4, scale: 1.1 + (y * 0.0005), duration: 0.1 });
+            });
+
+            const params = new URLSearchParams(location.search);
+            const username = params.get('user');
+            
+            if (!username) {
+                document.getElementById('profile-name').textContent = 'Пользователь не найден';
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/users/' + encodeURIComponent(username));
+                if (!res.ok) {
+                    document.getElementById('profile-name').textContent = 'Пользователь не найден';
+                    return;
+                }
+                const data = await res.json();
+                viewedUser = data.user;
+                
+                document.getElementById('profile-name').textContent = viewedUser.name || viewedUser.username;
+                document.getElementById('profile-tagline').textContent = viewedUser.tagline || 'Участник SIAODQQ';
+                document.getElementById('profile-bio').textContent = viewedUser.bio || 'Пока нет описания...';
+                document.getElementById('profile-username').textContent = '@' + viewedUser.username;
+                document.getElementById('profile-avatar').src = viewedUser.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${viewedUser.username}`;
+                document.title = `SIAODQQ | ${viewedUser.name || viewedUser.username}`;
+                
+                if (viewedUser.banner) {
+                    document.getElementById('banner').src = viewedUser.banner;
+                }
+                
+                if (viewedUser.created_at) {
+                    const d = new Date(viewedUser.created_at);
+                    const months = ['Января','Февраля','Марта','Апреля','Мая','Июня','Июля','Августа','Сентября','Октября','Ноября','Декабря'];
+                    document.getElementById('profile-date').textContent = `${d.getDate()} ${months[d.getMonth()]}, ${d.getFullYear()}`;
+                }
+                
+                const me = getUser();
+                if (me && me.username === viewedUser.username) {
+                    location.href = 'profile.html';
+                    return;
+                }
+
+                loadUserPosts(viewedUser.id);
+            } catch(e) {
+                document.getElementById('profile-name').textContent = 'Ошибка загрузки';
+            }
+        });
+    </script>
+</body>
+</html>
