@@ -451,10 +451,41 @@
             if (mode === 'reg') { login.style.display = 'none'; reg.style.display = 'block'; }
             else { reg.style.display = 'none'; login.style.display = 'block'; }
         }
+        function clearFieldErrors() {
+            document.querySelectorAll('.input-box').forEach(el => el.classList.remove('input-error'));
+            document.querySelectorAll('.field-error').forEach(el => el.style.display = 'none');
+        }
+
+        function setFieldError(inputId, msg) {
+            const input = document.getElementById(inputId);
+            if (input) input.classList.add('input-error');
+            // Find or create error element
+            let errEl = input?.parentElement?.querySelector('.field-error');
+            if (!errEl) {
+                errEl = document.createElement('div');
+                errEl.className = 'field-error';
+                input?.parentElement?.appendChild(errEl);
+            }
+            errEl.textContent = msg;
+            errEl.style.display = 'block';
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
         async function handleLogin() {
-            const email = document.getElementById('l-email').value;
+            clearFieldErrors();
+            const email = document.getElementById('l-email').value.trim();
             const password = document.getElementById('l-pass').value;
-            if (!email || !password) { showAlert('login-alert', 'Заполните все поля'); return; }
+            let hasError = false;
+
+            if (!email) { setFieldError('l-email', 'Введите email'); hasError = true; }
+            else if (!emailRegex.test(email)) { setFieldError('l-email', 'Некорректный формат email'); hasError = true; }
+
+            if (!password) { setFieldError('l-pass', 'Введите пароль'); hasError = true; }
+            else if (password.length < 6) { setFieldError('l-pass', 'Минимум 6 символов'); hasError = true; }
+
+            if (hasError) return;
+
             try {
                 const res = await fetch('/api/login', {
                     method: 'POST',
@@ -478,14 +509,38 @@
                 showAlert('login-alert', 'Ошибка соединения с сервером');
             }
         }
+
         async function handleRegister() {
-            const payload = {
-                username: document.getElementById('r-user').value,
-                email: document.getElementById('r-email').value,
-                discord_tag: document.getElementById('r-discord').value,
-                password: document.getElementById('r-pass').value
-            };
-            if (!payload.username || !payload.email || !payload.password) { showAlert('reg-alert', 'Заполните обязательные поля'); return; }
+            clearFieldErrors();
+            const username = document.getElementById('r-user').value.trim();
+            const discord_tag = document.getElementById('r-discord').value.trim();
+            const email = document.getElementById('r-email').value.trim();
+            const password = document.getElementById('r-pass').value;
+            let hasError = false;
+
+            // Nickname validation
+            if (!username) { setFieldError('r-user', 'Введите никнейм'); hasError = true; }
+            else if (username.length < 2 || username.length > 20) { setFieldError('r-user', 'От 2 до 20 символов'); hasError = true; }
+            else if (!/^[a-zA-Z0-9_]+$/.test(username)) { setFieldError('r-user', 'Только латиница, цифры и _'); hasError = true; }
+
+            // Discord tag validation
+            if (discord_tag) {
+                if (discord_tag.length < 2 || discord_tag.length > 37) { setFieldError('r-discord', 'От 2 до 37 символов'); hasError = true; }
+                else if (!/^[a-zA-Z0-9_.]{2,32}(#\d{4})?$/.test(discord_tag)) { setFieldError('r-discord', 'Формат: username или user#1234'); hasError = true; }
+            }
+
+            // Email validation
+            if (!email) { setFieldError('r-email', 'Введите email'); hasError = true; }
+            else if (!emailRegex.test(email)) { setFieldError('r-email', 'Некорректный формат email'); hasError = true; }
+
+            // Password validation
+            if (!password) { setFieldError('r-pass', 'Введите пароль'); hasError = true; }
+            else if (password.length < 6) { setFieldError('r-pass', 'Минимум 6 символов'); hasError = true; }
+            else if (password.length > 64) { setFieldError('r-pass', 'Максимум 64 символа'); hasError = true; }
+
+            if (hasError) return;
+
+            const payload = { username, email, discord_tag, password };
             try {
                 const res = await fetch('/api/register', {
                     method: 'POST',
@@ -510,6 +565,7 @@
                 showAlert('reg-alert', 'Ошибка соединения с сервером');
             }
         }
+
         function showAlert(id, text) {
             const el = document.getElementById(id);
             el.innerText = text;

@@ -1,93 +1,569 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SIAODQQ | Личное Пространство</title>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="common-styles.css">
+    <title>GGLINK — Мой профиль</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600&family=Space+Grotesk:wght@500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="header_footer.css">
     <style>
-        .banner-wrap { position: absolute; top: 0; left: 0; width: 100%; height: 85vh; z-index: 0; overflow: hidden; }
-        .banner-img { width: 100%; height: 100%; object-fit: cover; opacity: 0.8; filter: saturate(0.7); }
-        .banner-overlay { position: absolute; bottom: 0; left: 0; width: 100%; height: 50%; background: linear-gradient(to top, var(--bg) 5%, transparent 100%); }
-        .avatar-main { width: 180px; height: 180px; border-radius: 50%; padding: 6px; background: linear-gradient(45deg, var(--accent), #3b82f6); position: relative; box-shadow: 0 0 40px var(--accent-glow); }
-        .avatar-main img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; border: 5px solid #000; }
-        .friend-avatar { width: 45px; height: 45px; border-radius: 14px; border: 1px solid var(--border); transition: 0.3s; }
-        .friend-avatar:hover { border-color: var(--accent); }
-        .post-create-area textarea { background: transparent; border: none; width: 100%; resize: none; color: #fff; font-size: 16px; outline: none; font-family: 'Inter', sans-serif; }
-        .post-create-area textarea::placeholder { color: rgba(255,255,255,0.2); }
+        :root {
+            --bg: #000000;
+            --surface: #0a0a0a;
+            --border: #151515;
+            --accent: #0066ff;
+            --white: #ffffff;
+            --gray: #666666;
+            --danger: #ff3333;
+            --font-head: 'Space Grotesk', sans-serif;
+            --font-body: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; outline: none; }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg);
+            color: var(--white);
+            min-height: 100vh;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .profile-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 100px 20px 60px;
+        }
+
+        .profile-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .profile-header h1 {
+            font-family: var(--font-head);
+            font-size: 32px;
+            text-transform: uppercase;
+            letter-spacing: -1px;
+            margin-bottom: 8px;
+        }
+
+        .profile-header p {
+            color: var(--gray);
+            font-size: 13px;
+        }
+
+        .section-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 40px;
+            margin-bottom: 30px;
+            transition: 0.3s;
+        }
+
+        .section-card:hover { border-color: #222; }
+
+        .section-title {
+            font-family: var(--font-head);
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent);
+            margin-bottom: 25px;
+            font-weight: 700;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .full-width { grid-column: span 2; }
+
+        .input-group { margin-bottom: 0; }
+
+        .input-group label {
+            display: block;
+            font-size: 10px;
+            text-transform: uppercase;
+            color: var(--gray);
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .input-box, .select-box {
+            width: 100%;
+            background: #000;
+            border: 1px solid var(--border);
+            color: var(--white);
+            padding: 14px 16px;
+            font-family: var(--font-body);
+            font-size: 14px;
+            transition: 0.3s;
+        }
+
+        .select-box { cursor: pointer; appearance: none; }
+
+        .input-box:focus, .select-box:focus {
+            border-color: var(--accent);
+            background: #050505;
+        }
+
+        .input-box.input-error, .select-box.input-error {
+            border-color: var(--danger) !important;
+            background: rgba(255, 51, 51, 0.05) !important;
+        }
+
+        .field-error {
+            color: var(--danger);
+            font-size: 10px;
+            margin-top: 4px;
+            display: none;
+        }
+
+        .char-counter {
+            font-size: 10px;
+            color: var(--gray);
+            text-align: right;
+            margin-top: 3px;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 16px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            font-family: var(--font-head);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 13px;
+            cursor: pointer;
+            transition: 0.3s;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary:hover { filter: brightness(1.2); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .alert-box {
+            background: rgba(255, 51, 51, 0.05);
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            padding: 12px;
+            font-size: 11px;
+            text-align: center;
+            text-transform: uppercase;
+            margin-bottom: 25px;
+            display: none;
+        }
+
+        .alert-success {
+            background: rgba(0, 255, 136, 0.05);
+            border: 1px solid #00ff88;
+            color: #00ff88;
+            padding: 12px;
+            font-size: 11px;
+            text-align: center;
+            text-transform: uppercase;
+            margin-bottom: 25px;
+            display: none;
+        }
+
+        textarea.input-box {
+            resize: vertical;
+            min-height: 80px;
+            font-family: var(--font-body);
+        }
+
+        @media (max-width: 768px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .full-width { grid-column: span 1; }
+            .section-card { padding: 25px 18px; }
+            .profile-container { padding: 80px 16px 40px; }
+        }
     </style>
 </head>
+
 <body>
-    <header class="header-float"><div class="header-float-inner"><a href="index.html" class="header-logo huge-text text-lg">SIAODQQ</a><div class="header-nav-pills" id="nav-links"></div><div class="header-actions" id="nav-actions"></div></div></header>
-    <div class="banner-wrap"><img src="https://images.unsplash.com/photo-1614850523296-d8c1af93d400?w=1600" class="banner-img" id="banner"><div class="banner-overlay"></div></div>
-    <main class="max-w-[1600px] mx-auto px-10 pt-24 pb-40 relative z-10" style="margin-top: 200px;">
-        <div class="glass-card mb-8">
-            <div class="flex flex-col lg:flex-row items-center lg:items-end gap-10">
-                <div class="avatar-main"><img id="profile-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Alexander" alt="Avatar"></div>
-                <div class="flex-1 text-center lg:text-left">
-                    <div class="flex flex-col lg:flex-row justify-between items-center lg:items-end gap-6">
-                        <div><h1 class="huge-text text-6xl lg:text-8xl" id="profile-name">...</h1><p class="text-purple-400 font-black uppercase tracking-[0.4em] text-[12px] mt-4" id="profile-tagline">...</p></div>
-                        <button onclick="location.href='edit_info.html'" class="bg-white text-black px-12 py-4 rounded-full font-black uppercase text-[10px] hover:bg-purple-500 hover:text-white transition duration-500 border-none cursor-pointer">Редактировать</button>
-                    </div>
+    <header>
+        <div class="container">
+            <div class="nav-inner">
+                <a href="index.html" class="logo"><img src="assets/logo.svg" alt="GGLINK Logo"></a>
+                <nav class="nav-menu">
+                    <a href="brows.html">Найти тиммейта</a>
+                    <a href="games.html">Библиотека игр</a>
+                    <a href="tournament.html">Турниры</a>
+                    <a href="clans.html">Кланы</a>
+                </nav>
+                <div class="header-actions">
+                    <a href="message.html" class="msg-icon" title="Сообщения"><i class="fas fa-comment-dots"></i></a>
+                    <a href="admin.html" class="admin-link" id="admin-link"><i class="fas fa-shield-alt"></i> Админ</a>
+                    <a href="profile.html" class="profile-icon" id="header-profile-icon"></a>
+                    <span id="auth-buttons">
+                        <a href="auth.html" style="color:var(--gray); text-decoration:none; font-size:12px; font-weight:600; text-transform:uppercase;">Войти</a>
+                        <a href="auth.html" class="btn btn-blue" style="margin-left:10px;">Регистрация</a>
+                    </span>
+                    <button class="burger-btn" id="burger-btn" onclick="toggleMenu()"><i class="fas fa-bars" id="burger-icon"></i></button>
                 </div>
             </div>
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-8 mt-16 pt-16 border-t border-white/5">
-                <div><span class="text-[10px] opacity-30 font-bold uppercase tracking-widest">Просмотры</span><p class="text-3xl font-black mt-1 tracking-tighter">1.2M</p></div>
-                <div><span class="text-[10px] opacity-30 font-bold uppercase tracking-widest">Друзья</span><p class="text-3xl font-black mt-1 tracking-tighter" id="stat-friends">0</p></div>
-                <div><span class="text-[10px] opacity-30 font-bold uppercase tracking-widest">Публикации</span><p class="text-3xl font-black mt-1 tracking-tighter" id="stat-posts">0</p></div>
-                <div><span class="text-[10px] opacity-30 font-bold uppercase tracking-widest">Ранг</span><p class="text-3xl font-black mt-1 text-purple-400 tracking-tighter">Top 1%</p></div>
+        </div>
+    </header>
+    <div class="mobile-menu" id="mobile-menu">
+        <a href="brows.html">Найти тиммейта</a>
+        <a href="games.html">Библиотека игр</a>
+        <a href="tournament.html">Турниры</a>
+        <a href="clans.html">Кланы</a>
+        <a href="message.html">Сообщения</a>
+        <div class="mobile-auth" id="mobile-auth">
+            <a href="auth.html">Войти</a>
+            <a href="auth.html" class="btn btn-blue">Регистрация</a>
+        </div>
+    </div>
+
+    <div class="profile-container">
+        <div class="profile-header">
+            <h1>Мой игровой профиль</h1>
+            <p>Заполните информацию, чтобы другие игроки могли вас найти</p>
+        </div>
+
+        <div class="alert-box" id="profile-alert"></div>
+        <div class="alert-success" id="profile-success"></div>
+
+        <!-- Основная информация -->
+        <div class="section-card">
+            <div class="section-title">Основная информация</div>
+            <div class="form-grid">
+                <div class="input-group">
+                    <label>Никнейм в игре</label>
+                    <input type="text" id="p-nickname" class="input-box" placeholder="Ваш игровой ник" maxlength="20">
+                </div>
+                <div class="input-group">
+                    <label>Дисциплина</label>
+                    <select id="p-game" class="select-box">
+                        <option value="">Выберите игру</option>
+                        <option>Valorant</option>
+                        <option>CS2</option>
+                        <option>Dota 2</option>
+                        <option>League of Legends</option>
+                        <option>Overwatch 2</option>
+                        <option>Apex Legends</option>
+                        <option>Fortnite</option>
+                        <option>PUBG</option>
+                        <option>Rocket League</option>
+                        <option>Rainbow Six Siege</option>
+                    </select>
+                </div>
+                <div class="input-group full-width">
+                    <label>Описание</label>
+                    <textarea id="p-description" class="input-box" placeholder="Расскажите о себе..." maxlength="300"></textarea>
+                    <div class="char-counter"><span id="desc-count">0</span>/300</div>
+                </div>
             </div>
         </div>
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            <div class="lg:col-span-4 space-y-8">
-                <div class="glass-card"><h3 class="huge-text text-xl mb-6">Manifesto</h3><p class="text-sm text-white/60 leading-relaxed italic" id="profile-bio">...</p><div class="mt-8 space-y-4"><div class="flex justify-between text-[11px]"><span class="opacity-30 uppercase font-bold">Дата регистрации</span><span id="profile-date">—</span></div></div></div>
-                <div class="glass-card"><div class="flex justify-between items-center mb-6"><h3 class="huge-text text-xl">Друзья</h3><a href="friends.html" class="text-[10px] font-bold text-purple-400 hover:text-white transition" style="text-decoration:none;">Все →</a></div><div class="grid grid-cols-5 gap-3" id="friends-grid"><div class="friend-avatar bg-white/5 flex items-center justify-center text-[10px] opacity-30">...</div></div></div>
-            </div>
-            <div class="lg:col-span-8 space-y-8">
-                <div class="glass-card post-create-area"><div class="flex gap-5"><div class="w-12 h-12 rounded-2xl bg-neutral-800 shrink-0 overflow-hidden"><img id="post-create-avatar" src="" class="w-full h-full object-cover"></div><textarea id="postText" rows="3" placeholder="О чем вы думаете?"></textarea></div><div class="flex justify-end mt-6 pt-6 border-t border-white/5"><button class="btn-create px-8" onclick="createPost()">Опубликовать</button></div></div>
-                <div id="userPosts"><div class="glass-card"><div class="flex items-center justify-center py-16"><p class="text-sm opacity-30 uppercase font-bold tracking-widest">Загрузка...</p></div></div></div>
+
+        <!-- Дополнительная информация -->
+        <div class="section-card">
+            <div class="section-title">Дополнительная информация</div>
+            <div class="form-grid">
+                <div class="input-group">
+                    <label>Возраст</label>
+                    <input type="text" id="p-age" class="input-box" placeholder="18" maxlength="3" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+                    <div class="field-error" id="age-error"></div>
+                </div>
+                <div class="input-group">
+                    <label>Страна</label>
+                    <select id="p-country" class="select-box">
+                        <option value="">Выберите страну</option>
+                        <option>Россия</option><option>Украина</option><option>Беларусь</option><option>Казахстан</option>
+                        <option>Узбекистан</option><option>Кыргызстан</option><option>Таджикистан</option><option>Туркменистан</option>
+                        <option>Азербайджан</option><option>Армения</option><option>Грузия</option><option>Молдова</option>
+                        <option>Латвия</option><option>Литва</option><option>Эстония</option>
+                        <option>Австралия</option><option>Австрия</option><option>Аргентина</option><option>Бельгия</option>
+                        <option>Болгария</option><option>Бразилия</option><option>Великобритания</option><option>Венгрия</option>
+                        <option>Германия</option><option>Греция</option><option>Дания</option><option>Египет</option>
+                        <option>Индия</option><option>Индонезия</option><option>Ирландия</option><option>Испания</option>
+                        <option>Италия</option><option>Канада</option><option>Китай</option><option>Колумбия</option>
+                        <option>Мексика</option><option>Нидерланды</option><option>Новая Зеландия</option><option>Норвегия</option>
+                        <option>ОАЭ</option><option>Пакистан</option><option>Перу</option><option>Польша</option>
+                        <option>Португалия</option><option>Румыния</option><option>Саудовская Аравия</option><option>Сербия</option>
+                        <option>Словакия</option><option>Словения</option><option>США</option><option>Таиланд</option>
+                        <option>Турция</option><option>Филиппины</option><option>Финляндия</option><option>Франция</option>
+                        <option>Хорватия</option><option>Чехия</option><option>Чили</option><option>Швейцария</option>
+                        <option>Швеция</option><option>Южная Корея</option><option>Япония</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Языки</label>
+                    <select id="p-languages" class="select-box" multiple size="4" style="min-height:90px;">
+                        <option>Русский</option><option>Английский</option><option>Украинский</option><option>Казахский</option>
+                        <option>Немецкий</option><option>Французский</option><option>Испанский</option><option>Португальский</option>
+                        <option>Итальянский</option><option>Польский</option><option>Турецкий</option><option>Китайский</option>
+                        <option>Японский</option><option>Корейский</option><option>Арабский</option><option>Хинди</option>
+                        <option>Чешский</option><option>Шведский</option><option>Норвежский</option><option>Финский</option>
+                    </select>
+                    <div style="font-size:10px;color:var(--gray);margin-top:4px;">Зажмите Ctrl для выбора нескольких</div>
+                </div>
+                <div class="input-group">
+                    <label>Время игры</label>
+                    <select id="p-playtime" class="select-box">
+                        <option value="">Выберите</option>
+                        <option value="06:00-12:00">Утро (06:00–12:00)</option>
+                        <option value="12:00-18:00">День (12:00–18:00)</option>
+                        <option value="18:00-00:00">Вечер (18:00–00:00)</option>
+                        <option value="00:00-06:00">Ночь (00:00–06:00)</option>
+                        <option value="flexible">Гибкое</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Discord Tag</label>
+                    <input type="text" id="p-discord" class="input-box" placeholder="username#1234" maxlength="37">
+                </div>
+                <div class="input-group">
+                    <label>Микрофон</label>
+                    <select id="p-mic" class="select-box">
+                        <option value="0">Нет</option>
+                        <option value="1">Есть</option>
+                    </select>
+                </div>
             </div>
         </div>
-    </main>
-    <script src="common.js"></script>
+
+        <!-- Игровые характеристики -->
+        <div class="section-card">
+            <div class="section-title">Игровые характеристики</div>
+            <div class="form-grid">
+                <div class="input-group">
+                    <label>Текущий уровень / ранг</label>
+                    <input type="text" id="p-rank" class="input-box" placeholder="Diamond II" maxlength="15">
+                    <div class="char-counter"><span id="rank-count">0</span>/15</div>
+                </div>
+                <div class="input-group">
+                    <label>Основная роль</label>
+                    <input type="text" id="p-role" class="input-box" placeholder="Duelist" maxlength="10">
+                    <div class="char-counter"><span id="role-count">0</span>/10</div>
+                </div>
+                <div class="input-group">
+                    <label>Часов наиграно</label>
+                    <input type="text" id="p-hours" class="input-box" placeholder="1500" maxlength="6" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+                </div>
+                <div class="input-group">
+                    <label>Ищу команду</label>
+                    <select id="p-team" class="select-box">
+                        <option value="0">Нет</option>
+                        <option value="1">Да</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn-primary" id="save-btn" onclick="saveProfile()">Сохранить профиль</button>
+    </div>
+
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col" style="grid-column: span 2;">
+                    <svg viewBox="0 0 160 40" xmlns="http://www.w3.org/2000/svg" style="margin-bottom: 30px;">
+                        <rect x="0" y="5" width="5" height="30" fill="#0066ff" />
+                        <text x="15" y="28" fill="white" style="font-family:'Space Grotesk'; font-weight:700; font-size:24px; letter-spacing:-1px;">GGLINK</text>
+                    </svg>
+                </div>
+                <div class="footer-col">
+                    <h4>Продукт</h4>
+                    <ul>
+                        <li><a href="brows.html">Игроки</a></li>
+                        <li><a href="clans.html">Команды</a></li>
+                        <li><a href="tournament.html">Турниры</a></li>
+                        <li><a href="games.html">Игры</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Ресурсы</h4>
+                    <ul>
+                        <li><a href="#">Главная</a></li>
+                        <li><a href="#">Что мы предлагаем</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
+
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            if (!requireAuth()) return;
-            const user = getUser();
-            if (user) {
-                document.getElementById('profile-name').textContent = user.name || user.username;
-                document.getElementById('profile-tagline').textContent = user.tagline || 'Новый участник SIAODQQ';
-                document.getElementById('profile-bio').textContent = user.bio || 'Пока нет описания...';
-                const av = user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`;
-                document.getElementById('profile-avatar').src = av;
-                document.getElementById('post-create-avatar').src = av;
-                if (user.banner) document.getElementById('banner').src = user.banner;
-            }
-            loadMyPosts(); loadMyFriends();
+        function toggleMenu() {
+            const menu = document.getElementById('mobile-menu');
+            const icon = document.getElementById('burger-icon');
+            menu.classList.toggle('active');
+            icon.className = menu.classList.contains('active') ? 'fas fa-times' : 'fas fa-bars';
+        }
+
+        function checkAuth() {
+            try {
+                const user = JSON.parse(localStorage.getItem('currentUser'));
+                if (!user || !user.username) { window.location.href = 'auth.html'; return; }
+                const authBtns = document.getElementById('auth-buttons');
+                const profileIcon = document.getElementById('header-profile-icon');
+                const mobileAuth = document.getElementById('mobile-auth');
+                if (authBtns) authBtns.style.display = 'none';
+                if (mobileAuth) mobileAuth.style.display = 'none';
+                if (profileIcon) { profileIcon.style.display = 'flex'; profileIcon.innerText = user.username[0].toUpperCase(); }
+                if (user.isAdmin) {
+                    const al = document.getElementById('admin-link'); if (al) al.style.display = 'inline-block';
+                }
+            } catch (e) { window.location.href = 'auth.html'; }
+        }
+        checkAuth();
+
+        // Character counters
+        document.getElementById('p-description')?.addEventListener('input', function() {
+            document.getElementById('desc-count').textContent = this.value.length;
         });
-        async function loadMyFriends() {
-            try { const r = await fetch('/api/friends',{headers:{'Authorization':'Bearer '+getToken()}}); const d = await r.json(); const f = d.friends||[];
-                document.getElementById('stat-friends').textContent = f.length;
-                const g = document.getElementById('friends-grid');
-                g.innerHTML = f.length === 0 ? '<div class="friend-avatar bg-white/5 flex items-center justify-center text-[10px] opacity-30">Пусто</div>' : f.slice(0,5).map(u=>`<img src="${u.avatar||`https://api.dicebear.com/7.x/avataaars/svg?seed=${u.username}`}" class="friend-avatar bg-white/5 cursor-pointer" onclick="location.href='profile_user.html?user=${u.username}'" title="${u.name}">`).join('');
-            } catch(e){}
+        document.getElementById('p-rank')?.addEventListener('input', function() {
+            document.getElementById('rank-count').textContent = this.value.length;
+        });
+        document.getElementById('p-role')?.addEventListener('input', function() {
+            document.getElementById('role-count').textContent = this.value.length;
+        });
+
+        // Load existing profile
+        async function loadProfile() {
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            if (!user) return;
+            try {
+                const res = await fetch(`/api/players/my`, {
+                    headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('token') || '') }
+                });
+                if (!res.ok) return;
+                const p = await res.json();
+                if (p.nickname) document.getElementById('p-nickname').value = p.nickname;
+                if (p.game) document.getElementById('p-game').value = p.game;
+                if (p.description) { document.getElementById('p-description').value = p.description; document.getElementById('desc-count').textContent = p.description.length; }
+                if (p.age) document.getElementById('p-age').value = p.age;
+                if (p.country) document.getElementById('p-country').value = p.country;
+                if (p.discord_tag) document.getElementById('p-discord').value = p.discord_tag;
+                if (p.play_time) document.getElementById('p-playtime').value = p.play_time;
+                if (p.has_mic) document.getElementById('p-mic').value = p.has_mic ? '1' : '0';
+                if (p.rank) { document.getElementById('p-rank').value = p.rank; document.getElementById('rank-count').textContent = p.rank.length; }
+                if (p.role) { document.getElementById('p-role').value = p.role; document.getElementById('role-count').textContent = p.role.length; }
+                if (p.hours_played) document.getElementById('p-hours').value = p.hours_played;
+                if (p.looking_for_team) document.getElementById('p-team').value = p.looking_for_team ? '1' : '0';
+                if (p.languages) {
+                    const langArr = p.languages.split(',').map(l => l.trim());
+                    const sel = document.getElementById('p-languages');
+                    Array.from(sel.options).forEach(opt => { opt.selected = langArr.includes(opt.value); });
+                }
+            } catch(e) {}
         }
-        async function loadMyPosts() {
-            const user = getUser(); if (!user) return;
-            try { const r = await fetch('/api/posts?userId='+user.id); const d = await r.json(); const p = d.posts||[];
-                document.getElementById('stat-posts').textContent = p.length; renderPosts(p);
-            } catch(e){ document.getElementById('userPosts').innerHTML = '<div class="glass-card"><div class="flex items-center justify-center py-16"><p class="text-sm opacity-30 uppercase font-bold tracking-widest">Пока нет публикаций</p></div></div>'; }
+        loadProfile();
+
+        function showAlert(id, text) {
+            const el = document.getElementById(id);
+            el.textContent = text;
+            el.style.display = 'block';
         }
-        function renderPosts(posts) {
-            const c = document.getElementById('userPosts');
-            if (!posts.length) { c.innerHTML = '<div class="glass-card"><div class="flex items-center justify-center py-16"><p class="text-sm opacity-30 uppercase font-bold tracking-widest">Пока нет публикаций</p></div></div>'; return; }
-            c.innerHTML = posts.map(p => { const av = p.author_avatar||`https://api.dicebear.com/7.x/avataaars/svg?seed=${p.author_username}`; return `<div class="glass-card mb-6"><div class="flex items-center gap-4 mb-8"><div class="w-12 h-12 rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600"><img src="${av}" class="w-full h-full object-cover"></div><div><p class="font-bold">${p.author_name}</p><p class="text-[10px] opacity-30 font-bold uppercase">${getTimeAgo(p.created_at)}</p></div></div><p class="text-[18px] leading-relaxed text-white/90">${escapeHtml(p.text)}</p></div>`; }).join('');
+
+        async function saveProfile() {
+            // Clear errors
+            document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
+            document.querySelectorAll('.field-error').forEach(el => el.style.display = 'none');
+            document.getElementById('profile-alert').style.display = 'none';
+            document.getElementById('profile-success').style.display = 'none';
+
+            const nickname = document.getElementById('p-nickname').value.trim();
+            const game = document.getElementById('p-game').value;
+            const description = document.getElementById('p-description').value.trim();
+            const ageStr = document.getElementById('p-age').value.trim();
+            const country = document.getElementById('p-country').value;
+            const discord_tag = document.getElementById('p-discord').value.trim();
+            const play_time = document.getElementById('p-playtime').value;
+            const has_mic = document.getElementById('p-mic').value === '1';
+            const rank = document.getElementById('p-rank').value.trim();
+            const role = document.getElementById('p-role').value.trim();
+            const hours = document.getElementById('p-hours').value.trim();
+            const looking_for_team = document.getElementById('p-team').value === '1';
+            const langSel = document.getElementById('p-languages');
+            const languages = Array.from(langSel.selectedOptions).map(o => o.value).join(', ');
+
+            let hasError = false;
+
+            // Nickname validation
+            if (!nickname) { showFieldError('p-nickname', 'Обязательное поле'); hasError = true; }
+
+            // Age validation: only numbers, 10-100
+            if (ageStr) {
+                const age = parseInt(ageStr, 10);
+                if (isNaN(age) || age < 10 || age > 100) {
+                    showFieldError('p-age', 'От 10 до 100 лет');
+                    hasError = true;
+                }
+            }
+
+            // Rank max 15
+            if (rank.length > 15) { showFieldError('p-rank', 'Максимум 15 символов'); hasError = true; }
+
+            // Role max 10
+            if (role.length > 10) { showFieldError('p-role', 'Максимум 10 символов'); hasError = true; }
+
+            if (hasError) return;
+
+            const btn = document.getElementById('save-btn');
+            btn.disabled = true;
+            btn.textContent = 'Сохранение...';
+
+            try {
+                const user = JSON.parse(localStorage.getItem('currentUser'));
+                const res = await fetch('/api/players', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
+                    },
+                    body: JSON.stringify({
+                        nickname, game, description,
+                        age: ageStr ? parseInt(ageStr) : null,
+                        country: country || null,
+                        languages: languages || null,
+                        discord_tag: discord_tag || null,
+                        play_time: play_time || null,
+                        has_mic,
+                        rank: rank || null,
+                        role: role || null,
+                        hours_played: hours ? parseInt(hours) : null,
+                        looking_for_team
+                    })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showAlert('profile-success', 'Профиль сохранён!');
+                } else {
+                    showAlert('profile-alert', data.error || 'Ошибка сохранения');
+                }
+            } catch(e) {
+                showAlert('profile-alert', 'Ошибка соединения с сервером');
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Сохранить профиль';
         }
-        async function createPost() { const t = document.getElementById('postText'); const text = t.value.trim(); if(!text) return; try { const r = await fetch('/api/posts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+getToken()},body:JSON.stringify({text})}); if(r.ok){t.value='';loadMyPosts();} } catch(e){} }
-        function getTimeAgo(d){const now=new Date(),date=new Date(d),diff=Math.floor((now-date)/1000);if(diff<60)return'только что';if(diff<3600)return Math.floor(diff/60)+' мин. назад';if(diff<86400)return Math.floor(diff/3600)+' ч. назад';return Math.floor(diff/86400)+' дн. назад';}
-        function escapeHtml(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
+
+        function showFieldError(inputId, msg) {
+            const input = document.getElementById(inputId);
+            if (input) input.classList.add('input-error');
+            let errEl = document.getElementById(inputId.replace('p-', '') + '-error');
+            if (!errEl) {
+                errEl = document.createElement('div');
+                errEl.className = 'field-error';
+                input?.parentElement?.appendChild(errEl);
+            }
+            errEl.textContent = msg;
+            errEl.style.display = 'block';
+        }
     </script>
 </body>
+
 </html>

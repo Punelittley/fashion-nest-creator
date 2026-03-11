@@ -394,15 +394,66 @@
             div.className = `msg-bubble ${isOwn ? 'msg-out' : 'msg-in'}`;
             div.setAttribute('data-msg-id', msg.id || '');
             
-            if (!isOwn) {
-                div.innerHTML = `<div class="msg-sender">${msg.sender_name || 'Аноним'}</div>${msg.text}`;
+            const text = msg.text || '';
+            // Check if message contains an image (base64)
+            const imgMatch = text.match(/^\[photo\](data:image\/[^;]+;base64,.+)$/);
+            if (imgMatch) {
+                const imgHtml = `<img class="msg-photo" src="${imgMatch[1]}" onclick="window.open(this.src)">`;
+                if (!isOwn) {
+                    div.innerHTML = `<div class="msg-sender">${msg.sender_name || 'Аноним'}</div>${imgHtml}`;
+                } else {
+                    div.innerHTML = imgHtml;
+                }
             } else {
-                div.textContent = msg.text;
+                if (!isOwn) {
+                    div.innerHTML = `<div class="msg-sender">${msg.sender_name || 'Аноним'}</div>${escapeHtml(text)}`;
+                } else {
+                    div.textContent = text;
+                }
             }
             
             flow.appendChild(div);
-            gsap.from(div, { opacity: 0, y: 10, duration: 0.3 });
             flow.scrollTop = flow.scrollHeight;
+        }
+
+        function escapeHtml(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+
+        function sendPhoto(input) {
+            if (!input.files || !input.files[0] || !activeConvId) return;
+            const file = input.files[0];
+            // Only allow images
+            if (!file.type.startsWith('image/')) {
+                alert('Можно отправлять только фотографии');
+                input.value = '';
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                alert('Максимальный размер фото — 5 МБ');
+                input.value = '';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const base64 = e.target.result;
+                const text = '[photo]' + base64;
+                const me = getUser();
+                appendMessage({
+                    id: 'temp_' + Date.now(),
+                    sender_id: me?.id,
+                    sender_name: me?.name,
+                    text: text,
+                    conversation_id: activeConvId
+                });
+                try {
+                    await fetch(`/api/conversations/${activeConvId}/messages`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+                        body: JSON.stringify({ text })
+                    });
+                } catch(e) { console.error('Ошибка отправки фото'); }
+            };
+            reader.readAsDataURL(file);
+            input.value = '';
         }
 
         async function sendMessage() {
