@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIAODQQ | Global Network</title>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="common-styles.css">
+    <style>
+        .input-search { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 20px; padding: 16px 24px; width: 100%; color: #fff; transition: 0.4s; outline: none; font-family: 'Inter', sans-serif; }
+        .input-search:focus { border-color: var(--accent); box-shadow: 0 0 20px rgba(139, 92, 246, 0.1); }
+        .user-avatar { width: 80px; height: 80px; border-radius: 50%; padding: 3px; background: linear-gradient(45deg, var(--accent), #3b82f6); }
+        .user-avatar img { width: 100%; height: 100%; border-radius: 50%; border: 3px solid #000; object-fit: cover; }
+        .btn-add-friend { background: #fff; color: #000; padding: 10px 20px; border-radius: 100px; font-size: 10px; font-weight: 900; text-transform: uppercase; transition: 0.3s; border: none; cursor: pointer; }
+        .btn-add-friend:hover { background: var(--accent); color: #fff; }
+        .btn-add-friend.sent { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.5); cursor: default; }
+        .btn-add-friend.friends { background: #10b981; color: #fff; cursor: default; }
+        .btn-view { background: rgba(255,255,255,0.05); color: #fff; padding: 10px 20px; border-radius: 100px; font-size: 10px; font-weight: 900; text-transform: uppercase; transition: 0.3s; border: 1px solid var(--border); cursor: pointer; }
+        .btn-view:hover { background: rgba(255,255,255,0.1); border-color: var(--accent); }
+        .user-card { transition: 0.3s; }
+        .user-card:hover { border-color: rgba(255,255,255,0.15); }
+        .empty-state { text-align: center; padding: 60px 20px; }
+        .loading-spinner { display: inline-block; width: 30px; height: 30px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .filter-chip {
+            padding: 8px 20px; border-radius: 100px; font-size: 10px; font-weight: 800;
+            text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: 0.3s;
+            background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: rgba(255,255,255,0.4);
+        }
+        .filter-chip:hover { border-color: var(--accent); color: #fff; }
+        .filter-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+        .view-toggle {
+            padding: 8px 16px; border-radius: 14px; font-size: 10px; font-weight: 800; cursor: pointer;
+            background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: rgba(255,255,255,0.4); transition: 0.3s;
+        }
+        .view-toggle.active { background: rgba(255,255,255,0.1); color: #fff; border-color: rgba(255,255,255,0.2); }
+    </style>
+</head>
+<body class="pb-20">
+
+    <header class="header-float">
+        <div class="header-float-inner">
+            <a href="index.html" class="header-logo huge-text text-lg">SIAODQQ</a>
+            <div class="header-nav-pills" id="nav-links"></div>
+            <div class="header-actions" id="nav-actions"></div>
+        </div>
+    </header>
+
+    <main class="max-w-[1400px] mx-auto px-10 pt-24">
+        <!-- Hero -->
+        <div class="mb-10 flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
+            <div>
+                <h1 class="huge-text text-5xl mb-4">Global<br>Network</h1>
+                <p class="text-sm opacity-30 uppercase font-bold tracking-widest">Найдите новых друзей</p>
+            </div>
+            <div class="flex gap-3 items-center">
+                <span class="text-[10px] opacity-30 font-bold uppercase" id="totalCount">0 пользователей</span>
+                <div class="flex gap-1">
+                    <button class="view-toggle active" id="gridViewBtn" onclick="setView('grid')">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zm-9 9h7v7H4v-7zm9 0h7v7h-7v-7z"/></svg>
+                    </button>
+                    <button class="view-toggle" id="listViewBtn" onclick="setView('list')">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h16v2H4v-2z"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Search & Filters -->
+        <div class="mb-8 space-y-4">
+            <input type="text" id="nameSearch" placeholder="Поиск по имени или @username..." class="input-search" oninput="filterUsers()">
+            <div class="flex flex-wrap gap-2">
+                <div class="filter-chip active" onclick="setFilter('all', this)">Все</div>
+                <div class="filter-chip" onclick="setFilter('new', this)">Новые</div>
+                <div class="filter-chip" onclick="setFilter('az', this)">А → Я</div>
+                <div class="filter-chip" onclick="setFilter('za', this)">Я → А</div>
+                <div class="filter-chip" onclick="setFilter('has_bio', this)">С описанием</div>
+                <div class="filter-chip" onclick="setFilter('has_avatar', this)">С аватаром</div>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+            <div class="glass-card p-5 text-center">
+                <p class="huge-text text-2xl text-purple-400" id="statTotal">0</p>
+                <p class="text-[9px] opacity-30 uppercase font-bold mt-1">Всего</p>
+            </div>
+            <div class="glass-card p-5 text-center">
+                <p class="huge-text text-2xl" id="statToday">0</p>
+                <p class="text-[9px] opacity-30 uppercase font-bold mt-1">Сегодня</p>
+            </div>
+            <div class="glass-card p-5 text-center">
+                <p class="huge-text text-2xl" id="statWeek">0</p>
+                <p class="text-[9px] opacity-30 uppercase font-bold mt-1">За неделю</p>
+            </div>
+            <div class="glass-card p-5 text-center">
+                <p class="huge-text text-2xl text-green-400">99.9%</p>
+                <p class="text-[9px] opacity-30 uppercase font-bold mt-1">Uptime</p>
+            </div>
+        </div>
+        
+        <!-- Users Grid -->
+        <div id="userGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-16">
+            <div class="empty-state col-span-full">
+                <div class="loading-spinner"></div>
+                <p class="text-xs opacity-30 uppercase font-bold mt-4">Загрузка пользователей...</p>
+            </div>
+        </div>
+    </main>
+
+    <script src="common.js"></script>
+    <script>
+        let allUsers = [];
+        let currentFilter = 'all';
+        let currentView = 'grid';
+        let friendStatuses = {}; // userId -> 'none' | 'pending' | 'friends'
+
+        async function loadFriendStatuses() {
+            if (!isLoggedIn()) return;
+            try {
+                const res = await fetch('/api/friends/statuses', { headers: { 'Authorization': 'Bearer ' + getToken() } });
+                const data = await res.json();
+                friendStatuses = data.statuses || {};
+            } catch(e) {}
+        }
+
+        function renderUsers(users) {
+            const grid = document.getElementById('userGrid');
+            const me = getUser();
+            
+            // Filter out self
+            users = users.filter(u => !me || u.id !== me.id);
+            
+            document.getElementById('totalCount').textContent = users.length + ' пользователей';
+            document.getElementById('statTotal').textContent = allUsers.filter(u => !me || u.id !== me.id).length;
+            
+            const now = new Date();
+            const today = allUsers.filter(u => {
+                if (me && u.id === me.id) return false;
+                const d = new Date(u.created_at);
+                return d.toDateString() === now.toDateString();
+            }).length;
+            const weekAgo = new Date(now - 7 * 86400000);
+            const week = allUsers.filter(u => {
+                if (me && u.id === me.id) return false;
+                return new Date(u.created_at) > weekAgo;
+            }).length;
+            document.getElementById('statToday').textContent = today;
+            document.getElementById('statWeek').textContent = week;
+            
+            if (users.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state col-span-full">
+                        <p class="huge-text text-2xl opacity-20 mb-2">Пусто</p>
+                        <p class="text-xs opacity-30 uppercase font-bold">Пользователи не найдены</p>
+                    </div>
+                `;
+                return;
+            }
+
+            if (currentView === 'grid') {
+                grid.className = 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-16';
+                grid.innerHTML = users.map(user => {
+                    const avatarSrc = user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`;
+                    const tagline = user.tagline || 'Участник SIAODQQ';
+                    const status = friendStatuses[user.id] || 'none';
+                    let friendBtn = '';
+                    if (status === 'friends') {
+                        friendBtn = '<button class="btn-add-friend friends flex-1" disabled>✓ Друзья</button>';
+                    } else if (status === 'pending') {
+                        friendBtn = '<button class="btn-add-friend sent flex-1" disabled>Запрос отправлен</button>';
+                    } else {
+                        friendBtn = `<button class="btn-add-friend flex-1" onclick="addFriend(${user.id}, this)">Добавить в друзья</button>`;
+                    }
+                    
+                    return `
+                        <div class="glass-card p-6 flex flex-col items-center text-center user-card" data-name="${(user.name + ' ' + user.username).toLowerCase()}" data-bio="${(user.bio||'').length > 0 ? '1' : '0'}" data-avatar="${user.avatar ? '1' : '0'}">
+                            <div class="user-avatar mb-4"><img src="${avatarSrc}"></div>
+                            <h3 class="font-bold text-lg">${user.name}</h3>
+                            <p class="text-xs opacity-40 mb-1">@${user.username}</p>
+                            <p class="text-[10px] text-purple-400 font-black uppercase mb-4">${tagline}</p>
+                            <div class="flex gap-2 w-full">
+                                <button class="btn-view flex-1" onclick="location.href='profile_user.html?user=${encodeURIComponent(user.username)}'">Профиль</button>
+                                ${isLoggedIn() ? friendBtn : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                grid.className = 'space-y-3 mb-16';
+                grid.innerHTML = users.map(user => {
+                    const avatarSrc = user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`;
+                    const tagline = user.tagline || 'Участник SIAODQQ';
+                    const status = friendStatuses[user.id] || 'none';
+                    let friendBtn = '';
+                    if (status === 'friends') {
+                        friendBtn = '<button class="btn-add-friend friends" disabled>✓ Друзья</button>';
+                    } else if (status === 'pending') {
+                        friendBtn = '<button class="btn-add-friend sent" disabled>Отправлен</button>';
+                    } else {
+                        friendBtn = `<button class="btn-add-friend" onclick="addFriend(${user.id}, this)">В друзья</button>`;
+                    }
+                    
+                    return `
+                        <div class="glass-card p-4 flex items-center gap-4 user-card" data-name="${(user.name + ' ' + user.username).toLowerCase()}" data-bio="${(user.bio||'').length > 0 ? '1' : '0'}" data-avatar="${user.avatar ? '1' : '0'}">
+                            <div class="user-avatar" style="width:50px;height:50px;"><img src="${avatarSrc}"></div>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="font-bold text-sm">${user.name}</h3>
+                                <p class="text-[10px] opacity-40">@${user.username} · ${tagline}</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button class="btn-view" onclick="location.href='profile_user.html?user=${encodeURIComponent(user.username)}'">Профиль</button>
+                                ${isLoggedIn() ? friendBtn : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        async function addFriend(userId, btn) {
+            if (!isLoggedIn()) { location.href = 'auth.html'; return; }
+            try {
+                const res = await fetch('/api/friends/request', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+                    body: JSON.stringify({ targetId: userId })
+                });
+                if (res.ok) {
+                    btn.textContent = 'Запрос отправлен';
+                    btn.classList.add('sent');
+                    btn.disabled = true;
+                    friendStatuses[userId] = 'pending';
+                }
+            } catch(e) {}
+        }
+
+        function filterUsers() {
+            const search = document.getElementById('nameSearch').value.toLowerCase();
+            const me = getUser();
+            let filtered = allUsers.filter(u => {
+                if (me && u.id === me.id) return false;
+                return (u.name + ' ' + u.username).toLowerCase().includes(search);
+            });
+            filtered = applySorting(filtered);
+            renderUsers(filtered);
+        }
+
+        function applySorting(users) {
+            switch (currentFilter) {
+                case 'new': return [...users].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                case 'az': return [...users].sort((a, b) => a.name.localeCompare(b.name));
+                case 'za': return [...users].sort((a, b) => b.name.localeCompare(a.name));
+                case 'has_bio': return users.filter(u => u.bio && u.bio.trim().length > 0);
+                case 'has_avatar': return users.filter(u => u.avatar && u.avatar.length > 0);
+                default: return users;
+            }
+        }
+
+        function setFilter(filter, el) {
+            currentFilter = filter;
+            el.parentElement.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            filterUsers();
+        }
+
+        function setView(view) {
+            currentView = view;
+            document.getElementById('gridViewBtn').classList.toggle('active', view === 'grid');
+            document.getElementById('listViewBtn').classList.toggle('active', view === 'list');
+            filterUsers();
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                await loadFriendStatuses();
+                const res = await fetch('/api/users');
+                const data = await res.json();
+                allUsers = data.users || [];
+                filterUsers();
+            } catch(e) {
+                document.getElementById('userGrid').innerHTML = `
+                    <div class="empty-state col-span-full">
+                        <p class="huge-text text-2xl opacity-20 mb-2">Ошибка</p>
+                        <p class="text-xs opacity-30 uppercase font-bold">Не удалось загрузить пользователей</p>
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
