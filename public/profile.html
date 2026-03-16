@@ -1,569 +1,429 @@
 <!DOCTYPE html>
 <html lang="ru">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GGLINK — Мой профиль</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600&family=Space+Grotesk:wght@500;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="header_footer.css">
-    <style>
-        :root {
-            --bg: #000000;
-            --surface: #0a0a0a;
-            --border: #151515;
-            --accent: #0066ff;
-            --white: #ffffff;
-            --gray: #666666;
-            --danger: #ff3333;
-            --font-head: 'Space Grotesk', sans-serif;
-            --font-body: 'Plus Jakarta Sans', sans-serif;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; outline: none; }
-
-        body {
-            font-family: var(--font-body);
-            background: var(--bg);
-            color: var(--white);
-            min-height: 100vh;
-            background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-            background-size: 30px 30px;
-        }
-
-        .profile-container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 100px 20px 60px;
-        }
-
-        .profile-header {
-            text-align: center;
-            margin-bottom: 50px;
-        }
-
-        .profile-header h1 {
-            font-family: var(--font-head);
-            font-size: 32px;
-            text-transform: uppercase;
-            letter-spacing: -1px;
-            margin-bottom: 8px;
-        }
-
-        .profile-header p {
-            color: var(--gray);
-            font-size: 13px;
-        }
-
-        .section-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            padding: 40px;
-            margin-bottom: 30px;
-            transition: 0.3s;
-        }
-
-        .section-card:hover { border-color: #222; }
-
-        .section-title {
-            font-family: var(--font-head);
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: var(--accent);
-            margin-bottom: 25px;
-            font-weight: 700;
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        .full-width { grid-column: span 2; }
-
-        .input-group { margin-bottom: 0; }
-
-        .input-group label {
-            display: block;
-            font-size: 10px;
-            text-transform: uppercase;
-            color: var(--gray);
-            font-weight: 700;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
-        }
-
-        .input-box, .select-box {
-            width: 100%;
-            background: #000;
-            border: 1px solid var(--border);
-            color: var(--white);
-            padding: 14px 16px;
-            font-family: var(--font-body);
-            font-size: 14px;
-            transition: 0.3s;
-        }
-
-        .select-box { cursor: pointer; appearance: none; }
-
-        .input-box:focus, .select-box:focus {
-            border-color: var(--accent);
-            background: #050505;
-        }
-
-        .input-box.input-error, .select-box.input-error {
-            border-color: var(--danger) !important;
-            background: rgba(255, 51, 51, 0.05) !important;
-        }
-
-        .field-error {
-            color: var(--danger);
-            font-size: 10px;
-            margin-top: 4px;
-            display: none;
-        }
-
-        .char-counter {
-            font-size: 10px;
-            color: var(--gray);
-            text-align: right;
-            margin-top: 3px;
-        }
-
-        .btn-primary {
-            width: 100%;
-            padding: 16px;
-            background: var(--accent);
-            color: white;
-            border: none;
-            font-family: var(--font-head);
-            font-weight: 700;
-            text-transform: uppercase;
-            font-size: 13px;
-            cursor: pointer;
-            transition: 0.3s;
-            letter-spacing: 1px;
-        }
-
-        .btn-primary:hover { filter: brightness(1.2); }
-        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        .alert-box {
-            background: rgba(255, 51, 51, 0.05);
-            border: 1px solid var(--danger);
-            color: var(--danger);
-            padding: 12px;
-            font-size: 11px;
-            text-align: center;
-            text-transform: uppercase;
-            margin-bottom: 25px;
-            display: none;
-        }
-
-        .alert-success {
-            background: rgba(0, 255, 136, 0.05);
-            border: 1px solid #00ff88;
-            color: #00ff88;
-            padding: 12px;
-            font-size: 11px;
-            text-align: center;
-            text-transform: uppercase;
-            margin-bottom: 25px;
-            display: none;
-        }
-
-        textarea.input-box {
-            resize: vertical;
-            min-height: 80px;
-            font-family: var(--font-body);
-        }
-
-        @media (max-width: 768px) {
-            .form-grid { grid-template-columns: 1fr; }
-            .full-width { grid-column: span 1; }
-            .section-card { padding: 25px 18px; }
-            .profile-container { padding: 80px 16px 40px; }
-        }
-    </style>
+    <link rel="stylesheet" href="global.css">
+    <link rel="stylesheet" href="styles/profile.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
+<style>
+    .profile-cover { height: 200px; background: linear-gradient(135deg, #1dbf73 0%, #14a361 50%, #0d8c4f 100%); position: relative; }
+    .profile-container { max-width: 1100px; margin: -70px auto 0; padding: 0 20px 60px; position: relative; z-index: 2; }
+    .profile-header-card { background: #fff; border: 1px solid #e4e5e7; padding: 0 32px 24px; margin-bottom: 24px; }
+    .profile-top-row { display: flex; align-items: flex-end; gap: 24px; transform: translateY(-40px); margin-bottom: -16px; }
+    .profile-avatar-wrapper { position: relative; flex-shrink: 0; }
+    .profile-avatar { width: 130px; height: 130px; border: 5px solid #fff; background: #f0f0f0; overflow: hidden; }
+    .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .avatar-change-btn { position: absolute; bottom: 5px; right: 5px; width: 36px; height: 36px; background: #1dbf73; color: #fff; border: 3px solid #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; z-index: 5; }
+    .avatar-change-btn:hover { background: #19a463; }
+    .avatar-change-btn input { display: none; }
+    .profile-identity { flex: 1; padding-bottom: 8px; min-width: 0; }
+    .profile-name { font-size: 28px; font-weight: 800; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .badge-verified { background: #1dbf73; color: #fff; font-size: 11px; padding: 3px 10px; font-weight: 700; }
+    .badge-role { background: #222; color: #fff; font-size: 11px; padding: 3px 10px; font-weight: 700; }
+    .profile-handle { color: #74767e; font-size: 14px; margin-top: 2px; }
+    .profile-location { color: #999; font-size: 13px; margin-top: 4px; }
+    .profile-header-actions { display: flex; gap: 10px; padding-bottom: 8px; flex-shrink: 0; }
+    .btn-edit { padding: 10px 20px; border: 1px solid #e4e5e7; background: #fff; font-weight: 600; font-size: 13px; cursor: pointer; transition: 0.2s; }
+    .btn-edit:hover { border-color: #1dbf73; color: #1dbf73; }
 
+    .profile-grid { display: flex; flex-direction: column; gap: 24px; }
+    .card { background: #fff; border: 1px solid #e4e5e7; padding: 28px; margin-bottom: 0; overflow: hidden; box-sizing: border-box; }
+    .card-title { font-size: 17px; font-weight: 800; margin-bottom: 18px; }
+    .bio-text { font-size: 15px; color: #62646a; line-height: 1.7; word-wrap: break-word; overflow-wrap: break-word; white-space: pre-wrap; }
+    .skills-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .skill-tag { padding: 6px 16px; background: #f0faf5; border: 1px solid #d0f0e0; font-size: 13px; font-weight: 600; color: #1dbf73; }
+
+    .sidebar-strip { display: grid; grid-template-columns: 1fr; gap: 24px; }
+    .sidebar-strip .card { margin-bottom: 0; }
+    .info-list { list-style: none; padding: 0; margin: 0; }
+    .info-list li { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid #f9f9f9; font-size: 14px; }
+    .info-list li:last-child { border-bottom: none; }
+    .info-list .lbl { color: #999; flex: 1; }
+    .info-list .val { font-weight: 600; color: #222; word-break: break-all; }
+
+    .tab-switch { display: flex; gap: 0; margin-bottom: 24px; border-bottom: 2px solid #f0f0f0; }
+    .tab-btn { padding: 12px 24px; font-size: 14px; font-weight: 600; color: #999; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: 0.2s; background: none; border-top: none; border-left: none; border-right: none; }
+    .tab-btn:hover { color: #222; }
+    .tab-btn.active { color: #1dbf73; border-bottom-color: #1dbf73; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .empty-state { text-align: center; padding: 30px; color: #999; font-size: 14px; }
+    .order-item { padding: 16px; border: 1px solid #e4e5e7; margin-bottom: 12px; }
+    .order-item:hover { border-color: #1dbf73; }
+    .order-title { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+    .order-meta { font-size: 13px; color: #999; }
+    .order-price { font-weight: 800; color: #1dbf73; font-size: 16px; margin-top: 8px; }
+
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 3000; backdrop-filter: blur(4px); }
+    .modal-overlay.show { display: flex; }
+    .modal-box { background: #fff; width: 95%; max-width: 520px; max-height: 85vh; overflow-y: auto; padding: 36px; animation: slideUp 0.3s ease; }
+    @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-box h2 { font-size: 22px; font-weight: 800; margin-bottom: 24px; }
+    .modal-box .form-group { margin-bottom: 16px; }
+    .modal-box label { display: block; font-size: 13px; font-weight: 600; color: #404145; margin-bottom: 5px; }
+    .modal-box input, .modal-box select, .modal-box textarea { width: 100%; padding: 11px 14px; border: 1px solid #e4e5e7; font-size: 14px; outline: none; font-family: 'Inter', sans-serif; box-sizing: border-box; }
+    .modal-box input:focus, .modal-box select:focus, .modal-box textarea:focus { border-color: #1dbf73; }
+    .modal-box textarea { min-height: 100px; resize: vertical; }
+    .modal-actions { display: flex; gap: 12px; margin-top: 24px; }
+    .btn-save { flex: 2; padding: 13px; background: #1dbf73; color: #fff; border: none; font-weight: 700; font-size: 14px; cursor: pointer; }
+    .btn-save:hover { background: #19a463; }
+    .btn-cancel { flex: 1; padding: 13px; background: #f5f5f5; border: none; font-weight: 600; font-size: 14px; cursor: pointer; color: #666; }
+    .modal-avatar-upload { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #f0f0f0; }
+    .modal-avatar-preview { width: 64px; height: 64px; overflow: hidden; background: #f0f0f0; flex-shrink: 0; }
+    .modal-avatar-preview img { width: 100%; height: 100%; object-fit: cover; }
+    .modal-avatar-btn { padding: 8px 16px; border: 1px solid #e4e5e7; font-size: 13px; font-weight: 600; cursor: pointer; background: #fff; }
+    .modal-avatar-btn:hover { border-color: #1dbf73; color: #1dbf73; }
+
+    .edit-error-msg { color: #e74c3c; font-size: 13px; margin-top: 8px; display: none; }
+    .form-group .hint { font-size: 12px; color: #999; margin-top: 4px; }
+    .page-footer { text-align: center; padding: 30px 0; font-size: 13px; color: #999; border-top: 1px solid var(--border-soft); margin-top: 40px; }
+
+    @media (max-width: 768px) {
+        .profile-cover { height: 150px; }
+        .profile-container { margin: -50px auto 0; }
+        .profile-header-card { padding: 0 20px 20px; }
+        .profile-top-row { flex-direction: column; align-items: center; text-align: center; gap: 16px; transform: translateY(-30px); margin-bottom: -8px; }
+        .profile-avatar { width: 100px; height: 100px; }
+        .profile-name { font-size: 22px; justify-content: center; }
+        .profile-header-actions { justify-content: center; }
+        .sidebar-strip { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 480px) {
+        .profile-cover { height: 120px; }
+        .profile-container { margin: -40px auto 0; padding: 0 12px 40px; }
+        .profile-header-card { padding: 0 14px 16px; }
+        .profile-avatar { width: 80px; height: 80px; border-width: 3px; }
+        .avatar-change-btn { width: 28px; height: 28px; font-size: 11px; }
+        .profile-name { font-size: 20px; }
+        .badge-verified, .badge-role { font-size: 10px; padding: 2px 8px; }
+        .profile-handle { font-size: 13px; }
+        .btn-edit { padding: 8px 14px; font-size: 12px; }
+        .profile-header-actions { gap: 8px; }
+        .card { padding: 16px; overflow: hidden; word-wrap: break-word; overflow-wrap: break-word; }
+        .bio-text { font-size: 14px; line-height: 1.6; }
+        .card-title { font-size: 15px; margin-bottom: 12px; }
+        .info-list li { font-size: 13px; gap: 8px; padding: 9px 0; }
+        .info-list .val { font-size: 13px; }
+        .skills-grid { gap: 6px; }
+        .skill-tag { padding: 4px 10px; font-size: 12px; }
+        .tab-btn { padding: 10px 16px; font-size: 13px; }
+        .sidebar-strip { gap: 12px; }
+    }
+</style>
 <body>
-    <header>
-        <div class="container">
-            <div class="nav-inner">
-                <a href="index.html" class="logo"><img src="assets/logo.svg" alt="GGLINK Logo"></a>
-                <nav class="nav-menu">
-                    <a href="brows.html">Найти тиммейта</a>
-                    <a href="games.html">Библиотека игр</a>
-                    <a href="tournament.html">Турниры</a>
-                    <a href="clans.html">Кланы</a>
-                </nav>
-                <div class="header-actions">
-                    <a href="message.html" class="msg-icon" title="Сообщения"><i class="fas fa-comment-dots"></i></a>
-                    <a href="admin.html" class="admin-link" id="admin-link"><i class="fas fa-shield-alt"></i> Админ</a>
-                    <a href="profile.html" class="profile-icon" id="header-profile-icon"></a>
-                    <span id="auth-buttons">
-                        <a href="auth.html" style="color:var(--gray); text-decoration:none; font-size:12px; font-weight:600; text-transform:uppercase;">Войти</a>
-                        <a href="auth.html" class="btn btn-blue" style="margin-left:10px;">Регистрация</a>
-                    </span>
-                    <button class="burger-btn" id="burger-btn" onclick="toggleMenu()"><i class="fas fa-bars" id="burger-icon"></i></button>
-                </div>
-            </div>
-        </div>
-    </header>
-    <div class="mobile-menu" id="mobile-menu">
-        <a href="brows.html">Найти тиммейта</a>
-        <a href="games.html">Библиотека игр</a>
-        <a href="tournament.html">Турниры</a>
-        <a href="clans.html">Кланы</a>
-        <a href="message.html">Сообщения</a>
-        <div class="mobile-auth" id="mobile-auth">
-            <a href="auth.html">Войти</a>
-            <a href="auth.html" class="btn btn-blue">Регистрация</a>
-        </div>
-    </div>
-
+    <div id="header-placeholder"></div>
+    <div class="profile-cover"></div>
     <div class="profile-container">
-        <div class="profile-header">
-            <h1>Мой игровой профиль</h1>
-            <p>Заполните информацию, чтобы другие игроки могли вас найти</p>
-        </div>
-
-        <div class="alert-box" id="profile-alert"></div>
-        <div class="alert-success" id="profile-success"></div>
-
-        <!-- Основная информация -->
-        <div class="section-card">
-            <div class="section-title">Основная информация</div>
-            <div class="form-grid">
-                <div class="input-group">
-                    <label>Никнейм в игре</label>
-                    <input type="text" id="p-nickname" class="input-box" placeholder="Ваш игровой ник" maxlength="20">
+        <div class="profile-header-card">
+            <div class="profile-top-row">
+                <div class="profile-avatar-wrapper">
+                    <div class="profile-avatar"><img id="pAvatar" src="" alt=""></div>
+                    <label class="avatar-change-btn" title="Сменить аватар"><input type="file" accept="image/*" onchange="changeAvatarDirect(this)"></label>
                 </div>
-                <div class="input-group">
-                    <label>Дисциплина</label>
-                    <select id="p-game" class="select-box">
-                        <option value="">Выберите игру</option>
-                        <option>Valorant</option>
-                        <option>CS2</option>
-                        <option>Dota 2</option>
-                        <option>League of Legends</option>
-                        <option>Overwatch 2</option>
-                        <option>Apex Legends</option>
-                        <option>Fortnite</option>
-                        <option>PUBG</option>
-                        <option>Rocket League</option>
-                        <option>Rainbow Six Siege</option>
-                    </select>
+                <div class="profile-identity">
+                    <div class="profile-name"><span id="pName">—</span><span class="badge-verified">Проверен</span><span class="badge-role" id="pRoleBadge">Исполнитель</span></div>
+                    <div class="profile-handle" id="pHandle">@username</div>
+                    <div class="profile-location"><span id="pCity">Не указан</span></div>
                 </div>
-                <div class="input-group full-width">
-                    <label>Описание</label>
-                    <textarea id="p-description" class="input-box" placeholder="Расскажите о себе..." maxlength="300"></textarea>
-                    <div class="char-counter"><span id="desc-count">0</span>/300</div>
+                <div class="profile-header-actions">
+                    <button class="btn-edit" onclick="openEditModal()">Редактировать</button>
                 </div>
             </div>
         </div>
 
-        <!-- Дополнительная информация -->
-        <div class="section-card">
-            <div class="section-title">Дополнительная информация</div>
-            <div class="form-grid">
-                <div class="input-group">
-                    <label>Возраст</label>
-                    <input type="text" id="p-age" class="input-box" placeholder="18" maxlength="3" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
-                    <div class="field-error" id="age-error"></div>
+        <div class="tab-switch">
+            <button class="tab-btn active" onclick="switchProfileTab('profile', this)">Профиль</button>
+            <button class="tab-btn" onclick="switchProfileTab('orders', this)">Мои заказы</button>
+        </div>
+
+        <div class="tab-content active" id="tab-profile">
+            <div class="profile-grid">
+                <div class="sidebar-strip">
+                    <div class="card">
+                        <div class="card-title">Информация</div>
+                        <ul class="info-list">
+                            <li><span class="lbl">Город</span><span class="val" id="iCity">—</span></li>
+                            <li><span class="lbl">Специализация</span><span class="val" id="iSpec">—</span></li>
+                            <li><span class="lbl">Опыт</span><span class="val" id="iExp">—</span></li>
+                            <li><span class="lbl">На MW. с</span><span class="val" id="iJoined">—</span></li>
+                            <li><span class="lbl">Telegram</span><span class="val" id="iTelegram">—</span></li>
+                            <li><span class="lbl">Мин. бюджет</span><span class="val" id="iBudget">—</span></li>
+                            <li><span class="lbl">Портфолио</span><span class="val" id="iPortfolio">—</span></li>
+                        </ul>
+                    </div>
                 </div>
-                <div class="input-group">
-                    <label>Страна</label>
-                    <select id="p-country" class="select-box">
-                        <option value="">Выберите страну</option>
-                        <option>Россия</option><option>Украина</option><option>Беларусь</option><option>Казахстан</option>
-                        <option>Узбекистан</option><option>Кыргызстан</option><option>Таджикистан</option><option>Туркменистан</option>
-                        <option>Азербайджан</option><option>Армения</option><option>Грузия</option><option>Молдова</option>
-                        <option>Латвия</option><option>Литва</option><option>Эстония</option>
-                        <option>Австралия</option><option>Австрия</option><option>Аргентина</option><option>Бельгия</option>
-                        <option>Болгария</option><option>Бразилия</option><option>Великобритания</option><option>Венгрия</option>
-                        <option>Германия</option><option>Греция</option><option>Дания</option><option>Египет</option>
-                        <option>Индия</option><option>Индонезия</option><option>Ирландия</option><option>Испания</option>
-                        <option>Италия</option><option>Канада</option><option>Китай</option><option>Колумбия</option>
-                        <option>Мексика</option><option>Нидерланды</option><option>Новая Зеландия</option><option>Норвегия</option>
-                        <option>ОАЭ</option><option>Пакистан</option><option>Перу</option><option>Польша</option>
-                        <option>Португалия</option><option>Румыния</option><option>Саудовская Аравия</option><option>Сербия</option>
-                        <option>Словакия</option><option>Словения</option><option>США</option><option>Таиланд</option>
-                        <option>Турция</option><option>Филиппины</option><option>Финляндия</option><option>Франция</option>
-                        <option>Хорватия</option><option>Чехия</option><option>Чили</option><option>Швейцария</option>
-                        <option>Швеция</option><option>Южная Корея</option><option>Япония</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label>Языки</label>
-                    <select id="p-languages" class="select-box" multiple size="4" style="min-height:90px;">
-                        <option>Русский</option><option>Английский</option><option>Украинский</option><option>Казахский</option>
-                        <option>Немецкий</option><option>Французский</option><option>Испанский</option><option>Португальский</option>
-                        <option>Итальянский</option><option>Польский</option><option>Турецкий</option><option>Китайский</option>
-                        <option>Японский</option><option>Корейский</option><option>Арабский</option><option>Хинди</option>
-                        <option>Чешский</option><option>Шведский</option><option>Норвежский</option><option>Финский</option>
-                    </select>
-                    <div style="font-size:10px;color:var(--gray);margin-top:4px;">Зажмите Ctrl для выбора нескольких</div>
-                </div>
-                <div class="input-group">
-                    <label>Время игры</label>
-                    <select id="p-playtime" class="select-box">
-                        <option value="">Выберите</option>
-                        <option value="06:00-12:00">Утро (06:00–12:00)</option>
-                        <option value="12:00-18:00">День (12:00–18:00)</option>
-                        <option value="18:00-00:00">Вечер (18:00–00:00)</option>
-                        <option value="00:00-06:00">Ночь (00:00–06:00)</option>
-                        <option value="flexible">Гибкое</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label>Discord Tag</label>
-                    <input type="text" id="p-discord" class="input-box" placeholder="username#1234" maxlength="37">
-                </div>
-                <div class="input-group">
-                    <label>Микрофон</label>
-                    <select id="p-mic" class="select-box">
-                        <option value="0">Нет</option>
-                        <option value="1">Есть</option>
-                    </select>
-                </div>
+                <div class="card"><div class="card-title">О себе</div><div class="bio-text" id="pBio">Пользователь пока не добавил описание.</div></div>
+                <div class="card"><div class="card-title">Навыки</div><div class="skills-grid" id="pSkills"><div class="empty-state">Навыки не указаны</div></div></div>
             </div>
         </div>
 
-        <!-- Игровые характеристики -->
-        <div class="section-card">
-            <div class="section-title">Игровые характеристики</div>
-            <div class="form-grid">
-                <div class="input-group">
-                    <label>Текущий уровень / ранг</label>
-                    <input type="text" id="p-rank" class="input-box" placeholder="Diamond II" maxlength="15">
-                    <div class="char-counter"><span id="rank-count">0</span>/15</div>
-                </div>
-                <div class="input-group">
-                    <label>Основная роль</label>
-                    <input type="text" id="p-role" class="input-box" placeholder="Duelist" maxlength="10">
-                    <div class="char-counter"><span id="role-count">0</span>/10</div>
-                </div>
-                <div class="input-group">
-                    <label>Часов наиграно</label>
-                    <input type="text" id="p-hours" class="input-box" placeholder="1500" maxlength="6" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
-                </div>
-                <div class="input-group">
-                    <label>Ищу команду</label>
-                    <select id="p-team" class="select-box">
-                        <option value="0">Нет</option>
-                        <option value="1">Да</option>
-                    </select>
-                </div>
-            </div>
+        <div class="tab-content" id="tab-orders">
+            <div id="ordersList"><div class="empty-state">Загрузка заказов...</div></div>
         </div>
-
-        <button class="btn-primary" id="save-btn" onclick="saveProfile()">Сохранить профиль</button>
     </div>
 
-    <footer>
-        <div class="container">
-            <div class="footer-grid">
-                <div class="footer-col" style="grid-column: span 2;">
-                    <svg viewBox="0 0 160 40" xmlns="http://www.w3.org/2000/svg" style="margin-bottom: 30px;">
-                        <rect x="0" y="5" width="5" height="30" fill="#0066ff" />
-                        <text x="15" y="28" fill="white" style="font-family:'Space Grotesk'; font-weight:700; font-size:24px; letter-spacing:-1px;">GGLINK</text>
-                    </svg>
+    <div class="modal-overlay" id="editModal">
+        <div class="modal-box">
+            <h2>Редактировать профиль</h2>
+            <div class="edit-error-msg" id="editError"></div>
+            <form id="editForm" onsubmit="saveProfile(event)">
+                <div class="modal-avatar-upload">
+                    <div class="modal-avatar-preview"><img id="editAvatarPreview" src="" alt=""></div>
+                    <div>
+                        <label class="modal-avatar-btn" for="editAvatarInput">Сменить фото</label>
+                        <input type="file" id="editAvatarInput" accept="image/*" onchange="previewEditAvatar(this)" style="display:none;">
+                        <div style="font-size:11px;color:#999;margin-top:4px;">JPG/PNG, до 5 МБ</div>
+                    </div>
                 </div>
-                <div class="footer-col">
-                    <h4>Продукт</h4>
-                    <ul>
-                        <li><a href="brows.html">Игроки</a></li>
-                        <li><a href="clans.html">Команды</a></li>
-                        <li><a href="tournament.html">Турниры</a></li>
-                        <li><a href="games.html">Игры</a></li>
-                    </ul>
+                <div class="form-group">
+                    <label>Имя пользователя</label>
+                    <input id="eUsername" type="text" maxlength="10" disabled style="background:#f5f5f5;cursor:not-allowed;">
+                    <div class="hint">Нельзя изменить</div>
                 </div>
-                <div class="footer-col">
-                    <h4>Ресурсы</h4>
-                    <ul>
-                        <li><a href="#">Главная</a></li>
-                        <li><a href="#">Что мы предлагаем</a></li>
-                    </ul>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input id="eEmail" type="email" maxlength="16">
+                    <div class="hint">Макс. 16 символов</div>
                 </div>
-            </div>
+                <div class="form-group">
+                    <label>Роль на платформе</label>
+                    <select id="eRole">
+                        <option value="seller">Я исполнитель</option>
+                        <option value="buyer">Я заказчик</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Телефон</label>
+                    <input id="ePhone" type="tel" maxlength="11">
+                    <div class="hint">Ровно 11 цифр</div>
+                </div>
+                <div class="form-group"><label>Специализация</label><select id="eSpec"><option value="">Не выбрана</option><option value="design">Дизайн</option><option value="dev">Разработка</option><option value="seo">SEO</option><option value="texts">Тексты</option><option value="video">Видео</option><option value="ads">Реклама</option></select></div>
+                <div class="form-group"><label>Опыт</label><select id="eExp"><option value="">Не указан</option><option value="0-1">Менее 1 года</option><option value="1-3">1-3 года</option><option value="3-5">3-5 лет</option><option value="5+">Более 5 лет</option></select></div>
+                <div class="form-group">
+                    <label>Город</label>
+                    <input id="eCity" type="text" maxlength="10">
+                    <div class="hint">Макс. 10 символов</div>
+                </div>
+                <div class="form-group">
+                    <label>О себе</label>
+                    <textarea id="eBio" maxlength="30"></textarea>
+                    <div class="hint">Макс. 30 символов</div>
+                </div>
+                <div class="form-group">
+                    <label>Навыки (через запятую)</label>
+                    <input id="eSkills" type="text" placeholder="React, Figma, SEO...">
+                    <div class="hint">Каждый навык макс. 20 символов</div>
+                </div>
+                <div class="form-group">
+                    <label>Telegram</label>
+                    <input id="eTelegram" type="text" placeholder="@username">
+                    <div class="hint">Только через @</div>
+                </div>
+                <div class="form-group">
+                    <label>Ссылка на портфолио</label>
+                    <input id="ePortfolio" type="url" maxlength="25">
+                    <div class="hint">Только ссылка, макс. 25 символов</div>
+                </div>
+                <div class="form-group">
+                    <label>Мин. бюджет (₽)</label>
+                    <input id="eBudget" type="number" min="1000" max="50000">
+                    <div class="hint">От 1 000 до 50 000 ₽</div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="closeEditModal()">Отмена</button>
+                    <button type="submit" class="btn-save">Сохранить</button>
+                </div>
+            </form>
         </div>
-    </footer>
+    </div>
 
-    <script>
-        function toggleMenu() {
-            const menu = document.getElementById('mobile-menu');
-            const icon = document.getElementById('burger-icon');
-            menu.classList.toggle('active');
-            icon.className = menu.classList.contains('active') ? 'fas fa-times' : 'fas fa-bars';
+    <div class="page-footer">Спасибо что выбираете нас!</div>
+
+<script>
+    let editAvatarBase64 = null;
+    function getAvatarSrc(u) { if (u.avatar_data) return u.avatar_data; return `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.username}`; }
+    function initHeaderAuth() {
+        const user = JSON.parse(localStorage.getItem('mw_user') || 'null');
+        if (user) { const btn = document.getElementById('headerLoginBtn'); if (btn) btn.style.display = 'none'; const menu = document.getElementById('userMenu'); if (menu) { menu.style.display = 'block'; document.getElementById('headerAvatar').src = getAvatarSrc(user); document.getElementById('headerUserName').textContent = user.first_name || user.username; } }
+        document.addEventListener('click', function(e) { const dd = document.getElementById('userDropdown'); const menu = document.getElementById('userMenu'); if (dd && menu && !menu.contains(e.target)) dd.classList.remove('show'); });
+    }
+    function logoutUser() { localStorage.removeItem('mw_user'); window.location.href = 'index.html'; }
+    fetch('header.html').then(r => r.text()).then(data => { document.getElementById('header-placeholder').innerHTML = data; initHeaderAuth(); });
+
+    const specLabels = { design:'Дизайн', dev:'Разработка', seo:'SEO', texts:'Тексты', video:'Видео', ads:'Реклама' };
+    const expLabels = { '0-1':'< 1 года', '1-3':'1-3 года', '3-5':'3-5 лет', '5+':'5+ лет' };
+    let user = JSON.parse(localStorage.getItem('mw_user') || 'null');
+
+    function checkHash() {
+        const hash = window.location.hash;
+        if (hash === '#settings') { setTimeout(() => openEditModal(), 500); }
+        if (hash === '#orders') { setTimeout(() => switchProfileTab('orders', document.querySelectorAll('.tab-btn')[1]), 300); }
+    }
+
+    function switchProfileTab(tab, el) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('tab-' + tab).classList.add('active');
+        el.classList.add('active');
+        if (tab === 'orders') loadOrders();
+    }
+
+    async function loadOrders() {
+        const container = document.getElementById('ordersList');
+        if (!user) { container.innerHTML = '<div class="empty-state">Войдите для просмотра заказов</div>'; return; }
+        try {
+            const res = await fetch('/api/admin/orders');
+            const orders = await res.json();
+            const myOrders = orders.filter(o => o.buyer_name === (user.first_name || user.username) || o.seller_name === user.username);
+            if (myOrders.length === 0) { container.innerHTML = '<div class="empty-state">У вас пока нет заказов</div>'; return; }
+            container.innerHTML = myOrders.map(o => `
+                <div class="order-item">
+                    <div class="order-title">${o.kwork_title || 'Заказ #' + o.id}</div>
+                    <div class="order-meta">Продавец: ${o.seller_name} | Статус: ${o.status || 'active'} | ${o.created_at ? new Date(o.created_at).toLocaleDateString('ru-RU') : ''}</div>
+                    <div class="order-price">${(o.price || 0).toLocaleString()} ₽</div>
+                </div>
+            `).join('');
+        } catch(e) { container.innerHTML = '<div class="empty-state">Не удалось загрузить заказы</div>'; }
+    }
+
+    async function changeAvatarDirect(input) {
+        if (!input.files || !input.files[0] || !user) return;
+        const file = input.files[0];
+        if (file.size > 5 * 1024 * 1024) { alert('Максимум 5 МБ'); return; }
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            user.avatar_data = e.target.result;
+            localStorage.setItem('mw_user', JSON.stringify(user));
+            try { await fetch(`/api/profile/${user.username}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...user, avatar_data: user.avatar_data }) }); } catch(err) {}
+            renderProfile();
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function previewEditAvatar(input) {
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            if (file.size > 5 * 1024 * 1024) { alert('Максимум 5 МБ'); return; }
+            const reader = new FileReader();
+            reader.onload = e => { editAvatarBase64 = e.target.result; document.getElementById('editAvatarPreview').src = editAvatarBase64; };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function renderProfile() {
+        if (!user) { document.querySelector('.profile-container').innerHTML = '<div style="text-align:center;padding:80px 20px;"><h2>Войдите в аккаунт</h2><p style="color:#999;margin:12px 0 24px;">Для просмотра профиля войдите или зарегистрируйтесь.</p><a href="login.html" style="background:#1dbf73;color:#fff;padding:12px 32px;font-weight:700;display:inline-block;">Войти</a></div>'; return; }
+        document.getElementById('pAvatar').src = getAvatarSrc(user);
+        document.getElementById('pName').textContent = user.first_name || user.username;
+        document.getElementById('pHandle').textContent = `@${user.username}`;
+        document.getElementById('pCity').textContent = user.city || 'Не указан';
+        document.getElementById('pBio').textContent = user.bio || 'Пользователь пока не добавил описание.';
+        const roleMap = { seller: 'Исполнитель', buyer: 'Заказчик', both: 'Исполнитель / Заказчик' };
+        document.getElementById('pRoleBadge').textContent = roleMap[user.role] || 'Пользователь';
+        document.getElementById('iCity').textContent = user.city || '—';
+        document.getElementById('iSpec').textContent = specLabels[user.specialty] || user.specialty || '—';
+        document.getElementById('iExp').textContent = expLabels[user.experience] || user.experience || '—';
+        document.getElementById('iTelegram').textContent = user.telegram || '—';
+        document.getElementById('iBudget').textContent = user.min_budget ? `от ${Number(user.min_budget).toLocaleString()} ₽` : '—';
+        if (user.portfolio_url) {
+            document.getElementById('iPortfolio').innerHTML = `<a href="${user.portfolio_url}" target="_blank" rel="noopener noreferrer" style="color:#1dbf73;text-decoration:none;font-weight:600;">Открыть ↗</a>`;
+        } else {
+            document.getElementById('iPortfolio').textContent = '—';
+        }
+        const joined = user.created_at ? new Date(user.created_at).toLocaleDateString('ru-RU', { month:'long', year:'numeric' }) : 'Недавно';
+        document.getElementById('iJoined').textContent = joined;
+        try { let skills = typeof user.skills === 'string' ? JSON.parse(user.skills) : (user.skills || []); if (skills.length > 0) document.getElementById('pSkills').innerHTML = skills.map(s => `<span class="skill-tag">${s}</span>`).join(''); } catch(e) {}
+    }
+
+    function showEditError(msg) {
+        const err = document.getElementById('editError');
+        err.textContent = msg;
+        err.style.display = 'block';
+    }
+
+    function openEditModal() {
+        if (!user) return;
+        editAvatarBase64 = null;
+        document.getElementById('editError').style.display = 'none';
+        document.getElementById('editAvatarPreview').src = getAvatarSrc(user);
+        document.getElementById('eUsername').value = user.username || '';
+        document.getElementById('eEmail').value = user.email || '';
+        document.getElementById('eRole').value = user.role || 'seller';
+        document.getElementById('ePhone').value = user.phone || '';
+        document.getElementById('eSpec').value = user.specialty || '';
+        document.getElementById('eExp').value = user.experience || '';
+        document.getElementById('eCity').value = user.city || '';
+        document.getElementById('eBio').value = user.bio || '';
+        document.getElementById('eTelegram').value = user.telegram || '';
+        document.getElementById('ePortfolio').value = user.portfolio_url || '';
+        document.getElementById('eBudget').value = user.min_budget || '';
+        try { let sk = typeof user.skills === 'string' ? JSON.parse(user.skills) : (user.skills || []); document.getElementById('eSkills').value = sk.join(', '); } catch(e) { document.getElementById('eSkills').value = ''; }
+        document.getElementById('editModal').classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeEditModal() { document.getElementById('editModal').classList.remove('show'); document.body.style.overflow = 'auto'; }
+    document.getElementById('editModal').addEventListener('click', e => { if (e.target === document.getElementById('editModal')) closeEditModal(); });
+
+    async function saveProfile(e) {
+        e.preventDefault();
+        const errEl = document.getElementById('editError');
+        errEl.style.display = 'none';
+
+        const email = document.getElementById('eEmail').value.trim();
+        const phone = document.getElementById('ePhone').value.trim();
+        const city = document.getElementById('eCity').value.trim();
+        const bio = document.getElementById('eBio').value.trim();
+        const telegram = document.getElementById('eTelegram').value.trim();
+        const portfolio = document.getElementById('ePortfolio').value.trim();
+        const budget = parseInt(document.getElementById('eBudget').value) || 0;
+        const skillsRaw = document.getElementById('eSkills').value;
+        const role = document.getElementById('eRole').value;
+
+        if (email) {
+            if (email.length > 16) { showEditError('Email максимум 16 символов'); return; }
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) { showEditError('Введите корректный email'); return; }
+        }
+        if (phone && !/^\d{11}$/.test(phone)) { showEditError('Телефон: ровно 11 цифр'); return; }
+        if (city && city.length > 10) { showEditError('Город максимум 10 символов'); return; }
+        if (bio && bio.length > 30) { showEditError('О себе максимум 30 символов'); return; }
+
+        const skillsArr = skillsRaw.split(',').map(s => s.trim()).filter(Boolean);
+        for (const skill of skillsArr) {
+            if (skill.length > 20) { showEditError('Каждый навык максимум 20 символов'); return; }
         }
 
-        function checkAuth() {
-            try {
-                const user = JSON.parse(localStorage.getItem('currentUser'));
-                if (!user || !user.username) { window.location.href = 'auth.html'; return; }
-                const authBtns = document.getElementById('auth-buttons');
-                const profileIcon = document.getElementById('header-profile-icon');
-                const mobileAuth = document.getElementById('mobile-auth');
-                if (authBtns) authBtns.style.display = 'none';
-                if (mobileAuth) mobileAuth.style.display = 'none';
-                if (profileIcon) { profileIcon.style.display = 'flex'; profileIcon.innerText = user.username[0].toUpperCase(); }
-                if (user.isAdmin) {
-                    const al = document.getElementById('admin-link'); if (al) al.style.display = 'inline-block';
-                }
-            } catch (e) { window.location.href = 'auth.html'; }
+        if (telegram && !telegram.startsWith('@')) { showEditError('Telegram должен начинаться с @'); return; }
+        if (portfolio) {
+            if (portfolio.length > 25) { showEditError('Ссылка на портфолио макс. 25 символов'); return; }
+            if (!/^https?:\/\/.+/.test(portfolio)) { showEditError('Портфолио: введите корректную ссылку (https://...)'); return; }
         }
-        checkAuth();
-
-        // Character counters
-        document.getElementById('p-description')?.addEventListener('input', function() {
-            document.getElementById('desc-count').textContent = this.value.length;
-        });
-        document.getElementById('p-rank')?.addEventListener('input', function() {
-            document.getElementById('rank-count').textContent = this.value.length;
-        });
-        document.getElementById('p-role')?.addEventListener('input', function() {
-            document.getElementById('role-count').textContent = this.value.length;
-        });
-
-        // Load existing profile
-        async function loadProfile() {
-            const user = JSON.parse(localStorage.getItem('currentUser'));
-            if (!user) return;
-            try {
-                const res = await fetch(`/api/players/my`, {
-                    headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('token') || '') }
-                });
-                if (!res.ok) return;
-                const p = await res.json();
-                if (p.nickname) document.getElementById('p-nickname').value = p.nickname;
-                if (p.game) document.getElementById('p-game').value = p.game;
-                if (p.description) { document.getElementById('p-description').value = p.description; document.getElementById('desc-count').textContent = p.description.length; }
-                if (p.age) document.getElementById('p-age').value = p.age;
-                if (p.country) document.getElementById('p-country').value = p.country;
-                if (p.discord_tag) document.getElementById('p-discord').value = p.discord_tag;
-                if (p.play_time) document.getElementById('p-playtime').value = p.play_time;
-                if (p.has_mic) document.getElementById('p-mic').value = p.has_mic ? '1' : '0';
-                if (p.rank) { document.getElementById('p-rank').value = p.rank; document.getElementById('rank-count').textContent = p.rank.length; }
-                if (p.role) { document.getElementById('p-role').value = p.role; document.getElementById('role-count').textContent = p.role.length; }
-                if (p.hours_played) document.getElementById('p-hours').value = p.hours_played;
-                if (p.looking_for_team) document.getElementById('p-team').value = p.looking_for_team ? '1' : '0';
-                if (p.languages) {
-                    const langArr = p.languages.split(',').map(l => l.trim());
-                    const sel = document.getElementById('p-languages');
-                    Array.from(sel.options).forEach(opt => { opt.selected = langArr.includes(opt.value); });
-                }
-            } catch(e) {}
-        }
-        loadProfile();
-
-        function showAlert(id, text) {
-            const el = document.getElementById(id);
-            el.textContent = text;
-            el.style.display = 'block';
+        if (budget) {
+            if (budget < 1000 || budget > 50000) { showEditError('Бюджет от 1 000 до 50 000 ₽'); return; }
         }
 
-        async function saveProfile() {
-            // Clear errors
-            document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
-            document.querySelectorAll('.field-error').forEach(el => el.style.display = 'none');
-            document.getElementById('profile-alert').style.display = 'none';
-            document.getElementById('profile-success').style.display = 'none';
+        const avatarToSave = editAvatarBase64 || user.avatar_data || null;
+        const updated = {
+            email: email, role: role,
+            phone: phone, specialty: document.getElementById('eSpec').value,
+            skills: JSON.stringify(skillsArr), experience: document.getElementById('eExp').value,
+            city: city, bio: bio,
+            portfolio_url: portfolio, telegram: telegram,
+            min_budget: budget || 0, avatar_data: avatarToSave,
+        };
+        try { await fetch(`/api/profile/${user.username}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) }); } catch(err) {}
+        Object.assign(user, updated);
+        localStorage.setItem('mw_user', JSON.stringify(user));
+        closeEditModal();
+        renderProfile();
+    }
 
-            const nickname = document.getElementById('p-nickname').value.trim();
-            const game = document.getElementById('p-game').value;
-            const description = document.getElementById('p-description').value.trim();
-            const ageStr = document.getElementById('p-age').value.trim();
-            const country = document.getElementById('p-country').value;
-            const discord_tag = document.getElementById('p-discord').value.trim();
-            const play_time = document.getElementById('p-playtime').value;
-            const has_mic = document.getElementById('p-mic').value === '1';
-            const rank = document.getElementById('p-rank').value.trim();
-            const role = document.getElementById('p-role').value.trim();
-            const hours = document.getElementById('p-hours').value.trim();
-            const looking_for_team = document.getElementById('p-team').value === '1';
-            const langSel = document.getElementById('p-languages');
-            const languages = Array.from(langSel.selectedOptions).map(o => o.value).join(', ');
-
-            let hasError = false;
-
-            // Nickname validation
-            if (!nickname) { showFieldError('p-nickname', 'Обязательное поле'); hasError = true; }
-
-            // Age validation: only numbers, 10-100
-            if (ageStr) {
-                const age = parseInt(ageStr, 10);
-                if (isNaN(age) || age < 10 || age > 100) {
-                    showFieldError('p-age', 'От 10 до 100 лет');
-                    hasError = true;
-                }
-            }
-
-            // Rank max 15
-            if (rank.length > 15) { showFieldError('p-rank', 'Максимум 15 символов'); hasError = true; }
-
-            // Role max 10
-            if (role.length > 10) { showFieldError('p-role', 'Максимум 10 символов'); hasError = true; }
-
-            if (hasError) return;
-
-            const btn = document.getElementById('save-btn');
-            btn.disabled = true;
-            btn.textContent = 'Сохранение...';
-
-            try {
-                const user = JSON.parse(localStorage.getItem('currentUser'));
-                const res = await fetch('/api/players', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
-                    },
-                    body: JSON.stringify({
-                        nickname, game, description,
-                        age: ageStr ? parseInt(ageStr) : null,
-                        country: country || null,
-                        languages: languages || null,
-                        discord_tag: discord_tag || null,
-                        play_time: play_time || null,
-                        has_mic,
-                        rank: rank || null,
-                        role: role || null,
-                        hours_played: hours ? parseInt(hours) : null,
-                        looking_for_team
-                    })
-                });
-                const data = await res.json();
-                if (res.ok) {
-                    showAlert('profile-success', 'Профиль сохранён!');
-                } else {
-                    showAlert('profile-alert', data.error || 'Ошибка сохранения');
-                }
-            } catch(e) {
-                showAlert('profile-alert', 'Ошибка соединения с сервером');
-            }
-
-            btn.disabled = false;
-            btn.textContent = 'Сохранить профиль';
-        }
-
-        function showFieldError(inputId, msg) {
-            const input = document.getElementById(inputId);
-            if (input) input.classList.add('input-error');
-            let errEl = document.getElementById(inputId.replace('p-', '') + '-error');
-            if (!errEl) {
-                errEl = document.createElement('div');
-                errEl.className = 'field-error';
-                input?.parentElement?.appendChild(errEl);
-            }
-            errEl.textContent = msg;
-            errEl.style.display = 'block';
-        }
-    </script>
+    renderProfile();
+    checkHash();
+</script>
 </body>
-
 </html>

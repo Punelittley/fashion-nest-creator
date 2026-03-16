@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="global.css">
+    <link rel="stylesheet" href="styles/projects.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<style>
+    .projects-hero { padding: 60px 0 40px; border-bottom: 1px solid var(--border-soft); }
+    .projects-hero h1 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+    .projects-hero p { color: var(--text-muted); font-size: 16px; }
+
+    .tabs { display: flex; gap: 0; margin: 30px 0 25px; border-bottom: 2px solid #f0f0f0; }
+    .tab { padding: 12px 24px; font-size: 14px; font-weight: 600; color: #999; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: 0.2s; }
+    .tab:hover { color: #222; }
+    .tab.active { color: #1dbf73; border-bottom-color: #1dbf73; }
+
+    .masonry { columns: 3; column-gap: 20px; margin-bottom: 60px; }
+    .masonry-item { break-inside: avoid; margin-bottom: 20px; overflow: hidden; position: relative; cursor: pointer; }
+    .masonry-item:hover .masonry-overlay { opacity: 1; }
+    .masonry-item img { width: 100%; display: block; }
+    .masonry-overlay { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.85)); padding: 20px 16px 16px; opacity: 0; transition: opacity 0.3s; }
+    .masonry-overlay .m-title { color: #fff; font-weight: 700; font-size: 15px; margin-bottom: 6px; }
+    .masonry-overlay .m-meta { display: flex; justify-content: space-between; align-items: center; }
+    .masonry-overlay .m-author { color: rgba(255,255,255,0.8); font-size: 13px; display: flex; align-items: center; gap: 6px; }
+    .masonry-overlay .m-author img { width: 20px; height: 20px; }
+    .masonry-overlay .m-likes { color: rgba(255,255,255,0.8); font-size: 13px; }
+
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 3000; backdrop-filter: blur(6px); }
+    .modal-content { background: #fff; width: 95%; max-width: 900px; max-height: 90vh; overflow: hidden; display: flex; animation: modalUp 0.3s ease; position: relative; }
+    @keyframes modalUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .close-modal { position: absolute; top: 16px; right: 20px; font-size: 28px; cursor: pointer; color: #b5b6ba; z-index: 10; background: none; border: none; }
+    .close-modal:hover { color: #222; }
+    .modal-img-side { flex: 1.2; background: #f0f0f0; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+    .modal-img-side img { width: 100%; height: 100%; object-fit: cover; }
+    .slider-dots { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; }
+    .slider-dot { width: 8px; height: 8px; background: rgba(255,255,255,0.5); cursor: pointer; }
+    .slider-dot.active { background: #fff; }
+    .modal-info-side { flex: 1; padding: 40px; display: flex; flex-direction: column; overflow-y: auto; }
+    .modal-info-side .mi-category { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #1dbf73; margin-bottom: 10px; }
+    .modal-info-side .mi-title { font-size: 24px; font-weight: 800; margin-bottom: 16px; line-height: 1.2; }
+    .modal-info-side .mi-desc { font-size: 15px; color: #62646a; line-height: 1.6; margin-bottom: 24px; }
+    .mi-author-card { display: flex; align-items: center; gap: 12px; padding: 16px; background: #f9f9fb; margin-bottom: 24px; }
+    .mi-author-card img { width: 40px; height: 40px; }
+    .mi-author-card strong { font-size: 15px; display: block; }
+    .mi-author-card span { font-size: 13px; color: #1dbf73; font-weight: 600; }
+    .mi-stats { display: flex; gap: 24px; margin-bottom: 24px; }
+    .mi-stat { text-align: center; }
+    .mi-stat .val { font-size: 20px; font-weight: 800; }
+    .mi-stat .lbl { font-size: 12px; color: #999; }
+
+    @media (max-width: 768px) {
+        .projects-hero { padding: 40px 0 30px; }
+        .projects-hero h1 { font-size: 24px; }
+        .projects-hero p { font-size: 14px; }
+        .masonry { columns: 2; column-gap: 14px; }
+        .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+        .tabs::-webkit-scrollbar { display: none; }
+        .tab { white-space: nowrap; padding: 10px 18px; font-size: 13px; }
+        .modal-content { flex-direction: column; width: 95%; max-width: 600px; }
+    }
+
+    @media (max-width: 480px) {
+        .projects-hero { padding: 24px 0 20px; }
+        .projects-hero h1 { font-size: 20px; }
+        .masonry { columns: 1; }
+        .masonry-item { margin-bottom: 14px; }
+        .tab { padding: 8px 14px; font-size: 12px; }
+        .modal-content { width: 98%; }
+        .masonry-overlay { opacity: 1; padding: 14px 12px 12px; }
+        .masonry-overlay .m-title { font-size: 13px; }
+    }
+</style>
+<body>
+    <div id="header-placeholder"></div>
+    <div class="container">
+        <div class="projects-hero"><h1>Портфолио</h1><p>Вдохновляйтесь лучшими работами наших исполнителей</p></div>
+        <div class="tabs">
+            <div class="tab active" data-filter="all">Все работы</div>
+            <div class="tab" data-filter="Дизайн">Дизайн</div>
+            <div class="tab" data-filter="Разработка">Разработка</div>
+            <div class="tab" data-filter="SEO">SEO</div>
+            <div class="tab" data-filter="Тексты">Тексты</div>
+        </div>
+        <div class="masonry" id="masonryGrid"></div>
+    </div>
+
+    <div class="modal-overlay" id="projectModal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeModal()">×</button>
+            <div class="modal-img-side">
+                <img id="pm-img" src="" alt="">
+                <div class="slider-dots" id="sliderDots"></div>
+            </div>
+            <div class="modal-info-side">
+                <div class="mi-category" id="pm-category">Дизайн</div>
+                <div class="mi-title" id="pm-title">Название</div>
+                <div class="mi-desc" id="pm-desc">Описание проекта.</div>
+                <div class="mi-author-card"><img id="pm-avatar" src="" alt=""><div><strong id="pm-author">Автор</strong><span>Исполнитель</span></div></div>
+                <div class="mi-stats">
+                    <div class="mi-stat"><div class="val" id="pm-likes">0</div><div class="lbl">Нравится</div></div>
+                    <div class="mi-stat"><div class="val">48ч</div><div class="lbl">Выполнено за</div></div>
+                    <div class="mi-stat"><div class="val">★ 5.0</div><div class="lbl">Рейтинг</div></div>
+                </div>
+                <!-- Кнопка "Связаться" убрана — только просмотр -->
+            </div>
+        </div>
+    </div>
+
+    <div class="page-footer">Спасибо что выбираете нас!</div>
+
+<script>
+    let currentAuthor = '';
+    let currentAuthorAvatar = '';
+    let sliderImages = [];
+    let currentSlide = 0;
+
+    const USER_IMAGES = {
+        'ArtDesign': 'img/11.png', 'WebMaster': 'img/7.png', 'SEO_Pro': 'img/12.png',
+        'CopyWriter': 'img/8.png', 'SMM_King': 'img/13.png', 'aleksei_dev': 'img/11.png',
+        'marina_design': 'img/7.png', 'ivan_seo': 'img/12.png', 'olga_texts': 'img/8.png',
+        'dmitry_ads': 'img/13.png', 'elena_dev': 'img/9.png', 'sergey_design': 'img/13.png',
+        'anna_seo': 'img/14.png',
+    };
+
+    function getUserAvatar(username) {
+        return USER_IMAGES[username] || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + username;
+    }
+
+    function getAvatarSrc(u) {
+        if (u && u.avatar_url) return u.avatar_url;
+        if (u && u.avatar_data) return u.avatar_data;
+        return 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + (u ? u.username : 'user');
+    }
+    function initHeaderAuth() {
+        const user = JSON.parse(localStorage.getItem('mw_user') || 'null');
+        if (user) { const btn = document.getElementById('headerLoginBtn'); if (btn) btn.style.display = 'none'; const menu = document.getElementById('userMenu'); if (menu) { menu.style.display = 'block'; document.getElementById('headerAvatar').src = getAvatarSrc(user); document.getElementById('headerUserName').textContent = user.first_name || user.username; } }
+        document.addEventListener('click', function(e) { const dd = document.getElementById('userDropdown'); const menu = document.getElementById('userMenu'); if (dd && menu && !menu.contains(e.target)) dd.classList.remove('show'); });
+    }
+    function logoutUser() { localStorage.removeItem('mw_user'); window.location.href = 'index.html'; }
+    fetch('header.html').then(r => r.text()).then(data => {
+        document.getElementById('header-placeholder').innerHTML = data;
+        const link = document.querySelector('.nav-link[data-page="projects"]');
+        if (link) link.classList.add('active-link');
+        initHeaderAuth();
+    });
+
+    let allItems = [];
+    const heights = [220, 280, 200, 320, 250, 300];
+
+    async function fetchPortfolio() { try { const res = await fetch('/api/projects-portfolio'); allItems = await res.json(); } catch(e) { allItems = []; } renderItems(allItems); }
+
+    function renderItems(items) {
+        document.getElementById('masonryGrid').innerHTML = items.map((p, i) => {
+            const imgSrc = p.image_url;
+            const safeTitle = p.title.replace(/'/g, "\\'");
+            return `
+            <div class="masonry-item" onclick="openModal('${safeTitle}','${p.category}','${imgSrc}','${p.author}',${p.likes})">
+                <img src="${imgSrc}" alt="${p.title}" style="height:${heights[i % heights.length]}px; object-fit:cover;">
+                <div class="masonry-overlay">
+                    <div class="m-title">${p.title}</div>
+                    <div class="m-meta">
+                        <div class="m-author"><img src="${getUserAvatar(p.author)}" alt="">${p.author}</div>
+                        <span class="m-likes">♥ ${p.likes}</span>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            const filter = tab.dataset.filter;
+            renderItems(filter === 'all' ? allItems : allItems.filter(p => p.category === filter));
+        });
+    });
+
+    function openModal(title, category, img, author, likes) {
+        currentAuthor = author;
+        currentAuthorAvatar = getUserAvatar(author);
+        currentSlide = 0;
+        sliderImages = [img];
+        document.getElementById('pm-title').textContent = title;
+        document.getElementById('pm-category').textContent = category;
+        document.getElementById('pm-img').src = sliderImages[0];
+        document.getElementById('pm-author').textContent = author;
+        document.getElementById('pm-avatar').src = currentAuthorAvatar;
+        document.getElementById('pm-likes').textContent = likes;
+        document.getElementById('pm-desc').textContent = 'Проект "' + title + '" выполнен исполнителем ' + author + '. Работа включает полный цикл от концепции до финальной реализации.';
+        renderDots();
+        document.getElementById('projectModal').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function renderDots() {
+        document.getElementById('sliderDots').innerHTML = sliderImages.map((_, i) => `<div class="slider-dot ${i === currentSlide ? 'active' : ''}" onclick="goToSlide(${i})"></div>`).join('');
+    }
+
+    function goToSlide(i) { currentSlide = i; document.getElementById('pm-img').src = sliderImages[i]; renderDots(); }
+
+    function closeModal() { document.getElementById('projectModal').style.display = 'none'; document.body.style.overflow = 'auto'; }
+    document.getElementById('projectModal').addEventListener('click', e => { if (e.target === document.getElementById('projectModal')) closeModal(); });
+
+    window.onload = fetchPortfolio;
+</script>
+</body>
+</html>
