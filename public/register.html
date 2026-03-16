@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="global.css">
+    <link rel="stylesheet" href="styles/register.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<style>
+    .auth-page {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(circle at 70% 30%, #f7f7f9 0%, #fff 70%);
+        padding: 40px 20px;
+    }
+
+    .register-card {
+        background: #fff;
+        border: 1px solid #e4e5e7;
+        border-radius: 16px;
+        padding: 48px;
+        width: 100%;
+        max-width: 460px;
+    }
+
+    .auth-logo {
+        font-size: 28px;
+        font-weight: 800;
+        text-align: center;
+        margin-bottom: 8px;
+    }
+
+    .auth-logo a {
+        text-decoration: none;
+        color: #222;
+    }
+
+    .auth-subtitle {
+        text-align: center;
+        color: #74767e;
+        font-size: 15px;
+        margin-bottom: 32px;
+    }
+
+    .form-group {
+        margin-bottom: 18px;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: #404145;
+        margin-bottom: 6px;
+    }
+
+    .form-group input,
+    .form-group select {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid #e4e5e7;
+        border-radius: 8px;
+        font-size: 14px;
+        outline: none;
+        transition: 0.2s;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        border-color: #1dbf73;
+    }
+
+    .form-group .hint {
+        font-size: 12px;
+        color: #999;
+        margin-top: 4px;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    .btn-submit {
+        width: 100%;
+        padding: 14px;
+        background: #1dbf73;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: 0.2s;
+        margin-top: 8px;
+    }
+
+    .btn-submit:hover {
+        background: #19a463;
+    }
+
+    .auth-footer {
+        text-align: center;
+        font-size: 14px;
+        color: #74767e;
+        margin-top: 24px;
+    }
+
+    .auth-footer a {
+        color: #1dbf73;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .error-msg {
+        color: #e74c3c;
+        font-size: 13px;
+        margin-top: 8px;
+        display: none;
+    }
+
+    @media (max-width: 768px) {
+        .register-card {
+            padding: 32px 24px;
+            border-radius: 12px;
+        }
+        .form-row {
+            grid-template-columns: 1fr;
+            gap: 0;
+        }
+        .auth-logo { font-size: 24px; }
+    }
+
+    @media (max-width: 480px) {
+        .auth-page { padding: 16px 12px; }
+        .register-card { padding: 24px 16px; }
+        .auth-subtitle { font-size: 13px; margin-bottom: 24px; }
+        .form-group input, .form-group select { padding: 10px 12px; font-size: 13px; }
+        .form-group label { font-size: 12px; }
+        .btn-submit { padding: 12px; font-size: 14px; }
+    }
+</style>
+<body>
+    <div class="auth-page">
+        <div class="register-card">
+            <div class="auth-logo"><a href="index.html">Freelance Market</a></div>
+            <div class="auth-subtitle">Создайте аккаунт на платформе</div>
+
+            <form id="registerForm" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label>Имя пользователя *</label>
+                    <input type="text" id="regUsername" placeholder="ivan123" required maxlength="10">
+                    <div class="hint">Макс. 10 символов, только буквы и цифры</div>
+                </div>
+                <div class="form-group">
+                    <label>Email *</label>
+                    <input type="email" id="regEmail" placeholder="ivan@mail.ru" required maxlength="16">
+                    <div class="hint">Макс. 16 символов</div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Пароль *</label>
+                        <input type="password" id="regPassword" placeholder="Минимум 8 символов" required minlength="8" maxlength="100">
+                    </div>
+                    <div class="form-group">
+                        <label>Подтверждение *</label>
+                        <input type="password" id="regPasswordConfirm" placeholder="Повторите пароль" required minlength="8" maxlength="100">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Роль на платформе *</label>
+                    <select id="regRole" required>
+                        <option value="">Выберите роль</option>
+                        <option value="seller">Я исполнитель</option>
+                        <option value="buyer">Я заказчик</option>
+                    </select>
+                </div>
+
+                <div class="error-msg" id="regError"></div>
+
+                <button type="submit" class="btn-submit">Создать аккаунт</button>
+            </form>
+
+            <div class="auth-footer">
+                Уже есть аккаунт? <a href="login.html">Войти</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-footer">Спасибо что выбираете нас!</div>
+
+    <script>
+        function showError(msg) {
+            const err = document.getElementById('regError');
+            err.textContent = msg;
+            err.style.display = 'block';
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const err = document.getElementById('regError');
+            err.style.display = 'none';
+
+            const un = document.getElementById('regUsername').value.trim();
+            const em = document.getElementById('regEmail').value.trim();
+            const pw = document.getElementById('regPassword').value;
+            const pwc = document.getElementById('regPasswordConfirm').value;
+            const role = document.getElementById('regRole').value;
+
+            if (!un || !em || !pw || !pwc || !role) { showError('Заполните все обязательные поля'); return; }
+            if (!/^[A-Za-z0-9]{1,10}$/.test(un)) { showError('Имя пользователя: только буквы и цифры, макс. 10'); return; }
+            if (em.length > 16) { showError('Email максимум 16 символов'); return; }
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(em)) { showError('Введите корректный email'); return; }
+            if (pw.length < 8) { showError('Пароль минимум 8 символов'); return; }
+            if (pw !== pwc) { showError('Пароли не совпадают'); return; }
+
+            const userData = {
+                username: un,
+                email: em,
+                password: pw,
+                role: role,
+                first_name: un,
+                last_name: '',
+            };
+
+            try {
+                const res = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(userData)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    localStorage.setItem('mw_user', JSON.stringify(data.user));
+                    window.location.href = 'profile.html';
+                } else {
+                    showError(data.message || 'Ошибка регистрации');
+                }
+            } catch (er) {
+                showError('Ошибка сервера. Попробуйте позже.');
+            }
+        }
+    </script>
+</body>
+</html>

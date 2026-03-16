@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="global.css">
+    <link rel="stylesheet" href="styles/education.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<style>
+    .edu-hero {
+        padding: 70px 0 50px;
+        text-align: center;
+        background: radial-gradient(circle at center, #ffffff 0%, #f7f7f9 100%);
+        border-bottom: 1px solid var(--border-soft);
+    }
+    .edu-hero h1 { font-size: 36px; font-weight: 800; margin-bottom: 10px; }
+    .edu-hero p { color: var(--text-muted); font-size: 17px; max-width: 500px; margin: 0 auto; }
+
+    .role-switch {
+        display: flex; justify-content: center; gap: 0;
+        margin: 40px auto 0; background: #f0f0f0; padding: 4px; width: fit-content;
+    }
+    .role-btn {
+        padding: 12px 32px; border: none; font-size: 14px; font-weight: 700;
+        cursor: pointer; transition: 0.3s; background: transparent; color: #74767e;
+    }
+    .role-btn.active { background: #fff; color: #222; }
+
+    .role-description {
+        max-width: 700px;
+        margin: 30px auto 0;
+        background: #fff;
+        border: 1px solid #e4e5e7;
+        padding: 32px;
+    }
+    .role-description h3 {
+        font-size: 18px; font-weight: 800; margin-bottom: 16px; color: #222;
+    }
+    .role-description p {
+        font-size: 15px; color: #62646a; line-height: 1.7; margin-bottom: 12px;
+    }
+    .role-description ul {
+        list-style: none; padding: 0; margin: 0;
+    }
+    .role-description ul li {
+        padding: 10px 0; font-size: 14px; color: #404145;
+        display: flex; align-items: flex-start; gap: 10px;
+        border-bottom: 1px solid #f9f9f9;
+    }
+    .role-description ul li:last-child { border-bottom: none; }
+    .role-description ul li i { color: #1dbf73; margin-top: 3px; flex-shrink: 0; }
+
+    .progress-bar-container { margin: 30px auto; max-width: 500px; }
+    .progress-label { display: flex; justify-content: space-between; font-size: 13px; color: #999; margin-bottom: 8px; }
+    .progress-track { background: #f0f0f0; height: 8px; overflow: hidden; }
+    .progress-fill { height: 100%; background: #1dbf73; transition: width 0.5s ease; }
+
+    .accordion-section { max-width: 700px; margin: 40px auto 60px; }
+
+    .accordion-item { border: 1px solid #e4e5e7; margin-bottom: 12px; overflow: hidden; transition: 0.3s; }
+    .accordion-item.completed { border-color: #1dbf73; }
+    .accordion-item.completed .acc-status { background: #1dbf73; color: #fff; }
+
+    .accordion-header {
+        display: flex; align-items: center; gap: 16px; padding: 20px 24px;
+        cursor: pointer; user-select: none; transition: 0.2s;
+    }
+    .accordion-header:hover { background: #fafafa; }
+
+    .acc-number {
+        width: 36px; height: 36px; border-radius: 50%; background: #f0f0f0;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 800; font-size: 14px; color: #999; flex-shrink: 0;
+    }
+    .accordion-item.completed .acc-number { background: #e8f9f0; color: #1dbf73; }
+    .acc-title { flex: 1; font-weight: 700; font-size: 16px; color: #222; }
+    .acc-status { padding: 4px 12px; font-size: 11px; font-weight: 700; background: #f0f0f0; color: #999; }
+    .acc-chevron { color: #ccc; transition: transform 0.3s; font-size: 14px; }
+    .accordion-item.open .acc-chevron { transform: rotate(180deg); }
+
+    .accordion-body { max-height: 0; overflow: hidden; transition: max-height 0.4s ease, padding 0.3s; padding: 0 24px; }
+    .accordion-item.open .accordion-body { max-height: 400px; padding: 0 24px 24px; }
+    .acc-desc { font-size: 15px; color: #62646a; line-height: 1.6; margin-bottom: 16px; }
+    .acc-tips { list-style: none; padding: 0; }
+    .acc-tips li { padding: 8px 0; font-size: 14px; color: #404145; display: flex; align-items: flex-start; gap: 10px; }
+    .acc-tips li i { color: #1dbf73; margin-top: 3px; flex-shrink: 0; }
+
+    .btn-complete {
+        margin-top: 12px; padding: 10px 24px; border: 1px solid #1dbf73;
+        background: transparent; color: #1dbf73; font-weight: 700; font-size: 13px; cursor: pointer; transition: 0.2s;
+    }
+    .btn-complete:hover { background: #1dbf73; color: #fff; }
+    .accordion-item.completed .btn-complete { display: none; }
+
+    .page-footer { text-align: center; padding: 30px 0; font-size: 13px; color: #999; border-top: 1px solid var(--border-soft); margin-top: 40px; }
+
+    @media (max-width: 768px) {
+        .edu-hero { padding: 50px 0 30px; }
+        .edu-hero h1 { font-size: 26px; }
+        .edu-hero p { font-size: 15px; }
+        .role-switch { margin: 24px auto 0; }
+        .role-btn { padding: 10px 24px; font-size: 13px; }
+        .accordion-section { margin: 30px auto 40px; }
+        .accordion-header { padding: 16px 20px; gap: 12px; }
+        .acc-title { font-size: 14px; }
+        .progress-bar-container { max-width: 90%; }
+        .role-description { padding: 24px; margin: 20px 16px 0; }
+    }
+
+    @media (max-width: 480px) {
+        .edu-hero { padding: 30px 0 20px; }
+        .edu-hero h1 { font-size: 22px; }
+        .edu-hero p { font-size: 14px; }
+        .role-btn { padding: 8px 18px; font-size: 12px; }
+        .accordion-header { padding: 14px 16px; }
+        .acc-number { width: 30px; height: 30px; font-size: 12px; }
+        .acc-title { font-size: 13px; }
+        .accordion-section { padding: 0 4px; }
+        .role-description { padding: 20px 16px; }
+        .role-description h3 { font-size: 16px; }
+        .role-description p { font-size: 14px; }
+    }
+</style>
+<body>
+    <div id="header-placeholder"></div>
+
+    <section class="edu-hero">
+        <div class="container">
+            <h1>Центр обучения</h1>
+            <p>Пошаговые инструкции для успешной работы на платформе</p>
+            <div class="role-switch">
+                <button class="role-btn active" data-role="buyer">Я заказчик</button>
+                <button class="role-btn" data-role="seller">Я исполнитель</button>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-label">
+                    <span>Ваш прогресс</span>
+                    <span id="progressText">0 из 3</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-fill" id="progressFill" style="width:0%"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <main class="container">
+        <div class="role-description" id="roleDescription"></div>
+        <div class="accordion-section" id="accordionSection"></div>
+    </main>
+
+    <div class="page-footer">Спасибо что выбираете нас!</div>
+
+    <script>
+        function getAvatarSrc(u) {
+            if (u && u.avatar_data) return u.avatar_data;
+            return 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + (u ? u.username : 'user');
+        }
+
+        function initHeaderAuth() {
+            const user = JSON.parse(localStorage.getItem('mw_user') || 'null');
+            if (user) {
+                document.getElementById('headerLoginBtn').style.display = 'none';
+                const menu = document.getElementById('userMenu');
+                menu.style.display = 'block';
+                document.getElementById('headerAvatar').src = getAvatarSrc(user);
+                document.getElementById('headerUserName').textContent = user.first_name || user.username;
+            }
+            document.addEventListener('click', function(e) {
+                const dd = document.getElementById('userDropdown');
+                const menu = document.getElementById('userMenu');
+                if (dd && menu && !menu.contains(e.target)) dd.classList.remove('show');
+            });
+        }
+
+        function logoutUser() {
+            localStorage.removeItem('mw_user');
+            window.location.href = 'index.html';
+        }
+
+        fetch('header.html').then(r => r.text()).then(data => {
+            document.getElementById('header-placeholder').innerHTML = data;
+            const path = window.location.pathname.split("/").pop().replace(".html","");
+            const link = document.querySelector('.nav-link[data-page="' + path + '"]');
+            if (link) link.classList.add('active-link');
+            initHeaderAuth();
+        });
+
+        const roleDescriptions = {
+            buyer: {
+                title: 'Руководство для заказчика',
+                intro: 'Как заказчик, вы можете размещать проекты, выбирать исполнителей и контролировать выполнение задач. Вот что важно знать:',
+                items: [
+                    'Чётко формулируйте техническое задание — это ускорит поиск подходящего исполнителя',
+                    'Указывайте реальный бюджет и сроки — это привлечёт профессионалов',
+                    'Изучайте портфолио и отзывы исполнителей перед выбором',
+                    'Используйте безопасную сделку — деньги переводятся только после принятия работы',
+                    'Общайтесь с исполнителем через встроенные сообщения платформы',
+                    'При возникновении проблем обращайтесь в поддержку — мы поможем решить спор',
+                ]
+            },
+            seller: {
+                title: 'Руководство для исполнителя',
+                intro: 'Как исполнитель, вы можете откликаться на проекты, предлагать свои услуги и зарабатывать. Вот что важно знать:',
+                items: [
+                    'Заполните профиль полностью — укажите навыки, опыт и специализацию',
+                    'Добавьте работы в портфолио — заказчики оценивают по реальным примерам',
+                    'Пишите персонализированные отклики на проекты, а не шаблонные',
+                    'Указывайте реальные сроки выполнения — не обещайте то, что не сможете выполнить',
+                    'Поддерживайте связь с заказчиком — отвечайте на сообщения оперативно',
+                    'Качественная работа = хорошие отзывы = больше заказов в будущем',
+                ]
+            }
+        };
+
+        const guidesData = {
+            buyer: [
+                { title: "Как создать проект", icon: "fa-plus-circle", desc: "Перейдите на биржу, нажмите «Создать проект» и опишите задачу.", tips: ["Укажите бюджет и сроки", "Добавьте примеры и референсы", "Опишите ожидаемый результат"] },
+                { title: "Выбор лучшего отклика", icon: "fa-user-check", desc: "Изучайте профили и отзывы исполнителей.", tips: ["Смотрите рейтинг и отзывы", "Проверяйте портфолио", "Задавайте вопросы до начала"] },
+                { title: "Безопасная сделка", icon: "fa-shield-alt", desc: "Деньги переводятся только после принятия работы.", tips: ["Оплата замораживается", "Вы подтверждаете выполнение лично", "100% возврат при спорах"] },
+            ],
+            seller: [
+                { title: "Как откликнуться", icon: "fa-paper-plane", desc: "Найдите заказ и предложите свою цену.", tips: ["Пишите персонализированные отклики", "Указывайте реальные сроки", "Приложите примеры"] },
+                { title: "Оформление профиля", icon: "fa-briefcase", desc: "Качественный профиль привлекает заказчиков.", tips: ["Качественный аватар", "Подробное описание навыков", "Примеры работ в портфолио"] },
+                { title: "Выполнение заказа", icon: "fa-check-double", desc: "Выполняйте работу качественно и в срок.", tips: ["Соблюдайте дедлайны", "Поддерживайте связь с заказчиком", "Сдавайте работу поэтапно"] },
+            ]
+        };
+
+        let currentRole = 'buyer';
+        let completed = { buyer: new Set(), seller: new Set() };
+
+        function renderRoleDescription() {
+            const data = roleDescriptions[currentRole];
+            document.getElementById('roleDescription').innerHTML = `
+                <h3>${data.title}</h3>
+                <p>${data.intro}</p>
+                <ul>
+                    ${data.items.map(item => `<li><i class="fa fa-check-circle"></i> ${item}</li>`).join('')}
+                </ul>
+            `;
+        }
+
+        function renderAccordion() {
+            const items = guidesData[currentRole];
+            const section = document.getElementById('accordionSection');
+            section.innerHTML = items.map((g, i) => {
+                const isDone = completed[currentRole].has(i);
+                return `
+                <div class="accordion-item ${isDone ? 'completed' : ''}" data-index="${i}">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">
+                        <div class="acc-number">${isDone ? '<i class="fa fa-check"></i>' : (i+1)}</div>
+                        <div class="acc-title"><i class="fa ${g.icon}" style="color:#1dbf73;margin-right:10px"></i>${g.title}</div>
+                        <span class="acc-status">${isDone ? 'Пройдено' : 'Не пройдено'}</span>
+                        <i class="fa fa-chevron-down acc-chevron"></i>
+                    </div>
+                    <div class="accordion-body">
+                        <div class="acc-desc">${g.desc}</div>
+                        <ul class="acc-tips">${g.tips.map(t => `<li><i class="fa fa-check-circle"></i> ${t}</li>`).join('')}</ul>
+                        <button class="btn-complete" onclick="markComplete(${i})">Отметить как пройденное</button>
+                    </div>
+                </div>`;
+            }).join('');
+            updateProgress();
+            renderRoleDescription();
+        }
+
+        function toggleAccordion(header) {
+            const item = header.parentElement;
+            const wasOpen = item.classList.contains('open');
+            document.querySelectorAll('.accordion-item').forEach(el => el.classList.remove('open'));
+            if (!wasOpen) item.classList.add('open');
+        }
+
+        function markComplete(index) { completed[currentRole].add(index); renderAccordion(); }
+
+        function updateProgress() {
+            const total = guidesData[currentRole].length;
+            const done = completed[currentRole].size;
+            document.getElementById('progressText').textContent = done + ' из ' + total;
+            document.getElementById('progressFill').style.width = (done / total * 100) + '%';
+        }
+
+        document.querySelectorAll('.role-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentRole = btn.dataset.role;
+                renderAccordion();
+            });
+        });
+
+        renderAccordion();
+    </script>
+</body>
+</html>
