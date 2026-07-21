@@ -42,6 +42,7 @@ async function sendMessage(chatId: number, text: string, replyMarkup?: any) {
   if (replyMarkup) body.reply_markup = replyMarkup;
 
   try {
+    console.log("Sending message to", chatId, "body:", JSON.stringify(body).slice(0, 500));
     const response = await fetch(`${TELEGRAM_API}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -49,6 +50,7 @@ async function sendMessage(chatId: number, text: string, replyMarkup?: any) {
     });
 
     const result = await response.json();
+    console.log("sendMessage result:", JSON.stringify(result));
 
     // Handle rate limit errors
     if (!result.ok && result.error_code === 429) {
