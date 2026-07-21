@@ -25,21 +25,36 @@ Deno.serve(async (req) => {
     const api = `https://api.telegram.org/bot${token}`;
     const webhookUrl = `${supabaseUrl}/functions/v1/squid-game-bot`;
 
-    const [meRes, hookInfoRes, setHookRes] = await Promise.all([
-      fetch(`${api}/getMe`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }),
-      fetch(`${api}/getWebhookInfo`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }),
-      fetch(`${api}/setWebhook`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: webhookUrl, allowed_updates: ['message', 'edited_message', 'callback_query'] }),
+    // Delete and re-set webhook to clear Telegram-side errors
+    const deleteHook = await fetch(`${api}/deleteWebhook`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+    }).then(r => r.json());
+
+    const setHook = await fetch(`${api}/setWebhook`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url: webhookUrl,
+        allowed_updates: ['message', 'edited_message', 'callback_query'],
+        max_connections: 40,
       }),
-    ]);
+    }).then(r => r.json());
 
-    const me = await meRes.json();
-    const hookInfo = await hookInfoRes.json();
-    const setHook = await setHookRes.json();
+    const hookInfo = await fetch(`${api}/getWebhookInfo`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+    }).then(r => r.json());
 
-    return new Response(JSON.stringify({ me, webhook_before: hookInfo, setWebhook: setHook }, null, 2), {
+    const me = await fetch(`${api}/getMe`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+    }).then(r => r.json());
+
+    return new Response(JSON.stringify({ deleteWebhook: deleteHook, setWebhook: setHook, webhookInfo: hookInfo, me }, null, 2), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
